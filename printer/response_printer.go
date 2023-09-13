@@ -10,9 +10,9 @@ import (
 	logrus "github.com/sirupsen/logrus"
 )
 
-func PrintResponse(resp *http.Response) {
-	fmt.Printf("%v %v", resp.Proto, resp.Status)
-	fmt.Println("")
+func PrintResponse(resp *http.Response) (string, error) {
+	resp_str := fmt.Sprintf("%v %v", resp.Proto, resp.Status)
+	resp_str += fmt.Sprintln("")
 
 	resp_headers := resp.Header
 
@@ -25,8 +25,8 @@ func PrintResponse(resp *http.Response) {
 
 	for _, resp_header := range resp_header_names {
 		resp_header_vals := strings.Join(resp_headers.Values(resp_header), ", ")
-		fmt.Printf("%v: %v", resp_header, resp_header_vals)
-		fmt.Println("")
+		resp_str += fmt.Sprintf("%v: %v", resp_header, resp_header_vals)
+		resp_str += fmt.Sprintln("")
 	}
 
 	if resp.ContentLength > 0 {
@@ -34,9 +34,13 @@ func PrintResponse(resp *http.Response) {
 		resp_body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logrus.Errorf("Error occurred while reading body", err)
+			return "", err
 		}
 
 		bodyStr := string(resp_body[:])
-		fmt.Print(bodyStr)
+		resp_str += fmt.Sprint(bodyStr)
+
+		return resp_str, nil
 	}
+	return resp_str, nil
 }

@@ -1,11 +1,8 @@
 package cmd
 
 import (
-	"fmt"
-	"goful-cli/client"
-	"goful-cli/printer"
+	tui "goful-cli/tui/list"
 
-	logrus "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -15,18 +12,7 @@ var runCmd = &cobra.Command{
 	Short: "Run a http request",
 	Long:  `Run a http request`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var url = "https://httpbin.org/anything"
-		var headers = map[string]string{"X-Foo": "bar", "X-Bar": "foo"}
-		var body = []byte("{\"foo\":\"hello\"}")
-		resp, err := client.DoRequest(url, "POST", headers, body)
-
-		if err != nil {
-			logrus.Errorf("Failed to perform request %v", err)
-		}
-
-		printed, _ := printer.PrintResponse(resp)
-		fmt.Print(printed)
-
+		tui.Start()
 	},
 }
 

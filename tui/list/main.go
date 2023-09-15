@@ -1,4 +1,4 @@
-package main
+package tui
 
 import (
 	"fmt"
@@ -94,7 +94,7 @@ func doRequest(r request) tea.Cmd {
 	}
 }
 
-func main() {
+func Start() {
 	items := []list.Item{
 		request{name: "Raspberry Pi’s", url: "https://httpbin.org/anything", method: "POST", headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, body: []byte("{\"foo\":\"Raspberry Pi’s\"}")},
 		request{name: "Nutella", url: "https://httpbin.org/anything", method: "POST", headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, body: []byte("{\"foo\":\"Nutella\"}")},

@@ -1,10 +1,12 @@
 package cmd
 
 import (
-	logrus "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
+	"fmt"
 	"goful-cli/client"
 	"goful-cli/printer"
+
+	logrus "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 // runCmd represents the run command
@@ -22,7 +24,8 @@ var runCmd = &cobra.Command{
 			logrus.Errorf("Failed to perform request %v", err)
 		}
 
-		printer.PrintResponse(resp)
+		printed, _ := printer.PrintResponse(resp)
+		fmt.Print(printed)
 
 	},
 }

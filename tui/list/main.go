@@ -89,7 +89,7 @@ func doRequest(r request) tea.Cmd {
 	// TODO handle errors
 	return func() tea.Msg {
 		resp, _ := client.DoRequest(r.url, r.method, r.headers, r.body)
-		printed, _ := printer.PrintResponse(resp)
+		printed, _ := printer.SprintPrettyResponse(resp)
 		return requestFinishedMsg(printed)
 	}
 }

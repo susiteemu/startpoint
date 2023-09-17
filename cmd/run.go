@@ -1,7 +1,9 @@
 package cmd
 
 import (
-	tui "goful-cli/tui/list"
+	"fmt"
+	"goful-cli/client"
+	"goful-cli/printer"
 
 	"github.com/spf13/cobra"
 )
@@ -12,7 +14,16 @@ var runCmd = &cobra.Command{
 	Short: "Run a http request",
 	Long:  `Run a http request`,
 	Run: func(cmd *cobra.Command, args []string) {
-		tui.Start()
+		resp, _ := client.DoRequest(
+			"https://httpbin.org/anything",
+			"POST",
+			map[string]string{"X-Foo": "bar", "X-Bar": "foo"},
+			[]byte("{\"foo\":\"Run run\"}"))
+		resp_str, err := printer.SprintPrettyResponse(resp)
+		if err != nil {
+			fmt.Errorf("Error %v", err)
+		}
+		fmt.Print(resp_str)
 	},
 }
 

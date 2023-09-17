@@ -75,7 +75,7 @@ func doRequest() tea.Msg {
 	var body = []byte("{\"foo\":\"hello\"}")
 	resp, _ := client.DoRequest(url, "POST", headers, body)
 
-	printed, _ := printer.PrintResponse(resp)
+	printed, _ := printer.SprintResponse(resp)
 	return processFinishedMsg(printed)
 }
 

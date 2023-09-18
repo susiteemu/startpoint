@@ -4,8 +4,9 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	selectui "goful-cli/tui/select"
+
 	"github.com/spf13/cobra"
-	tui "goful-cli/tui/list"
 )
 
 // selectCmd represents the select command
@@ -14,7 +15,7 @@ var selectCmd = &cobra.Command{
 	Short: "Select and run a request",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		tui.Start()
+		selectui.Start()
 	},
 }
 

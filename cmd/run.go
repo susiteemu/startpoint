@@ -19,7 +19,14 @@ var runCmd = &cobra.Command{
 			"POST",
 			map[string]string{"X-Foo": "bar", "X-Bar": "foo"},
 			[]byte("{\"foo\":\"Run run\"}"))
-		resp_str, err := printer.SprintPrettyResponse(resp)
+
+		var resp_str string
+		var err error
+		if plain, _ := cmd.Flags().GetBool("plain"); plain {
+			resp_str, err = printer.SprintResponse(resp)
+		} else {
+			resp_str, err = printer.SprintPrettyResponse(resp)
+		}
 		if err != nil {
 			fmt.Errorf("Error %v", err)
 		}
@@ -29,6 +36,8 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
+
+	runCmd.PersistentFlags().Bool("plain", false, "Print plain response without styling")
 
 	// Here you will define your flags and configuration settings.
 

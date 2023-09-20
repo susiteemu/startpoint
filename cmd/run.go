@@ -1,3 +1,6 @@
+/*
+Copyright © 2023 Teemu Turunen <teturun@gmail.com>
+*/
 package cmd
 
 import (
@@ -8,7 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// runCmd represents the run command
+type RunConfig struct {
+	Plain        bool
+	PrintHeaders bool
+	PrintBody    bool
+}
+
+var runConfig RunConfig
+
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run a http request",
@@ -22,10 +32,11 @@ var runCmd = &cobra.Command{
 
 		var resp_str string
 		var err error
-		if plain, _ := cmd.Flags().GetBool("plain"); plain {
-			resp_str, err = printer.SprintResponse(resp)
+
+		if runConfig.Plain {
+			resp_str, err = printer.SprintResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
 		} else {
-			resp_str, err = printer.SprintPrettyResponse(resp)
+			resp_str, err = printer.SprintPrettyResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
 		}
 		if err != nil {
 			fmt.Errorf("Error %v", err)
@@ -37,15 +48,24 @@ var runCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	runCmd.PersistentFlags().Bool("plain", false, "Print plain response without styling")
+	const printHeadersP = "h"
+	const printBodyP = "b"
 
-	// Here you will define your flags and configuration settings.
+	runCmd.PersistentFlags().BoolVarP(&runConfig.Plain, "plain", "p", false, "Print plain response without styling")
+	runCmd.PersistentFlags().BoolVarP(&runConfig.PrintHeaders, "headers", printHeadersP, false, "Print response headers")
+	runCmd.PersistentFlags().BoolVarP(&runConfig.PrintBody, "body", printBodyP, true, "Print response body")
+	runCmd.PersistentFlags().StringSlice("print", []string{}, fmt.Sprintf("Print WHAT\n- '%s'\tPrint response headers\n- '%s'\tPrint response body", printHeadersP, printBodyP))
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// runCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	runCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		if cmd == runCmd {
+			printFlags, _ := cmd.Flags().GetStringSlice("print")
+			for _, flag := range printFlags {
+				if flag == printHeadersP {
+					runConfig.PrintHeaders = true
+				} else if flag == printBodyP {
+					runConfig.PrintBody = true
+				}
+			}
+		}
+	}
 }

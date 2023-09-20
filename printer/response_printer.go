@@ -9,47 +9,73 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/alecthomas/chroma/v2/quick"
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/formatters"
+	"github.com/alecthomas/chroma/v2/lexers"
+	//	"github.com/alecthomas/chroma/v2/quick"
+	"github.com/alecthomas/chroma/v2/styles"
 )
 
-func SprintResponse(resp *http.Response) (string, error) {
-	return sprintResponse(resp, false)
+func SprintFullResponse(resp *http.Response) (string, error) {
+	return sprintResponse(resp, false, true, true)
 }
 
-func SprintPrettyResponse(resp *http.Response) (string, error) {
-	return sprintResponse(resp, true)
+func SprintPrettyFullResponse(resp *http.Response) (string, error) {
+	return sprintResponse(resp, true, true, true)
 }
 
-func sprintResponse(resp *http.Response, pretty bool) (string, error) {
+func SprintResponse(resp *http.Response, printHeaders bool, printBody bool) (string, error) {
+	return sprintResponse(resp, false, printHeaders, printBody)
+}
+
+func SprintPrettyResponse(resp *http.Response, printHeaders bool, printBody bool) (string, error) {
+	return sprintResponse(resp, true, printHeaders, printBody)
+}
+
+func sprintResponse(resp *http.Response, pretty bool, printHeaders bool, printBody bool) (string, error) {
 	resp_str := ""
 
-	resp_status_str, err := SprintStatus(resp)
-	if err != nil {
-		return "", err
+	if printHeaders {
+		resp_status_str, err := SprintStatus(resp)
+		if err != nil {
+			return "", err
+		}
+		resp_headers_str, err := SprintHeaders(resp)
+		if err != nil {
+			return "", err
+		}
+		resp_str += resp_status_str + "\n" + resp_headers_str
 	}
-	resp_str += resp_status_str + "\n"
 
-	resp_headers_str, err := SprintHeaders(resp)
-	if err != nil {
-		return "", err
-	}
-	resp_str += resp_headers_str
-
-	resp_body_str, err := SprintBody(resp)
-	if err != nil {
-		return "", err
+	var resp_body_str string
+	if printBody {
+		var err error
+		resp_body_str, err = SprintBody(resp)
+		if err != nil {
+			return "", err
+		}
+		if printHeaders {
+			resp_str += "\n"
+		}
+		resp_str += resp_body_str
 	}
 
 	if pretty {
 		buf := new(bytes.Buffer)
-		// TODO content-type
-		err = quick.Highlight(buf, resp_body_str, "json", "terminal16m", "catppuccin-mocha")
+
+		lexer := resolveLexer(resp, printHeaders, printBody)
+		style := resolveStyle()
+		formatter := resolveFormatter()
+		iterator, err := lexer.Tokenise(nil, resp_str)
 		if err != nil {
 			return "", err
 		}
-		resp_str += buf.String()
-	} else {
-		resp_str += resp_body_str
+		err = formatter.Format(buf, style, iterator)
+		if err != nil {
+			return "", err
+		}
+
+		resp_str = buf.String()
 	}
 
 	return resp_str, nil
@@ -102,4 +128,50 @@ func sortHeaderNames(headers http.Header) []string {
 	}
 	sort.Strings(sorted_headers)
 	return sorted_headers
+}
+
+func getContentType(headers http.Header) (string, error) {
+	for k := range headers {
+		if k == "Content-Type" {
+			return headers.Get(k), nil
+		}
+	}
+	return "", errors.New("Could not find Content-Type!")
+}
+
+func resolveLexer(resp *http.Response, printHeaders bool, printBody bool) chroma.Lexer {
+	var lexer chroma.Lexer
+	if printHeaders || (!printBody) {
+		lexer = lexers.Get("http")
+	} else if printBody {
+		contentType, err := getContentType(resp.Header)
+		if err != nil {
+			lexer = lexers.Fallback
+		} else {
+			lexer = lexers.MatchMimeType(contentType)
+		}
+	}
+
+	if lexer == nil {
+		lexer = lexers.Fallback
+	}
+
+	lexer = chroma.Coalesce(lexer)
+	return lexer
+}
+
+func resolveStyle() *chroma.Style {
+	style := styles.Get("catppuccin-mocha")
+	if style == nil {
+		style = styles.Fallback
+	}
+	return style
+}
+
+func resolveFormatter() chroma.Formatter {
+	formatter := formatters.Get("terminal16m")
+	if formatter == nil {
+		formatter = formatters.Fallback
+	}
+	return formatter
 }

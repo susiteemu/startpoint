@@ -47,10 +47,8 @@ func sprintResponse(resp *http.Response, pretty bool, printHeaders bool, printBo
 		resp_str += resp_status_str + "\n" + resp_headers_str
 	}
 
-	var resp_body_str string
 	if printBody {
-		var err error
-		resp_body_str, err = SprintBody(resp)
+		resp_body_str, err := SprintBody(resp)
 		if err != nil {
 			return "", err
 		}

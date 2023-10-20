@@ -2,14 +2,12 @@ package listtui
 
 import (
 	"fmt"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 var listStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center)
-var stopwatchStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center).Bold(true)
 
 type Request struct {
 	Name    string
@@ -36,8 +34,8 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "enter":
+		switch msg.Type {
+		case tea.KeyEnter:
 			i, ok := m.list.SelectedItem().(Request)
 			if ok {
 				m.Selection = i
@@ -72,11 +70,12 @@ func New(requests []Request, width, height int) Model {
 	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(titleColor).BorderLeftForeground(titleColor)
 	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(descColor).BorderLeftForeground(descColor)
 
-	list := list.New(items, d, width, height)
-	list.Title = "Requests"
+	requestList := list.New(items, d, width, height)
+	requestList.Title = "Requests"
+	// TODO AdditionalFullHelpKeys
 
 	m := Model{
-		list:      list,
+		list:      requestList,
 		Selection: Request{},
 		Selected:  false,
 	}

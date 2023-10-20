@@ -2,6 +2,7 @@ package printer
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -112,8 +113,14 @@ func SprintBody(resp *http.Response) (string, error) {
 			return "", err
 		}
 
-		bodyStr := string(resp_body[:])
-		resp_body_str += fmt.Sprint(bodyStr)
+		dispatcher := NewBodyFormatter(&JsonContentTypeBodyHandler{}, &XmlContentTypeBodyHandler{}, &DefaultContentTypeBodyHandler{})
+
+		contentType, err := getContentType(resp.Header)
+		if err != nil {
+			resp_body_str = string(resp_body[:])
+		} else {
+			resp_body_str, _ = dispatcher.Format(contentType, resp_body)
+		}
 	}
 	return resp_body_str, nil
 }
@@ -171,4 +178,63 @@ func resolveFormatter() chroma.Formatter {
 		formatter = formatters.Fallback
 	}
 	return formatter
+}
+
+type BodyFormatHandler interface {
+	Supports(contentType string) bool
+	Handle(body []byte) (string, error)
+}
+
+type JsonContentTypeBodyHandler struct{}
+
+func (h *JsonContentTypeBodyHandler) Supports(contentType string) bool {
+	return strings.HasPrefix(strings.ToLower(contentType), "application/json")
+}
+
+func (h *JsonContentTypeBodyHandler) Handle(body []byte) (string, error) {
+	var pretty_json bytes.Buffer
+	err := json.Indent(&pretty_json, body[:], "", "    ")
+	if err != nil {
+		return "", err
+	}
+	return string(pretty_json.Bytes()), nil
+}
+
+type XmlContentTypeBodyHandler struct{}
+
+func (h *XmlContentTypeBodyHandler) Supports(contentType string) bool {
+	return strings.HasPrefix(strings.ToLower(contentType), "application/xml")
+}
+
+func (h *XmlContentTypeBodyHandler) Handle(body []byte) (string, error) {
+	// TODO actual indentation
+	return string(body), nil
+}
+
+type DefaultContentTypeBodyHandler struct{}
+
+func (h *DefaultContentTypeBodyHandler) Supports(contentType string) bool {
+	return true
+}
+
+func (h *DefaultContentTypeBodyHandler) Handle(body []byte) (string, error) {
+	// TODO actual indentation
+	return string(body), nil
+}
+
+type BodyFormatter struct {
+	handlers []BodyFormatHandler
+}
+
+func NewBodyFormatter(handlers ...BodyFormatHandler) *BodyFormatter {
+	return &BodyFormatter{handlers: handlers}
+}
+
+func (d *BodyFormatter) Format(contentType string, body []byte) (string, error) {
+	for _, handler := range d.handlers {
+		if handler.Supports(contentType) {
+			return handler.Handle(body)
+		}
+	}
+	return "", errors.New("No handler found for the given content-type")
 }

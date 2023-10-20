@@ -1,4 +1,4 @@
-module goful-cli
+module goful
 
 go 1.21
 

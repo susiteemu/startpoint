@@ -1,26 +1,21 @@
-package selectui
+package managetui
 
 import (
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"goful/client"
-	"goful/printer"
+	edit "goful/tui/requestedit"
 	list "goful/tui/requestlist"
 )
 
-var stopwatchStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center).Bold(true)
-
 type model struct {
-	list      list.Model
-	stopwatch stopwatch.Model
-	resp      string
-	width     int
-	height    int
+	list     list.Model
+	edit     edit.Model
+	selected list.Request
+	width    int
+	height   int
 }
 
 func (m model) Init() tea.Cmd {
@@ -41,19 +36,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case list.RequestSelectedMsg:
 		selected := m.list.Selected
 		if selected {
-			return m, tea.Batch(
-				m.stopwatch.Init(),
-				doRequest(m.list.Selection),
-			)
+			m.selected = m.list.Selection
 		}
-	case requestFinishedMsg:
-		m.resp = string(msg)
-		return m, tea.Quit
 	}
 
 	var cmd tea.Cmd
 	if m.list.Selected {
-		m.stopwatch, cmd = m.stopwatch.Update(msg)
+		m.edit, cmd = m.edit.Update(msg)
 	} else {
 		m.list, cmd = m.list.Update(msg)
 	}
@@ -62,7 +51,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.list.Selected {
-		return stopwatchStyle.Render("Making request to " + m.list.Selection.Name + " :: Elapsed time: " + m.stopwatch.View())
+		return lipgloss.Place(
+			m.width,
+			m.height,
+			lipgloss.Center,
+			lipgloss.Top,
+			m.edit.View())
 	}
 
 	return lipgloss.Place(
@@ -71,17 +65,6 @@ func (m model) View() string {
 		lipgloss.Center,
 		lipgloss.Center,
 		m.list.View())
-}
-
-type requestFinishedMsg string
-
-func doRequest(r list.Request) tea.Cmd {
-	// TODO handle errors
-	return func() tea.Msg {
-		resp, _ := client.DoRequest(r.Url, r.Method, r.Headers, r.Body)
-		printed, _ := printer.SprintPrettyFullResponse(resp)
-		return requestFinishedMsg(printed)
-	}
 }
 
 func Start() {
@@ -111,17 +94,14 @@ func Start() {
 		{Name: "Terrycloth", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Terrycloth\"}")},
 	}
 
-	m := model{list: list.New(requests, 0, 0), stopwatch: stopwatch.NewWithInterval(time.Millisecond)}
+	m := model{list: list.New(requests, 0, 0), edit: edit.New()}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
-	r, err := p.Run()
+	_, err := p.Run()
 	if err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
 
-	if m, ok := r.(model); ok && m.resp != "" {
-		fmt.Printf("%s", m.resp)
-	}
 }

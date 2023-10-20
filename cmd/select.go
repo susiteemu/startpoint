@@ -4,7 +4,7 @@ Copyright © 2023 Teemu Turunen <teturun@gmail.com>
 package cmd
 
 import (
-	selectui "goful-cli/tui/select"
+	selectui "goful/tui/select"
 
 	"github.com/spf13/cobra"
 )

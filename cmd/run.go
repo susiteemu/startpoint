@@ -6,9 +6,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"goful-cli/client"
-	"goful-cli/client/validator"
-	"goful-cli/printer"
+	"goful/client"
+	"goful/client/validator"
+	"goful/printer"
 	"net/http"
 	"strings"
 

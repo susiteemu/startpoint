@@ -60,7 +60,6 @@ var runCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-
 		var resp *http.Response
 		runArgs := ParseArgs(args)
 		if runArgs != (RunArgs{}) {
@@ -80,18 +79,18 @@ var runCmd = &cobra.Command{
 				[]byte("{\"foo\":\"Run run\"}"))
 		}
 
-		var resp_str string
+		var respStr string
 		var err error
 
 		if runConfig.Plain {
-			resp_str, err = printer.SprintResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
+			respStr, err = printer.SprintResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
 		} else {
-			resp_str, err = printer.SprintPrettyResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
+			respStr, err = printer.SprintPrettyResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
 		}
 		if err != nil {
-			fmt.Errorf("Error %v", err)
+			fmt.Print(fmt.Errorf("error %v", err))
 		}
-		fmt.Print(resp_str)
+		fmt.Print(respStr)
 	},
 }
 

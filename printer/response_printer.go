@@ -7,6 +7,7 @@ import (
 	"github.com/alecthomas/chroma/v2/formatters"
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
+	"github.com/spf13/viper"
 	"net/http"
 )
 
@@ -79,7 +80,7 @@ func getContentType(headers http.Header) (string, error) {
 			return headers.Get(k), nil
 		}
 	}
-	return "", errors.New("Could not find Content-Type!")
+	return "", errors.New("could not find Content-Type")
 }
 
 func resolveLexer(resp *http.Response, printHeaders bool, printBody bool) chroma.Lexer {
@@ -104,7 +105,7 @@ func resolveLexer(resp *http.Response, printHeaders bool, printBody bool) chroma
 }
 
 func resolveStyle() *chroma.Style {
-	style := styles.Get("catppuccin-mocha")
+	style := styles.Get(viper.GetString("theme.syntax"))
 	if style == nil {
 		style = styles.Fallback
 	}
@@ -112,7 +113,7 @@ func resolveStyle() *chroma.Style {
 }
 
 func resolveFormatter() chroma.Formatter {
-	formatter := formatters.Get("terminal16m")
+	formatter := formatters.Get(viper.GetString("printer.response.formatter"))
 	if formatter == nil {
 		formatter = formatters.Fallback
 	}

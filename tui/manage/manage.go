@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spf13/viper"
 	create "goful/tui/requestcreate"
 	list "goful/tui/requestlist"
 	"log"
@@ -174,9 +175,9 @@ func Start() {
 			file, err := os.Create("tmp/" + name)
 			if err == nil {
 				filename := file.Name()
-				editor := os.Getenv("EDITOR")
+				editor := viper.GetString("editor")
 				if editor == "" {
-					log.Fatal("The $EDITOR environment variable is not set.")
+					log.Fatal("Editor is not configured through configuration file or $EDITOR environment variable.")
 				}
 
 				cmd := exec.Command(editor, filename)

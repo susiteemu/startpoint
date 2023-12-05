@@ -86,5 +86,5 @@ func (d *BodyFormatter) Format(contentType string, body []byte) (string, error) 
 			return handler.Handle(body)
 		}
 	}
-	return "", errors.New("No handler found for the given content-type")
+	return "", errors.New("no handler found for the given content-type")
 }

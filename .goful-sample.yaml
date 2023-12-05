@@ -1,0 +1,6 @@
+theme:
+  syntax: catppuccin-mocha
+printer:
+  response:
+      formatter: terminal16m
+editor: /opt/homebrew/bin/nvim

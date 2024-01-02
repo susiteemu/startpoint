@@ -6,9 +6,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"goful/client"
-	"goful/client/validator"
-	"goful/printer"
+	"goful/core/client"
+	"goful/core/client/validator"
+	"goful/core/print"
 	"net/http"
 	"strings"
 
@@ -83,9 +83,9 @@ var runCmd = &cobra.Command{
 		var err error
 
 		if runConfig.Plain {
-			respStr, err = printer.SprintResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
+			respStr, err = print.SprintPlainResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
 		} else {
-			respStr, err = printer.SprintPrettyResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
+			respStr, err = print.SprintPrettyResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
 		}
 		if err != nil {
 			fmt.Print(fmt.Errorf("error %v", err))

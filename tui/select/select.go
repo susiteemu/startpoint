@@ -2,14 +2,14 @@ package selectui
 
 import (
 	"fmt"
+	"goful/core/client"
+	"goful/core/print"
 	"os"
 	"time"
 
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"goful/client"
-	"goful/printer"
 	list "goful/tui/requestlist"
 )
 
@@ -79,7 +79,7 @@ func doRequest(r list.Request) tea.Cmd {
 	// TODO handle errors
 	return func() tea.Msg {
 		resp, _ := client.DoRequest(r.Url, r.Method, r.Headers, r.Body)
-		printed, _ := printer.SprintPrettyFullResponse(resp)
+		printed, _ := print.SprintPrettyFullResponse(resp)
 		return requestFinishedMsg(printed)
 	}
 }

@@ -1,4 +1,4 @@
-package printer
+package print
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ func SprintPrettyFullResponse(resp *http.Response) (string, error) {
 	return sprintResponse(resp, true, true, true)
 }
 
-func SprintResponse(resp *http.Response, printHeaders bool, printBody bool) (string, error) {
+func SprintPlainResponse(resp *http.Response, printHeaders bool, printBody bool) (string, error) {
 	return sprintResponse(resp, false, printHeaders, printBody)
 }
 

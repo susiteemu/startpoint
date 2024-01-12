@@ -1,8 +1,10 @@
 package builder
 
 import (
+	"fmt"
 	"goful/core/loader"
 	"goful/core/model"
+	starlarkng "goful/core/scripting/starlark"
 	"goful/core/templating/yamlng"
 	"net/http"
 )
@@ -94,5 +96,20 @@ func buildStarlarkRequest(requestMetadata model.RequestMetadata, previousRespons
 	if requestMetadata.Request != "star" {
 		return model.Request{}, false, nil
 	}
-	return model.Request{}, true, nil
+
+	res, err := starlarkng.RunStarlarkScript(requestMetadata, previousResponse, profile)
+	if err != nil {
+		return model.Request{}, true, err
+	}
+
+	fmt.Printf("Res %v", res)
+
+	req := model.Request{
+		Url:     res["url"].(string),
+		Method:  res["method"].(string),
+		Headers: res["headers"].(map[string]model.HeaderValues),
+		Body:    []byte(res["body"].(string)),
+	}
+
+	return req, true, nil
 }

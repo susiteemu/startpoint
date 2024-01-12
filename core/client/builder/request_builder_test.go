@@ -3,6 +3,8 @@ package builder
 import (
 	"github.com/google/go-cmp/cmp"
 	"goful/core/model"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -12,11 +14,11 @@ func TestBuildRequestYaml(t *testing.T) {
 		Name:       "yaml_request",
 		PrevReq:    "",
 		Request:    "yaml",
-		WorkingDir: "testdata",
+		WorkingDir: filepath.Join(currentDir(), "testdata"),
 	}
 
 	wantedRequest := model.Request{
-		Url:    "foobar.com",
+		Url:    "http://foobar.com",
 		Method: "POST",
 		Headers: map[string]model.HeaderValues{
 			"X-Foo-Bar": {"SomeValue"},
@@ -36,16 +38,15 @@ func TestBuildRequestYaml(t *testing.T) {
 }
 
 func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
-
 	requestMetadata := model.RequestMetadata{
 		Name:       "yaml_request_with_tmpl_vars",
 		PrevReq:    "",
 		Request:    "yaml",
-		WorkingDir: "testdata",
+		WorkingDir: filepath.Join(currentDir(), "testdata"),
 	}
 
 	wantedRequest := model.Request{
-		Url:    "prodfoobar.com/api",
+		Url:    "http://prodfoobar.com/api",
 		Method: "POST",
 		Headers: map[string]model.HeaderValues{
 			"X-Foo-Bar":  {"SomeValue"},
@@ -71,4 +72,37 @@ func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 	if !cmp.Equal(request, wantedRequest) {
 		t.Errorf("got %q, wanted %q", request, wantedRequest)
 	}
+}
+
+func TestBuildStarlarkRequest(t *testing.T) {
+	requestMetadata := model.RequestMetadata{
+		Name:       "starlark_request",
+		PrevReq:    "",
+		Request:    "star",
+		WorkingDir: filepath.Join(currentDir(), "testdata"),
+	}
+
+	wantedRequest := model.Request{
+		Url:    "http://foobar.com",
+		Method: "POST",
+		Headers: map[string]model.HeaderValues{
+			"X-Foo-Bar": {"SomeValue"},
+		},
+		Body: []byte("{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}"),
+	}
+
+	request, err := BuildRequest(requestMetadata, model.Profile{})
+	if err != nil {
+		t.Errorf("did not expect error %v", err)
+		return
+	}
+
+	if !cmp.Equal(request, wantedRequest) {
+		t.Errorf("got %q, wanted %q", request, wantedRequest)
+	}
+}
+
+func currentDir() string {
+	wd, _ := os.Getwd()
+	return wd
 }

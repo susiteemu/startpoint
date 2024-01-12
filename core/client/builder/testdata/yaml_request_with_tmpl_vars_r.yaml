@@ -1,4 +1,4 @@
-url: "{domain}/api"
+url: "http://{domain}/api"
 method: POST
 headers:
   X-Foo-Bar: SomeValue

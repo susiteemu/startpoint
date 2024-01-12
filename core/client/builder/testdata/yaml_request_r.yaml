@@ -1,4 +1,4 @@
-url: foobar.com
+url: "http://foobar.com"
 method: POST
 headers:
   X-Foo-Bar: SomeValue

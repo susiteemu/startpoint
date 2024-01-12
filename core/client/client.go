@@ -12,6 +12,9 @@ func DoRequest(url string, method string, headers map[string]string, body []byte
 	for key, val := range headers {
 		req.Header.Add(key, val)
 	}
+	// req.Form
+	// req.MultipartForm
+	// req.FormFile()
 	if err != nil {
 		// TODO log error
 		return nil, err

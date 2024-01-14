@@ -13,7 +13,7 @@ type Request struct {
 	Name    string
 	Url     string
 	Method  string
-	Headers map[string]string
+	Headers map[string][]string
 	Body    []byte
 }
 

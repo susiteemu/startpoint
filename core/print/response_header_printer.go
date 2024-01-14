@@ -3,22 +3,22 @@ package print
 import (
 	"errors"
 	"fmt"
-	"net/http"
+	"goful/core/model"
 	"sort"
 	"strings"
 )
 
-func SprintHeaders(resp *http.Response) (string, error) {
+func SprintHeaders(resp *model.Response) (string, error) {
 	if resp == nil {
-		return "", errors.New("Response must not be nil!")
+		return "", errors.New("response must not be nil")
 	}
 
-	respHeaders := resp.Header
+	respHeaders := resp.Headers
 	respHeadersStr := ""
 	// sort header names
-	respHeaderNames := sortHeaderNames(respHeaders)
+	respHeaderNames := sortHeaderNames(resp.Headers)
 	for _, respHeader := range respHeaderNames {
-		respHeaderVals := strings.Join(respHeaders.Values(respHeader), ", ")
+		respHeaderVals := strings.Join(respHeaders[respHeader], ", ")
 		respHeadersStr += fmt.Sprintf("%v: %v", respHeader, respHeaderVals)
 		respHeadersStr += fmt.Sprintln("")
 	}
@@ -26,7 +26,7 @@ func SprintHeaders(resp *http.Response) (string, error) {
 	return respHeadersStr, nil
 }
 
-func sortHeaderNames(headers http.Header) []string {
+func sortHeaderNames(headers map[string]model.HeaderValues) []string {
 	sortedHeaders := make([]string, 0, len(headers))
 	for k := range headers {
 		sortedHeaders = append(sortedHeaders, k)

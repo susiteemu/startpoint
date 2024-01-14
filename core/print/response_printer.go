@@ -8,26 +8,26 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/spf13/viper"
-	"net/http"
+	"goful/core/model"
 )
 
-func SprintFullResponse(resp *http.Response) (string, error) {
+func SprintFullResponse(resp *model.Response) (string, error) {
 	return sprintResponse(resp, false, true, true)
 }
 
-func SprintPrettyFullResponse(resp *http.Response) (string, error) {
+func SprintPrettyFullResponse(resp *model.Response) (string, error) {
 	return sprintResponse(resp, true, true, true)
 }
 
-func SprintPlainResponse(resp *http.Response, printHeaders bool, printBody bool) (string, error) {
+func SprintPlainResponse(resp *model.Response, printHeaders bool, printBody bool) (string, error) {
 	return sprintResponse(resp, false, printHeaders, printBody)
 }
 
-func SprintPrettyResponse(resp *http.Response, printHeaders bool, printBody bool) (string, error) {
+func SprintPrettyResponse(resp *model.Response, printHeaders bool, printBody bool) (string, error) {
 	return sprintResponse(resp, true, printHeaders, printBody)
 }
 
-func sprintResponse(resp *http.Response, pretty bool, printHeaders bool, printBody bool) (string, error) {
+func sprintResponse(resp *model.Response, pretty bool, printHeaders bool, printBody bool) (string, error) {
 	respStr := ""
 
 	if printHeaders {
@@ -74,21 +74,21 @@ func sprintResponse(resp *http.Response, pretty bool, printHeaders bool, printBo
 	return respStr, nil
 }
 
-func getContentType(headers http.Header) (string, error) {
+func getContentType(headers map[string]model.HeaderValues) (string, error) {
 	for k := range headers {
 		if k == "Content-Type" {
-			return headers.Get(k), nil
+			return headers[k][0], nil
 		}
 	}
 	return "", errors.New("could not find Content-Type")
 }
 
-func resolveLexer(resp *http.Response, printHeaders bool, printBody bool) chroma.Lexer {
+func resolveLexer(resp *model.Response, printHeaders bool, printBody bool) chroma.Lexer {
 	var lexer chroma.Lexer
 	if printHeaders || (!printBody) {
 		lexer = lexers.Get("http")
 	} else if printBody {
-		contentType, err := getContentType(resp.Header)
+		contentType, err := getContentType(resp.Headers)
 		if err != nil {
 			lexer = lexers.Fallback
 		} else {

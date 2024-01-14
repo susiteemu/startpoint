@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"goful/core/client"
 	"goful/core/client/validator"
+	"goful/core/model"
 	"goful/core/print"
-	"net/http"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -60,23 +60,19 @@ var runCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var resp *http.Response
+		var resp *model.Response
 		runArgs := ParseArgs(args)
 		if runArgs != (RunArgs{}) {
 			// TODO err
 			headers := toHeadersMap(runFlags.Headers)
-			resp, _ = client.DoRequest(
-				runArgs.Url,
-				runArgs.Method,
-				headers,
-				[]byte(runFlags.Body))
+			resp, _ = client.DoRequest(model.Request{
+				Url:     runArgs.Url,
+				Method:  runArgs.Method,
+				Headers: headers,
+				Body:    runFlags.Body,
+			})
 		} else {
 			// TODO get from --name
-			resp, _ = client.DoRequest(
-				"https://httpbin.org/anything",
-				"POST",
-				map[string]string{"X-Foo": "bar", "X-Bar": "foo"},
-				[]byte("{\"foo\":\"Run run\"}"))
 		}
 
 		var respStr string
@@ -104,12 +100,12 @@ func ParseArgs(args []string) RunArgs {
 	return RunArgs{args[0], args[1]}
 }
 
-func toHeadersMap(headers []string) map[string]string {
-	var headerMap = map[string]string{}
+func toHeadersMap(headers []string) map[string]model.HeaderValues {
+	var headerMap = make(map[string]model.HeaderValues)
 	for _, h := range headers {
 		headerParts := strings.Split(h, ":")
 		if len(headerParts) == 2 {
-			headerMap[headerParts[0]] = headerParts[1]
+			headerMap[headerParts[0]] = strings.Split(headerParts[1], ",")
 		}
 	}
 	return headerMap

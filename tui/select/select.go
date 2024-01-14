@@ -3,6 +3,7 @@ package selectui
 import (
 	"fmt"
 	"goful/core/client"
+	"goful/core/model"
 	"goful/core/print"
 	"os"
 	"time"
@@ -15,7 +16,7 @@ import (
 
 var stopwatchStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center).Bold(true)
 
-type model struct {
+type selectModel struct {
 	list      list.Model
 	stopwatch stopwatch.Model
 	resp      string
@@ -23,11 +24,11 @@ type model struct {
 	height    int
 }
 
-func (m model) Init() tea.Cmd {
+func (m selectModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m selectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -60,7 +61,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) View() string {
+func (m selectModel) View() string {
 	if m.list.Selected {
 		return stopwatchStyle.Render("Making request to " + m.list.Selection.Name + " :: Elapsed time: " + m.stopwatch.View())
 	}
@@ -78,7 +79,12 @@ type requestFinishedMsg string
 func doRequest(r list.Request) tea.Cmd {
 	// TODO handle errors
 	return func() tea.Msg {
-		resp, _ := client.DoRequest(r.Url, r.Method, r.Headers, r.Body)
+		resp, _ := client.DoRequest(model.Request{
+			Url:     r.Url,
+			Method:  r.Method,
+			Headers: new(model.Headers).FromMap(r.Headers),
+			Body:    r.Body,
+		})
 		printed, _ := print.SprintPrettyFullResponse(resp)
 		return requestFinishedMsg(printed)
 	}
@@ -86,32 +92,32 @@ func doRequest(r list.Request) tea.Cmd {
 
 func Start() {
 	requests := []list.Request{
-		{Name: "Raspberry Pi’s", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Raspberry Pi’s\"}")},
-		{Name: "Nutella", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Nutella\"}")},
-		{Name: "Bitter melon", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Bitter melon\"}")},
-		{Name: "Nice socks", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Nice socks\"}")},
-		{Name: "Eight hours of sleep", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Eight hours of sleep\"}")},
-		{Name: "Cats", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Cats\"}")},
-		{Name: "Plantasia, the album", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Plantasia, the album\"}")},
-		{Name: "Pour over coffee", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Pour over coffee\"}")},
-		{Name: "VR", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"VR\"}")},
-		{Name: "Noguchi Lamps", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Noguchi Lamps\"}")},
-		{Name: "Linux", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Linux\"}")},
-		{Name: "Business school", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Business school\"}")},
-		{Name: "Pottery", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Pottery\"}")},
-		{Name: "Shampoo", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Shampoo\"}")},
-		{Name: "Table tennis", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Table tennis\"}")},
-		{Name: "Milk crates", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Milk crates\"}")},
-		{Name: "Afternoon tea", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Afternoon tea\"}")},
-		{Name: "Stickers", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Stickers\"}")},
-		{Name: "20° Weather", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"20° Weather\"}")},
-		{Name: "Warm light", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Warm light\"}")},
-		{Name: "The vernal equinox", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"The vernal equinox\"}")},
-		{Name: "Gaffer’s tape", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Gaffer’s tape\"}")},
-		{Name: "Terrycloth", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string]string{"X-Foo": "bar", "X-Bar": "foo"}, Body: []byte("{\"foo\":\"Terrycloth\"}")},
+		{Name: "Raspberry Pi’s", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Raspberry Pi’s\"}")},
+		{Name: "Nutella", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Nutella\"}")},
+		{Name: "Bitter melon", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Bitter melon\"}")},
+		{Name: "Nice socks", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Nice socks\"}")},
+		{Name: "Eight hours of sleep", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Eight hours of sleep\"}")},
+		{Name: "Cats", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Cats\"}")},
+		{Name: "Plantasia, the album", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Plantasia, the album\"}")},
+		{Name: "Pour over coffee", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Pour over coffee\"}")},
+		{Name: "VR", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"VR\"}")},
+		{Name: "Noguchi Lamps", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Noguchi Lamps\"}")},
+		{Name: "Linux", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Linux\"}")},
+		{Name: "Business school", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Business school\"}")},
+		{Name: "Pottery", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Pottery\"}")},
+		{Name: "Shampoo", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Shampoo\"}")},
+		{Name: "Table tennis", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Table tennis\"}")},
+		{Name: "Milk crates", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Milk crates\"}")},
+		{Name: "Afternoon tea", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Afternoon tea\"}")},
+		{Name: "Stickers", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Stickers\"}")},
+		{Name: "20° Weather", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"20° Weather\"}")},
+		{Name: "Warm light", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Warm light\"}")},
+		{Name: "The vernal equinox", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"The vernal equinox\"}")},
+		{Name: "Gaffer’s tape", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Gaffer’s tape\"}")},
+		{Name: "Terrycloth", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Terrycloth\"}")},
 	}
 
-	m := model{list: list.New(requests, 0, 0), stopwatch: stopwatch.NewWithInterval(time.Millisecond)}
+	m := selectModel{list: list.New(requests, 0, 0), stopwatch: stopwatch.NewWithInterval(time.Millisecond)}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -121,7 +127,7 @@ func Start() {
 		os.Exit(1)
 	}
 
-	if m, ok := r.(model); ok && m.resp != "" {
+	if m, ok := r.(selectModel); ok && m.resp != "" {
 		fmt.Printf("%s", m.resp)
 	}
 }

@@ -3,10 +3,10 @@ package print
 import (
 	"errors"
 	"fmt"
-	"net/http"
+	"goful/core/model"
 )
 
-func SprintStatus(resp *http.Response) (string, error) {
+func SprintStatus(resp *model.Response) (string, error) {
 	if resp == nil {
 		return "", errors.New("Response must not be nil!")
 	}

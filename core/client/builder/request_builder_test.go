@@ -3,6 +3,7 @@ package builder
 import (
 	"github.com/google/go-cmp/cmp"
 	"goful/core/model"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
@@ -20,10 +21,10 @@ func TestBuildRequestYaml(t *testing.T) {
 	wantedRequest := model.Request{
 		Url:    "http://foobar.com",
 		Method: "POST",
-		Headers: map[string]model.HeaderValues{
+		Headers: model.Headers{
 			"X-Foo-Bar": {"SomeValue"},
 		},
-		Body: []byte("{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}"),
+		Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
 	}
 
 	request, err := BuildRequest(requestMetadata, model.Profile{})
@@ -48,11 +49,11 @@ func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 	wantedRequest := model.Request{
 		Url:    "http://prodfoobar.com/api",
 		Method: "POST",
-		Headers: map[string]model.HeaderValues{
+		Headers: model.Headers{
 			"X-Foo-Bar":  {"SomeValue"},
 			"X-Tmpl-Var": {"Value from template var"},
 		},
-		Body: []byte("{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}"),
+		Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
 	}
 
 	profile := model.Profile{
@@ -85,10 +86,15 @@ func TestBuildStarlarkRequest(t *testing.T) {
 	wantedRequest := model.Request{
 		Url:    "http://foobar.com",
 		Method: "POST",
-		Headers: map[string]model.HeaderValues{
-			"X-Foo-Bar": {"SomeValue"},
+		Headers: model.Headers{
+			"X-Foo":  {"Bar"},
+			"X-Foos": {"Bar1", "Bar2"},
 		},
-		Body: []byte("{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}"),
+		Body: map[string]interface{}{
+			"id":     big.NewInt(1),
+			"amount": 1.2001,
+			"name":   "Jane",
+		},
 	}
 
 	request, err := BuildRequest(requestMetadata, model.Profile{})
@@ -97,7 +103,7 @@ func TestBuildStarlarkRequest(t *testing.T) {
 		return
 	}
 
-	if !cmp.Equal(request, wantedRequest) {
+	if !cmp.Equal(request, wantedRequest, cmp.AllowUnexported(big.Int{})) {
 		t.Errorf("got %q, wanted %q", request, wantedRequest)
 	}
 }

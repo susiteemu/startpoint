@@ -1,30 +1,29 @@
 package client
 
 import (
-	"bytes"
-	"net/http"
+	"github.com/go-resty/resty/v2"
+	"goful/core/model"
 )
 
-func DoRequest(url string, method string, headers map[string]string, body []byte) (*http.Response, error) {
-	client := &http.Client{}
-	bodyReader := bytes.NewReader(body)
-	req, err := http.NewRequest(method, url, bodyReader)
-	for key, val := range headers {
-		req.Header.Add(key, val)
-	}
-	// req.Form
-	// req.MultipartForm
-	// req.FormFile()
+func DoRequest(request model.Request) (*model.Response, error) {
+	client := resty.New()
+
+	requestHeaders := request.Headers.ToMap()
+	// TODO enable trace?
+	// TODO handle body vs formdata, also check if []byte can be string before casting
+	resp, err := client.R().SetHeaders(requestHeaders).SetBody(request.Body).Execute(request.Method, request.Url)
 	if err != nil {
-		// TODO log error
-		return nil, err
+		return &model.Response{}, err
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		// TODO log error
-		return nil, err
+	r := model.Response{
+		Headers:    new(model.Headers).FromMap(resp.Header()),
+		Body:       resp.Body(),
+		Status:     resp.Status(),
+		StatusCode: resp.StatusCode(),
+		Proto:      resp.Proto(),
+		Size:       resp.Size(),
+		ReceivedAt: resp.ReceivedAt(),
 	}
 
-	return resp, nil
-
+	return &r, nil
 }

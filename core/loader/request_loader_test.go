@@ -26,7 +26,7 @@ func TestReadYamlRequest(t *testing.T) {
 		Headers: map[string]model.HeaderValues{
 			"X-Foo-Bar": {"SomeValue"},
 		},
-		Body: []byte("{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}"),
+		Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
 	}
 
 	if !cmp.Equal(request, wantedRequest) {

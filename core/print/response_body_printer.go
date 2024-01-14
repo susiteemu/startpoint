@@ -4,23 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
-	"net/http"
+	"goful/core/model"
 	"strings"
 )
 
-func SprintBody(resp *http.Response) (string, error) {
+func SprintBody(resp *model.Response) (string, error) {
 	respBodyStr := ""
-	if resp.ContentLength > 0 {
-		defer resp.Body.Close()
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return "", err
-		}
+	if resp.Size > 0 {
+		respBody := resp.Body
 
 		dispatcher := NewBodyFormatter(&JsonContentTypeBodyHandler{}, &XmlContentTypeBodyHandler{}, &DefaultContentTypeBodyHandler{})
 
-		contentType, err := getContentType(resp.Header)
+		contentType, err := getContentType(resp.Headers)
 		if err != nil {
 			respBodyStr = string(respBody[:])
 		} else {

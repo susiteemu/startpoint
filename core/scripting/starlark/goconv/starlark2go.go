@@ -45,13 +45,13 @@ func ConvertDict(v starlark.Value) (interface{}, bool, error) {
 	tuples := dict.Items()
 	goDict := make(map[string]interface{})
 	for _, t := range tuples {
-		t1 := t[0]
+		t1, _, _ := ConvertString(t[0])
 		t2 := t[1]
 		converted, err := ConvertValue(t2)
 		if err != nil {
 			return map[string]interface{}{}, true, err
 		}
-		goDict[t1.String()] = converted
+		goDict[t1.(string)] = converted
 	}
 	return goDict, true, nil
 }

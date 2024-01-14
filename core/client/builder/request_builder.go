@@ -1,12 +1,12 @@
 package builder
 
 import (
-	"fmt"
 	"goful/core/loader"
 	"goful/core/model"
 	starlarkng "goful/core/scripting/starlark"
 	"goful/core/templating/yamlng"
 	"net/http"
+	"reflect"
 )
 
 var builders = []func(requestMetadata model.RequestMetadata, previousResponse *http.Response, profile model.Profile) (model.Request, bool, error){
@@ -102,13 +102,26 @@ func buildStarlarkRequest(requestMetadata model.RequestMetadata, previousRespons
 		return model.Request{}, true, err
 	}
 
-	fmt.Printf("Res %v", res)
+	headers := make(map[string][]string)
+	for k, v := range res["headers"].(map[string]interface{}) {
+		t := reflect.TypeOf(v)
+		if t.String() == "string" {
+			headers[k] = []string{v.(string)}
+		} else if t.String() == "[]interface {}" {
+			vv := v.([]interface{})
+			var l []string
+			for _, vvv := range vv {
+				l = append(l, vvv.(string))
+			}
+			headers[k] = l
+		}
+	}
 
 	req := model.Request{
 		Url:     res["url"].(string),
 		Method:  res["method"].(string),
-		Headers: res["headers"].(map[string]model.HeaderValues),
-		Body:    []byte(res["body"].(string)),
+		Headers: new(model.Headers).FromMap(headers),
+		Body:    res["body"],
 	}
 
 	return req, true, nil

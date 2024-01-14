@@ -1,7 +1,6 @@
 package starlarkng
 
 import (
-	"fmt"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
 	"goful/core/model"
@@ -14,12 +13,9 @@ func RunStarlarkScript(metadata model.RequestMetadata, previousResponse *http.Re
 
 	profileValues, err := starlarkconv.Convert(profile.Variables)
 	if err != nil {
-		fmt.Printf(">>> ERRRRRRR")
 		// TODO handle err
 		return nil, err
 	}
-
-	fmt.Printf(">>> GOING FORWARD %v\n", metadata)
 
 	predeclared := starlark.StringDict{
 		"profile": profileValues,
@@ -36,14 +32,11 @@ func RunStarlarkScript(metadata model.RequestMetadata, previousResponse *http.Re
 		LoadBindsGlobally: true,
 		Recursion:         true,
 	}
-	fmt.Printf(">>> path %v\n", metadata.ToRequestPath())
 	globals, _ := starlark.ExecFileOptions(&fileOptions, thread, metadata.ToRequestPath(), nil, predeclared)
-	fmt.Printf(">>> GOT VALUES %v\n", globals.Keys())
 	values := make(map[string]interface{})
 	for _, name := range globals.Keys() {
 		starlarkValue := globals[name]
 		goValue, err := goconv.ConvertValue(starlarkValue)
-		fmt.Printf(">>> name %s, value %v", name, goValue)
 		if err != nil {
 			return nil, err
 		}

@@ -1,9 +1,0 @@
-url: "http://foobar.com"
-method: POST
-headers:
-  X-Foo-Bar: SomeValue
-body: >
-  {
-    "id": 1,
-    "name": "Jane"
-  }

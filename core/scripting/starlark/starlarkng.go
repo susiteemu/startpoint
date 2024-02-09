@@ -1,15 +1,21 @@
 package starlarkng
 
 import (
-	"go.starlark.net/starlark"
-	"go.starlark.net/syntax"
+	"errors"
 	"goful/core/model"
 	"goful/core/scripting/starlark/goconv"
 	"goful/core/scripting/starlark/starlarkconv"
 	"net/http"
+
+	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 )
 
-func RunStarlarkScript(metadata model.RequestMetadata, previousResponse *http.Response, profile model.Profile) (map[string]interface{}, error) {
+func RunStarlarkScript(request model.RequestMold, previousResponse *http.Response, profile model.Profile) (map[string]interface{}, error) {
+
+	if request.Starlark == nil {
+		return nil, errors.New("starlark request must not be nil")
+	}
 
 	profileValues, err := starlarkconv.Convert(profile.Variables)
 	if err != nil {
@@ -32,7 +38,10 @@ func RunStarlarkScript(metadata model.RequestMetadata, previousResponse *http.Re
 		LoadBindsGlobally: true,
 		Recursion:         true,
 	}
-	globals, _ := starlark.ExecFileOptions(&fileOptions, thread, metadata.ToRequestPath(), nil, predeclared)
+
+	starlarkRequest := request.Starlark
+
+	globals, _ := starlark.ExecFileOptions(&fileOptions, thread, request.Name(), starlarkRequest.Script, predeclared)
 	values := make(map[string]interface{})
 	for _, name := range globals.Keys() {
 		starlarkValue := globals[name]

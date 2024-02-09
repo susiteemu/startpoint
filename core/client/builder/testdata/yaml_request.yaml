@@ -1,2 +1,11 @@
-prev_req:
-request: yaml
+name: yaml_request
+url: 'http://foobar.com'
+method: POST
+headers:
+  X-Foo-Bar: SomeValue
+body: >
+  {
+    "id": 1,
+    "name": "Jane"
+  }
+

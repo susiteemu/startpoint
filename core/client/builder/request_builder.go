@@ -1,7 +1,6 @@
 package builder
 
 import (
-	"goful/core/loader"
 	"goful/core/model"
 	starlarkng "goful/core/scripting/starlark"
 	"goful/core/templating/yamlng"
@@ -9,15 +8,15 @@ import (
 	"reflect"
 )
 
-var builders = []func(requestMetadata model.RequestMetadata, previousResponse *http.Response, profile model.Profile) (model.Request, bool, error){
+var builders = []func(requestMold model.RequestMold, previousResponse *http.Response, profile model.Profile) (model.Request, bool, error){
 	buildYamlRequest,
 	buildStarlarkRequest,
 }
 
-func BuildRequest(requestMetadata model.RequestMetadata, profile model.Profile) (model.Request, error) {
+func BuildRequest(requestMold model.RequestMold, profile model.Profile) (model.Request, error) {
 	var request model.Request
 	for _, builder := range builders {
-		result, accept, err := builder(requestMetadata, nil, profile)
+		result, accept, err := builder(requestMold, nil, profile)
 		if err != nil {
 			return model.Request{}, err
 		}
@@ -65,39 +64,45 @@ func BuildRequest(requestMetadata model.RequestMetadata, profile model.Profile) 
 		return model.Request{}, nil
 	}
 */
-func BuildRequestUsingPreviousResponse(requestMetadata model.RequestMetadata, previousResponse *http.Response, profile model.Profile) (model.Request, error) {
+func BuildRequestUsingPreviousResponse(requestMold model.RequestMold, previousResponse *http.Response, profile model.Profile) (model.Request, error) {
 	return model.Request{}, nil
 }
 
-func buildYamlRequest(requestMetadata model.RequestMetadata, _ *http.Response, profile model.Profile) (model.Request, bool, error) {
-	if requestMetadata.Request != "yaml" && requestMetadata.Request != "yml" {
+func buildYamlRequest(requestMold model.RequestMold, _ *http.Response, profile model.Profile) (model.Request, bool, error) {
+	if requestMold.Yaml == nil {
 		return model.Request{}, false, nil
 	}
-	request, err := loader.ReadYamlRequest(requestMetadata)
-	if err != nil {
-		return model.Request{}, true, err
-	}
+
+	yamlRequest := requestMold.Yaml
 
 	if len(profile.Variables) > 0 {
-		headers := request.Headers
+		headers := yamlRequest.Headers
 		for k, v := range profile.Variables {
-			request.Url = yamlng.ProcessTemplateVariable(request.Url, k, v)
-			for headerName, headerValues := range request.Headers {
+			yamlRequest.Url = yamlng.ProcessTemplateVariable(yamlRequest.Url, k, v)
+			for headerName, headerValues := range yamlRequest.Headers {
 				headers[headerName] = yamlng.ProcessTemplateVariables(headerValues, k, v)
 			}
 		}
-		request.Headers = headers
+		yamlRequest.Headers = headers
 	}
 
-	return request, true, err
+	request := model.Request{
+		Url:     yamlRequest.Url,
+		Method:  yamlRequest.Method,
+		Headers: yamlRequest.Headers,
+		Body:    yamlRequest.Body,
+	}
+
+	// TODO map values from YamlRequest to Request
+	return request, true, nil
 }
 
-func buildStarlarkRequest(requestMetadata model.RequestMetadata, previousResponse *http.Response, profile model.Profile) (model.Request, bool, error) {
-	if requestMetadata.Request != "star" {
+func buildStarlarkRequest(requestMold model.RequestMold, previousResponse *http.Response, profile model.Profile) (model.Request, bool, error) {
+	if requestMold.Starlark == nil {
 		return model.Request{}, false, nil
 	}
 
-	res, err := starlarkng.RunStarlarkScript(requestMetadata, previousResponse, profile)
+	res, err := starlarkng.RunStarlarkScript(requestMold, previousResponse, profile)
 	if err != nil {
 		return model.Request{}, true, err
 	}

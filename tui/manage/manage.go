@@ -2,16 +2,18 @@ package managetui
 
 import (
 	"fmt"
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/spf13/viper"
+	"goful/core/model"
 	create "goful/tui/requestcreate"
 	list "goful/tui/requestlist"
 	"log"
 	"os"
 	"os/exec"
+
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/spf13/viper"
 )
 
 type ActiveView int
@@ -48,7 +50,7 @@ var keys = keyMap{
 	),
 }
 
-type model struct {
+type uiModel struct {
 	list     list.Model
 	create   create.Model
 	active   ActiveView
@@ -60,11 +62,11 @@ type model struct {
 	help     help.Model
 }
 
-func (m model) Init() tea.Cmd {
+func (m uiModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -95,7 +97,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) View() string {
+func (m uiModel) View() string {
 	switch m.active {
 	case List:
 		return renderList(m)
@@ -106,7 +108,7 @@ func (m model) View() string {
 	}
 }
 
-func renderList(m model) string {
+func renderList(m uiModel) string {
 	return lipgloss.Place(
 		m.width,
 		m.height,
@@ -115,7 +117,7 @@ func renderList(m model) string {
 		m.list.View())
 }
 
-func renderCreate(m model) string {
+func renderCreate(m uiModel) string {
 	return lipgloss.Place(
 		m.width,
 		m.height,
@@ -124,31 +126,16 @@ func renderCreate(m model) string {
 		m.create.View())
 }
 
-func Start() {
-	requests := []list.Request{
-		{Name: "Raspberry Pi’s", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Raspberry Pi’s\"}")},
-		{Name: "Nutella", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Nutella\"}")},
-		{Name: "Bitter melon", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Bitter melon\"}")},
-		{Name: "Nice socks", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Nice socks\"}")},
-		{Name: "Eight hours of sleep", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Eight hours of sleep\"}")},
-		{Name: "Cats", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Cats\"}")},
-		{Name: "Plantasia, the album", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Plantasia, the album\"}")},
-		{Name: "Pour over coffee", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Pour over coffee\"}")},
-		{Name: "VR", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"VR\"}")},
-		{Name: "Noguchi Lamps", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Noguchi Lamps\"}")},
-		{Name: "Linux", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Linux\"}")},
-		{Name: "Business school", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Business school\"}")},
-		{Name: "Pottery", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Pottery\"}")},
-		{Name: "Shampoo", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Shampoo\"}")},
-		{Name: "Table tennis", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Table tennis\"}")},
-		{Name: "Milk crates", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Milk crates\"}")},
-		{Name: "Afternoon tea", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Afternoon tea\"}")},
-		{Name: "Stickers", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Stickers\"}")},
-		{Name: "20° Weather", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"20° Weather\"}")},
-		{Name: "Warm light", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Warm light\"}")},
-		{Name: "The vernal equinox", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"The vernal equinox\"}")},
-		{Name: "Gaffer’s tape", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Gaffer’s tape\"}")},
-		{Name: "Terrycloth", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}}, Body: []byte("{\"foo\":\"Terrycloth\"}")},
+func Start(loadedRequests []model.RequestMold) {
+	var requests []list.Request
+
+	for _, v := range loadedRequests {
+		r := list.Request{
+			Name:   v.Name(),
+			Url:    v.Url(),
+			Method: v.Method(),
+		}
+		requests = append(requests, r)
 	}
 
 	f, err := tea.LogToFile("debug.log", "debug")
@@ -158,7 +145,7 @@ func Start() {
 	}
 	defer f.Close()
 
-	m := model{list: list.New(requests, 0, 0), create: create.New(), active: List}
+	m := uiModel{list: list.New(requests, 0, 0), create: create.New(), active: List}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -168,7 +155,7 @@ func Start() {
 		os.Exit(1)
 	}
 
-	if m, ok := r.(model); ok {
+	if m, ok := r.(uiModel); ok {
 		name := m.create.Name
 		log.Printf("About to create new request with name %v", name)
 		if len(name) > 0 {

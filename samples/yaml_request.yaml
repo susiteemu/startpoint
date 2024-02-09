@@ -1,3 +1,5 @@
+name: yaml_request
+prev_req:
 url: foobar.com
 method: POST
 headers:
@@ -7,3 +9,4 @@ body: >
     "id": 1,
     "name": "Jane"
   }
+

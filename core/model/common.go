@@ -1,9 +1,7 @@
 package model
 
 import (
-	"fmt"
 	"gopkg.in/yaml.v3"
-	"path/filepath"
 	"strings"
 )
 
@@ -46,8 +44,4 @@ func (headers *Headers) ToMap() map[string]string {
 		headerMap[k] = v.ToString()
 	}
 	return headerMap
-}
-
-func (metadata *RequestMetadata) ToRequestPath() string {
-	return filepath.Join(metadata.WorkingDir, fmt.Sprint(metadata.Name, "_r.", metadata.Request))
 }

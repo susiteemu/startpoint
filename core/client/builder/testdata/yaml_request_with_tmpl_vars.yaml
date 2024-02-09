@@ -1,2 +1,12 @@
-prev_req:
-request: yaml
+name: yaml_request_with_tmpl_vars
+url: 'http://{domain}/api'
+method: POST
+headers:
+  X-Foo-Bar: SomeValue
+  X-Tmpl-Var: '{header-value-test}'
+body: >
+  {
+    "id": 1,
+    "name": "Jane"
+  }
+

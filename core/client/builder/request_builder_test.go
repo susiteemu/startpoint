@@ -4,18 +4,21 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"goful/core/model"
 	"math/big"
-	"os"
-	"path/filepath"
 	"testing"
 )
 
 func TestBuildRequestYaml(t *testing.T) {
 
-	requestMetadata := model.RequestMetadata{
-		Name:       "yaml_request",
-		PrevReq:    "",
-		Request:    "yaml",
-		WorkingDir: filepath.Join(currentDir(), "testdata"),
+	requestMold := model.RequestMold{
+		Yaml: &model.YamlRequest{
+			Name:   "yaml_request",
+			Url:    "http://foobar.com",
+			Method: "POST",
+			Headers: model.Headers{
+				"X-Foo-Bar": {"SomeValue"},
+			},
+			Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+		},
 	}
 
 	wantedRequest := model.Request{
@@ -27,23 +30,29 @@ func TestBuildRequestYaml(t *testing.T) {
 		Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
 	}
 
-	request, err := BuildRequest(requestMetadata, model.Profile{})
+	request, err := BuildRequest(requestMold, model.Profile{})
 	if err != nil {
 		t.Errorf("did not expect error %v", err)
 		return
 	}
 
 	if !cmp.Equal(request, wantedRequest) {
-		t.Errorf("got %q, wanted %q", request, wantedRequest)
+		t.Errorf("got\n%q\nwanted\n%q\n", request, wantedRequest)
 	}
 }
 
 func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
-	requestMetadata := model.RequestMetadata{
-		Name:       "yaml_request_with_tmpl_vars",
-		PrevReq:    "",
-		Request:    "yaml",
-		WorkingDir: filepath.Join(currentDir(), "testdata"),
+	requestMold := model.RequestMold{
+		Yaml: &model.YamlRequest{
+			Name:   "yaml_request",
+			Url:    "http://{domain}/api",
+			Method: "POST",
+			Headers: model.Headers{
+				"X-Foo-Bar":  {"SomeValue"},
+				"X-Tmpl-Var": {"{header-value-test}"},
+			},
+			Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+		},
 	}
 
 	wantedRequest := model.Request{
@@ -64,23 +73,36 @@ func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 		},
 	}
 
-	request, err := BuildRequest(requestMetadata, profile)
+	request, err := BuildRequest(requestMold, profile)
 	if err != nil {
 		t.Errorf("did not expect error %v", err)
 		return
 	}
 
 	if !cmp.Equal(request, wantedRequest) {
-		t.Errorf("got %q, wanted %q", request, wantedRequest)
+		t.Errorf("got\n%q\nwanted\n%q\n", request, wantedRequest)
 	}
 }
 
 func TestBuildStarlarkRequest(t *testing.T) {
-	requestMetadata := model.RequestMetadata{
-		Name:       "starlark_request",
-		PrevReq:    "",
-		Request:    "star",
-		WorkingDir: filepath.Join(currentDir(), "testdata"),
+	requestMold := model.RequestMold{
+		Starlark: &model.StarlarkRequest{
+			Script: `
+"""
+meta:name: Starlark request
+meta:prev_req: Some previous request
+doc:url: http://foobar.com
+doc:method: POST
+"""
+url = "http://foobar.com"
+headers = { "X-Foo": "Bar", "X-Foos": [ "Bar1", "Bar2" ] }
+method = "POST"
+body = {
+    "id": 1,
+    "amount": 1.2001,
+    "name": "Jane"
+}`,
+		},
 	}
 
 	wantedRequest := model.Request{
@@ -97,18 +119,13 @@ func TestBuildStarlarkRequest(t *testing.T) {
 		},
 	}
 
-	request, err := BuildRequest(requestMetadata, model.Profile{})
+	request, err := BuildRequest(requestMold, model.Profile{})
 	if err != nil {
 		t.Errorf("did not expect error %v", err)
 		return
 	}
 
 	if !cmp.Equal(request, wantedRequest, cmp.AllowUnexported(big.Int{})) {
-		t.Errorf("got %q, wanted %q", request, wantedRequest)
+		t.Errorf("got\n%q\nwanted\n%q\n", request, wantedRequest)
 	}
-}
-
-func currentDir() string {
-	wd, _ := os.Getwd()
-	return wd
 }

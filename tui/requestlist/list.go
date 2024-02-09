@@ -2,6 +2,8 @@ package listtui
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -25,6 +27,8 @@ type Model struct {
 	list      list.Model
 	Selection Request
 	Selected  bool
+	width     int
+	height    int
 }
 
 func (m Model) Init() tea.Cmd {
@@ -47,6 +51,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.width = h
+		m.height = v
 	}
 
 	var cmd tea.Cmd
@@ -83,6 +89,15 @@ func New(requests []Request, width, height int) Model {
 }
 
 func (m Model) View() string {
+
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
+	f.Write([]byte(fmt.Sprintf("w:%v, h: %v\n", m.width, m.height)))
+
+	defer f.Close()
 	return listStyle.Render(m.list.View())
 }
 

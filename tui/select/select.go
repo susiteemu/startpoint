@@ -90,31 +90,16 @@ func doRequest(r list.Request) tea.Cmd {
 	}
 }
 
-func Start() {
-	requests := []list.Request{
-		{Name: "Raspberry Pi’s", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Raspberry Pi’s\"}")},
-		{Name: "Nutella", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Nutella\"}")},
-		{Name: "Bitter melon", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Bitter melon\"}")},
-		{Name: "Nice socks", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Nice socks\"}")},
-		{Name: "Eight hours of sleep", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Eight hours of sleep\"}")},
-		{Name: "Cats", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Cats\"}")},
-		{Name: "Plantasia, the album", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Plantasia, the album\"}")},
-		{Name: "Pour over coffee", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Pour over coffee\"}")},
-		{Name: "VR", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"VR\"}")},
-		{Name: "Noguchi Lamps", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Noguchi Lamps\"}")},
-		{Name: "Linux", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Linux\"}")},
-		{Name: "Business school", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Business school\"}")},
-		{Name: "Pottery", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Pottery\"}")},
-		{Name: "Shampoo", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Shampoo\"}")},
-		{Name: "Table tennis", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Table tennis\"}")},
-		{Name: "Milk crates", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Milk crates\"}")},
-		{Name: "Afternoon tea", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Afternoon tea\"}")},
-		{Name: "Stickers", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Stickers\"}")},
-		{Name: "20° Weather", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"20° Weather\"}")},
-		{Name: "Warm light", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Warm light\"}")},
-		{Name: "The vernal equinox", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"The vernal equinox\"}")},
-		{Name: "Gaffer’s tape", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Gaffer’s tape\"}")},
-		{Name: "Terrycloth", Url: "https://httpbin.org/anything", Method: "POST", Headers: map[string][]string{"X-Foo": {"bar"}, "X-Bar": {"foo"}, "Content-Type": {"application/json"}}, Body: []byte("{\"foo\":\"Terrycloth\"}")},
+func Start(loadedRequests []model.RequestMold) {
+	var requests []list.Request
+
+	for _, v := range loadedRequests {
+		r := list.Request{
+			Name:   v.Name(),
+			Url:    v.Url(),
+			Method: v.Method(),
+		}
+		requests = append(requests, r)
 	}
 
 	m := selectModel{list: list.New(requests, 0, 0), stopwatch: stopwatch.NewWithInterval(time.Millisecond)}

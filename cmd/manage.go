@@ -4,8 +4,10 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"goful/core/loader"
 	managetui "goful/tui/manage"
+
+	"github.com/spf13/cobra"
 )
 
 // manageCmd represents the manage command
@@ -14,7 +16,9 @@ var manageCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		managetui.Start()
+		// TODO handle err
+		loadedRequests, _ := loader.ReadRequests("samples")
+		managetui.Start(loadedRequests)
 	},
 }
 

@@ -8,8 +8,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("36")).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(180)
-var descriptionStyle = lipgloss.NewStyle().Padding(1).Width(180)
+var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("36")).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(70)
+var descriptionStyle = lipgloss.NewStyle().Padding(1).Width(70)
 
 type keyMap struct {
 	Save key.Binding
@@ -40,6 +40,7 @@ var keys = keyMap{
 type Model struct {
 	nameInput textinput.Model
 	Name      string
+	Complex   bool
 	keys      keyMap
 	help      help.Model
 }
@@ -72,7 +73,15 @@ func (m Model) View() string {
 
 	inputViews := []string{}
 	inputViews = append(inputViews, "Name")
-	inputViews = append(inputViews, descriptionStyle.Render("Choose a name for your request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."))
+
+	if m.Complex {
+		inputViews = append(inputViews, descriptionStyle.Render("Choose a name for your complex request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."))
+
+	} else {
+		inputViews = append(inputViews, descriptionStyle.Render("Choose a name for your request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."))
+
+	}
+
 	inputViews = append(inputViews, inputStyle.Render(m.nameInput.View()))
 	inputViews = append(inputViews, helpView)
 
@@ -80,17 +89,18 @@ func (m Model) View() string {
 
 }
 
-func New() Model {
+func New(complex bool) Model {
 	nameInput := textinput.New()
 	nameInput.Placeholder = "Name your request"
 	nameInput.Focus()
 	nameInput.CharLimit = 64
-	nameInput.Width = 30
+	nameInput.Width = 70
 	nameInput.Prompt = ""
 	//inputs[ccn].Validate = ccnValidator
 
 	return Model{
 		nameInput: nameInput,
+		Complex:   complex,
 		keys:      keys,
 		help:      help.New(),
 	}

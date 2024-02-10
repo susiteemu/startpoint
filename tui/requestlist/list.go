@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -61,7 +62,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
-func New(requests []Request, width, height int) Model {
+func New(requests []Request, width, height int, additionalFullHelpKeys []key.Binding) Model {
 	items := []list.Item{}
 
 	for _, v := range requests {
@@ -78,7 +79,11 @@ func New(requests []Request, width, height int) Model {
 
 	requestList := list.New(items, d, width, height)
 	requestList.Title = "Requests"
-	// TODO AdditionalFullHelpKeys
+	if additionalFullHelpKeys != nil {
+		requestList.AdditionalFullHelpKeys = func() []key.Binding {
+			return additionalFullHelpKeys
+		}
+	}
 
 	m := Model{
 		list:      requestList,

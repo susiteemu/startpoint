@@ -21,45 +21,30 @@ type ActiveView int
 const (
 	List ActiveView = iota
 	Create
+	CreateComplex
 	Update
 )
 
-type keyMap struct {
-	Add  key.Binding
-	Quit key.Binding
-}
-
-func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Add, k.Quit}
-}
-
-func (k keyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.Add, k.Quit}, // first column
-	}
-}
-
-var keys = keyMap{
-	Add: key.NewBinding(
+var keys = []key.Binding{
+	key.NewBinding(
 		key.WithKeys("a"),
-		key.WithHelp("a", "Add"),
+		key.WithHelp("a", "Add simple"),
 	),
-	Quit: key.NewBinding(
-		key.WithKeys("q", "esc", "ctrl+c"),
-		key.WithHelp("q", "quit"),
-	),
-}
+	key.NewBinding(
+		key.WithKeys("A"),
+		key.WithHelp("A", "Add complex"),
+	)}
 
 type uiModel struct {
-	list     list.Model
-	create   create.Model
-	active   ActiveView
-	selected list.Request
-	width    int
-	height   int
-	debug    string
-	keys     keyMap
-	help     help.Model
+	list          list.Model
+	create        create.Model
+	createComplex create.Model
+	active        ActiveView
+	selected      list.Request
+	width         int
+	height        int
+	debug         string
+	help          help.Model
 }
 
 func (m uiModel) Init() tea.Cmd {
@@ -76,8 +61,13 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "a":
-			if m.active != Create {
+			if m.active != Create && m.active != CreateComplex {
 				m.active = Create
+				return m, nil
+			}
+		case "A":
+			if m.active != Create && m.active != CreateComplex {
+				m.active = CreateComplex
 				return m, nil
 			}
 		}
@@ -93,6 +83,8 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list, cmd = m.list.Update(msg)
 	case Create:
 		m.create, cmd = m.create.Update(msg)
+	case CreateComplex:
+		m.createComplex, cmd = m.createComplex.Update(msg)
 	}
 	return m, cmd
 }
@@ -103,6 +95,8 @@ func (m uiModel) View() string {
 		return renderList(m)
 	case Create:
 		return renderCreate(m)
+	case CreateComplex:
+		return renderCreateComplex(m)
 	default:
 		return renderList(m)
 	}
@@ -126,6 +120,15 @@ func renderCreate(m uiModel) string {
 		m.create.View())
 }
 
+func renderCreateComplex(m uiModel) string {
+	return lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Center,
+		m.createComplex.View())
+}
+
 func Start(loadedRequests []model.RequestMold) {
 	var requests []list.Request
 
@@ -145,7 +148,7 @@ func Start(loadedRequests []model.RequestMold) {
 	}
 	defer f.Close()
 
-	m := uiModel{list: list.New(requests, 0, 0), create: create.New(), active: List}
+	m := uiModel{list: list.New(requests, 0, 0, keys), create: create.New(false), createComplex: create.New(true), active: List}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -156,11 +159,59 @@ func Start(loadedRequests []model.RequestMold) {
 	}
 
 	if m, ok := r.(uiModel); ok {
-		name := m.create.Name
-		log.Printf("About to create new request with name %v", name)
-		if len(name) > 0 {
-			file, err := os.Create("tmp/" + name)
+		fileName := ""
+		content := ""
+		createFile := false
+		if m.active == Create {
+			fileName = fmt.Sprintf("%s.yaml", m.create.Name)
+			createFile = true
+			// TODO read from a template file
+			content = fmt.Sprintf(`name: %s
+prev_req: <call other request before this>
+url: <your url>
+method: <http method>
+headers:
+  <headers key-val list, e.g. X-Foo-Bar: SomeValue>
+body: >
+  <body, e.g. {
+    <"id": 1,
+    "name": "Jane">
+  }>
+`, m.create.Name)
+		} else if m.active == CreateComplex {
+			fileName = fmt.Sprintf("%s.star", m.createComplex.Name)
+			// TODO read from template
+			content = fmt.Sprintf(`"""
+meta:name: %s
+meta:prev_req: <call other request before this>
+doc:url: <your url for display>
+doc:method: <your http method for display>
+"""
+# insert contents of your script here, for more see https://github.com/google/starlark-go/blob/master/doc/spec.md
+# Request url
+url = ""
+# HTTP method
+method = ""
+# HTTP headers, e.g. { "X-Foo": "bar", "X-Foos": [ "Bar1", "Bar2" ] }
+headers = {}
+# Request body, e.g. { "id": 1, "people": [ {"name": "Joe"}, {"name": "Jane"}, ] }
+body = {}
+`, m.createComplex.Name)
+			createFile = true
+		}
+
+		if !createFile {
+			return
+		}
+
+		log.Printf("About to create new request with name %v", fileName)
+		if len(fileName) > 0 {
+			file, err := os.Create("tmp/" + fileName)
 			if err == nil {
+				defer file.Close()
+				// TODO handle err
+				file.WriteString(content)
+				file.Sync()
 				filename := file.Name()
 				editor := viper.GetString("editor")
 				if editor == "" {

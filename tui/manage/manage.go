@@ -106,8 +106,8 @@ func renderList(m uiModel) string {
 	return lipgloss.Place(
 		m.width,
 		m.height,
-		lipgloss.Center,
-		lipgloss.Center,
+		lipgloss.Left,
+		lipgloss.Top,
 		m.list.View())
 }
 
@@ -204,7 +204,7 @@ body = {}
 			return
 		}
 
-		log.Printf("About to create new request with name %v", fileName)
+		f.WriteString(fmt.Sprintf("About to create new request with name %v\n", fileName))
 		if len(fileName) > 0 {
 			file, err := os.Create("tmp/" + fileName)
 			if err == nil {
@@ -215,7 +215,7 @@ body = {}
 				filename := file.Name()
 				editor := viper.GetString("editor")
 				if editor == "" {
-					log.Fatal("Editor is not configured through configuration file or $EDITOR environment variable.")
+					f.WriteString("Editor is not configured through configuration file or $EDITOR environment variable.")
 				}
 
 				cmd := exec.Command(editor, filename)
@@ -225,12 +225,12 @@ body = {}
 
 				err = cmd.Run()
 				if err != nil {
-					log.Printf("Failed to open file with editor: %v", err)
+					f.WriteString(fmt.Sprintf("Failed to open file with editor: %v\n", err))
 				}
 				log.Printf("Successfully edited file %v", file.Name())
 				fmt.Printf("Saved new request to file %v", file.Name())
 			} else {
-				log.Printf("Failed to create file %v", err)
+				f.WriteString(fmt.Sprintf("Failed to create file %v\n", err))
 			}
 		}
 	}

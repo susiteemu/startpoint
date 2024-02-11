@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var listStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center)
+var listStyle = lipgloss.NewStyle().BorderBackground(lipgloss.Color("#cdd6f4"))
 
 type Request struct {
 	Name    string
@@ -25,7 +25,7 @@ func (i Request) Description() string { return fmt.Sprintf("%v %v", i.Method, i.
 func (i Request) FilterValue() string { return i.Name }
 
 type Model struct {
-	list      list.Model
+	List      list.Model
 	Selection Request
 	Selected  bool
 	width     int
@@ -41,23 +41,21 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			i, ok := m.list.SelectedItem().(Request)
+			i, ok := m.List.SelectedItem().(Request)
 			if ok {
 				m.Selection = i
 				m.Selected = true
 			}
 			return m, tea.Cmd(func() tea.Msg { return RequestSelectedMsg{} })
 		}
-
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.List.SetSize(msg.Width, msg.Height)
 		m.width = h
 		m.height = v
 	}
-
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	m.List, cmd = m.List.Update(msg)
 
 	return m, cmd
 }
@@ -79,6 +77,7 @@ func New(requests []Request, width, height int, additionalFullHelpKeys []key.Bin
 
 	requestList := list.New(items, d, width, height)
 	requestList.Title = "Requests"
+	requestList.Help.ShowAll = true
 	if additionalFullHelpKeys != nil {
 		requestList.AdditionalFullHelpKeys = func() []key.Binding {
 			return additionalFullHelpKeys
@@ -86,7 +85,7 @@ func New(requests []Request, width, height int, additionalFullHelpKeys []key.Bin
 	}
 
 	m := Model{
-		list:      requestList,
+		List:      requestList,
 		Selection: Request{},
 		Selected:  false,
 	}
@@ -103,7 +102,7 @@ func (m Model) View() string {
 	f.Write([]byte(fmt.Sprintf("w:%v, h: %v\n", m.width, m.height)))
 
 	defer f.Close()
-	return listStyle.Render(m.list.View())
+	return m.List.View()
 }
 
 type RequestSelectedMsg struct{}

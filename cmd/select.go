@@ -16,7 +16,7 @@ var selectCmd = &cobra.Command{
 	Long:  `Launches a tui application where you can query a stored request and run it`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO handle err
-		loadedRequests, _ := loader.ReadRequests("samples")
+		loadedRequests, _ := loader.ReadRequests("tmp")
 		selectui.Start(loadedRequests)
 	},
 }

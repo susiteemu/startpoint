@@ -167,16 +167,20 @@ func Start(loadedRequests []model.RequestMold) {
 			createFile = true
 			// TODO read from a template file
 			content = fmt.Sprintf(`name: %s
-prev_req: <call other request before this>
-url: <your url>
-method: <http method>
+# Possible request to call _before_ this one
+prev_req:
+# Request url, may contain template variables in a form of {var}
+url:
+# HTTP method
+method:
+# HTTP headers as key-val list, e.g. X-Foo-Bar: SomeValue
 headers:
-  <headers key-val list, e.g. X-Foo-Bar: SomeValue>
+# Request body, e.g.
+# {
+#    "id": 1,
+#    "name": "Jane">
+# }
 body: >
-  <body, e.g. {
-    <"id": 1,
-    "name": "Jane">
-  }>
 `, m.create.Name)
 		} else if m.active == CreateComplex {
 			fileName = fmt.Sprintf("%s.star", m.createComplex.Name)

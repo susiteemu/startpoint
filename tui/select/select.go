@@ -3,15 +3,17 @@ package selectui
 import (
 	"fmt"
 	"goful/core/client"
+	"goful/core/client/builder"
 	"goful/core/model"
 	"goful/core/print"
 	"os"
 	"time"
 
+	list "goful/tui/requestlist"
+
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	list "goful/tui/requestlist"
 )
 
 var stopwatchStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center).Bold(true)
@@ -63,7 +65,7 @@ func (m selectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m selectModel) View() string {
 	if m.list.Selected {
-		return stopwatchStyle.Render("Making request to " + m.list.Selection.Name + " :: Elapsed time: " + m.stopwatch.View())
+		return stopwatchStyle.Render("Making request to " + m.list.Selection.Url + " :: Elapsed time: " + m.stopwatch.View())
 	}
 
 	return lipgloss.Place(
@@ -79,13 +81,19 @@ type requestFinishedMsg string
 func doRequest(r list.Request) tea.Cmd {
 	// TODO handle errors
 	return func() tea.Msg {
-		resp, _ := client.DoRequest(model.Request{
-			Url:     r.Url,
-			Method:  r.Method,
-			Headers: new(model.Headers).FromMap(r.Headers),
-			Body:    r.Body,
-		})
-		printed, _ := print.SprintPrettyFullResponse(resp)
+		req, err := builder.BuildRequest(*r.Mold, model.Profile{})
+		if err != nil {
+			return requestFinishedMsg(fmt.Sprintf("err: %v", err))
+		}
+		resp, err := client.DoRequest(req)
+		if err != nil {
+			return requestFinishedMsg(fmt.Sprintf("err: %v", err))
+		}
+
+		printed, err := print.SprintPrettyFullResponse(resp)
+		if err != nil {
+			return requestFinishedMsg(fmt.Sprintf("err: %v", err))
+		}
 		return requestFinishedMsg(printed)
 	}
 }
@@ -98,6 +106,7 @@ func Start(loadedRequests []model.RequestMold) {
 			Name:   v.Name(),
 			Url:    v.Url(),
 			Method: v.Method(),
+			Mold:   &v,
 		}
 		requests = append(requests, r)
 	}

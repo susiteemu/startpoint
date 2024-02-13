@@ -70,8 +70,8 @@ func initConfig() {
 	viper.SetDefault("printer.response.formatter", "terminal16m")
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Printf("Using config file: %v\n", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("failed to read config %v\n", err)
 	}
 
 }

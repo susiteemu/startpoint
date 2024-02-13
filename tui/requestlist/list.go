@@ -2,6 +2,7 @@ package listtui
 
 import (
 	"fmt"
+	"goful/core/model"
 	"os"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -13,11 +14,10 @@ import (
 var listStyle = lipgloss.NewStyle().BorderBackground(lipgloss.Color("#cdd6f4"))
 
 type Request struct {
-	Name    string
-	Url     string
-	Method  string
-	Headers map[string][]string
-	Body    []byte
+	Name   string
+	Url    string
+	Method string
+	Mold   *model.RequestMold
 }
 
 func (i Request) Title() string       { return i.Name }

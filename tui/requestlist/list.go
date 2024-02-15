@@ -17,7 +17,7 @@ type Request struct {
 	Name   string
 	Url    string
 	Method string
-	Mold   *model.RequestMold
+	Mold   model.RequestMold
 }
 
 func (i Request) Title() string       { return i.Name }

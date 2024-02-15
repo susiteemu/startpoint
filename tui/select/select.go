@@ -81,18 +81,18 @@ type requestFinishedMsg string
 func doRequest(r list.Request) tea.Cmd {
 	// TODO handle errors
 	return func() tea.Msg {
-		req, err := builder.BuildRequest(*r.Mold, model.Profile{})
+		req, err := builder.BuildRequest(r.Mold, model.Profile{})
 		if err != nil {
-			return requestFinishedMsg(fmt.Sprintf("err: %v", err))
+			return requestFinishedMsg(fmt.Sprintf("failed to build request err: %v", err))
 		}
 		resp, err := client.DoRequest(req)
 		if err != nil {
-			return requestFinishedMsg(fmt.Sprintf("err: %v", err))
+			return requestFinishedMsg(fmt.Sprintf("failed to do request err: %v", err))
 		}
 
 		printed, err := print.SprintPrettyFullResponse(resp)
 		if err != nil {
-			return requestFinishedMsg(fmt.Sprintf("err: %v", err))
+			return requestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))
 		}
 		return requestFinishedMsg(printed)
 	}
@@ -106,7 +106,7 @@ func Start(loadedRequests []model.RequestMold) {
 			Name:   v.Name(),
 			Url:    v.Url(),
 			Method: v.Method(),
-			Mold:   &v,
+			Mold:   v,
 		}
 		requests = append(requests, r)
 	}

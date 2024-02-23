@@ -67,7 +67,7 @@ func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 
 	profile := model.Profile{
 		Name: "test",
-		Variables: map[string]interface{}{
+		Variables: map[string]string{
 			"domain":            "prodfoobar.com",
 			"header-value-test": "Value from template var",
 		},

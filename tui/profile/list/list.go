@@ -2,7 +2,6 @@ package listtui
 
 import (
 	"fmt"
-	"goful/core/model"
 	"os"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -13,20 +12,18 @@ import (
 
 var listStyle = lipgloss.NewStyle().BorderBackground(lipgloss.Color("#cdd6f4"))
 
-type Request struct {
-	Name   string
-	Url    string
-	Method string
-	Mold   model.RequestMold
+type Profile struct {
+	Name      string
+	Variables int
 }
 
-func (i Request) Title() string       { return i.Name }
-func (i Request) Description() string { return fmt.Sprintf("%v %v", i.Method, i.Url) }
-func (i Request) FilterValue() string { return i.Name }
+func (i Profile) Title() string       { return i.Name }
+func (i Profile) Description() string { return fmt.Sprintf("Vars: %d", i.Variables) }
+func (i Profile) FilterValue() string { return i.Name }
 
 type Model struct {
 	List      list.Model
-	Selection Request
+	Selection Profile
 	Selected  bool
 	width     int
 	height    int
@@ -41,12 +38,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			i, ok := m.List.SelectedItem().(Request)
+			i, ok := m.List.SelectedItem().(Profile)
 			if ok {
 				m.Selection = i
 				m.Selected = true
 			}
-			return m, tea.Cmd(func() tea.Msg { return RequestSelectedMsg{} })
+			return m, tea.Cmd(func() tea.Msg { return ProfileSelectedMsg{} })
 		}
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
@@ -60,10 +57,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
-func New(requests []Request, width, height int, additionalFullHelpKeys []key.Binding) Model {
+func New(profiles []Profile, width, height int, additionalFullHelpKeys []key.Binding) Model {
 	items := []list.Item{}
 
-	for _, v := range requests {
+	for _, v := range profiles {
 		items = append(items, v)
 	}
 
@@ -75,18 +72,18 @@ func New(requests []Request, width, height int, additionalFullHelpKeys []key.Bin
 	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(titleColor).BorderLeftForeground(titleColor)
 	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(descColor).BorderLeftForeground(descColor)
 
-	requestList := list.New(items, d, width, height)
-	requestList.Title = "Requests"
-	requestList.Help.ShowAll = true
+	profileList := list.New(items, d, width, height)
+	profileList.Title = "Profiles"
+	profileList.Help.ShowAll = true
 	if additionalFullHelpKeys != nil {
-		requestList.AdditionalFullHelpKeys = func() []key.Binding {
+		profileList.AdditionalFullHelpKeys = func() []key.Binding {
 			return additionalFullHelpKeys
 		}
 	}
 
 	m := Model{
-		List:      requestList,
-		Selection: Request{},
+		List:      profileList,
+		Selection: Profile{},
 		Selected:  false,
 	}
 	return m
@@ -105,4 +102,4 @@ func (m Model) View() string {
 	return m.List.View()
 }
 
-type RequestSelectedMsg struct{}
+type ProfileSelectedMsg struct{}

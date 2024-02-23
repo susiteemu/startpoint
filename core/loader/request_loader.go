@@ -39,7 +39,9 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 			}
 			if yamlRequest.Name != "" {
 				request := model.RequestMold{
-					Yaml: yamlRequest,
+					Yaml:        yamlRequest,
+					Raw:         string(file),
+					ContentType: "yaml",
 				}
 				requestSlice = append(requestSlice, request)
 			}
@@ -54,7 +56,9 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 				Script: string(file),
 			}
 			request := model.RequestMold{
-				Starlark: starlarkRequest,
+				Starlark:    starlarkRequest,
+				Raw:         string(file),
+				ContentType: "star",
 			}
 			requestSlice = append(requestSlice, request)
 

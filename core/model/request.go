@@ -10,8 +10,10 @@ type Request struct {
 }
 
 type RequestMold struct {
-	Yaml     *YamlRequest
-	Starlark *StarlarkRequest
+	Yaml        *YamlRequest
+	Starlark    *StarlarkRequest
+	ContentType string
+	Raw         string
 }
 
 type YamlRequest struct {
@@ -41,28 +43,36 @@ func (r *RequestMold) Name() string {
 }
 
 func (r *RequestMold) Url() string {
+	var url = ""
 	if r.Yaml != nil {
-		return r.Yaml.Url
+		url = r.Yaml.Url
 	} else if r.Starlark != nil {
 		pattern := regexp.MustCompile(".*doc:url:\\s*(.*)")
 		match := pattern.FindStringSubmatch(r.Starlark.Script)
 		if len(match) == 2 {
-			return match[1]
+			url = match[1]
 		}
+	}
+	if url != "" {
+		return url
 	}
 	return ""
 
 }
 
 func (r *RequestMold) Method() string {
+	var method = ""
 	if r.Yaml != nil {
-		return r.Yaml.Method
+		method = r.Yaml.Method
 	} else if r.Starlark != nil {
 		pattern := regexp.MustCompile(".*doc:method:\\s*(.*)")
 		match := pattern.FindStringSubmatch(r.Starlark.Script)
 		if len(match) == 2 {
-			return match[1]
+			method = match[1]
 		}
+	}
+	if method != "" {
+		return method
 	}
 	return ""
 

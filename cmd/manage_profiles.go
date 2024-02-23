@@ -5,25 +5,25 @@ package cmd
 
 import (
 	"goful/core/loader"
-	requestManageTui "goful/tui/request/manage"
+	profileManageTui "goful/tui/profile/manage"
 
 	"github.com/spf13/cobra"
 )
 
 // manageCmd represents the manage command
-var manageCmd = &cobra.Command{
-	Use:   "manage",
+var manageProfilesCmd = &cobra.Command{
+	Use:   "profiles",
 	Short: "A brief description of your command",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO handle err
-		loadedRequests, _ := loader.ReadRequests("tmp")
-		requestManageTui.Start(loadedRequests)
+		loadedProfiles, _ := loader.ReadProfiles("tmp")
+		profileManageTui.Start(loadedProfiles)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(manageCmd)
+	manageCmd.AddCommand(manageProfilesCmd)
 
 	// Here you will define your flags and configuration settings.
 

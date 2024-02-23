@@ -104,6 +104,19 @@ func resolveLexer(resp *model.Response, printHeaders bool, printBody bool) chrom
 	return lexer
 }
 
+func resolveLexerForContentType(contentType string) chroma.Lexer {
+
+	var lexer chroma.Lexer
+	lexer = lexers.MatchMimeType(contentType)
+
+	if lexer == nil {
+		lexer = lexers.Fallback
+	}
+
+	lexer = chroma.Coalesce(lexer)
+	return lexer
+}
+
 func resolveStyle() *chroma.Style {
 	style := styles.Get(viper.GetString("theme.syntax"))
 	if style == nil {

@@ -3,8 +3,8 @@ package managetui
 import (
 	"fmt"
 	"goful/core/model"
-	create "goful/tui/requestcreate"
-	list "goful/tui/requestlist"
+	create "goful/tui/request/create"
+	list "goful/tui/request/list"
 	"log"
 	"os"
 	"os/exec"

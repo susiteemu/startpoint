@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"goful/core/loader"
-	selectui "goful/tui/select"
+	requestSelectTui "goful/tui/request/select"
 
 	"github.com/spf13/cobra"
 )
@@ -17,7 +17,7 @@ var selectCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO handle err
 		loadedRequests, _ := loader.ReadRequests("tmp")
-		selectui.Start(loadedRequests)
+		requestSelectTui.Start(loadedRequests)
 	},
 }
 

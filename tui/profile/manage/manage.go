@@ -24,7 +24,7 @@ const (
 var keys = []key.Binding{
 	key.NewBinding(
 		key.WithKeys("a"),
-		key.WithHelp("a", "Add simple"),
+		key.WithHelp("a", "Add new profile"),
 	)}
 
 type uiModel struct {
@@ -58,7 +58,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case list.ProfileSelectedMsg:
-		m.active = Update
+		return m, tea.Quit
 	case create.CreateMsg:
 		return m, tea.Quit
 	}

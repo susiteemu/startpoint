@@ -7,7 +7,7 @@ import (
 func SprintStar(rawYaml string) (string, error) {
 	buf := new(bytes.Buffer)
 
-	lexer := resolveLexerForContentType("text/x-python2")
+	lexer := resolveLexer("text/x-python2")
 	style := resolveStyle()
 	formatter := resolveFormatter()
 	iterator, err := lexer.Tokenise(nil, rawYaml)

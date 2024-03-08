@@ -42,6 +42,7 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 					Yaml:        yamlRequest,
 					Raw:         string(file),
 					ContentType: "yaml",
+					Filename:    filename,
 				}
 				requestSlice = append(requestSlice, request)
 			}
@@ -59,6 +60,7 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 				Starlark:    starlarkRequest,
 				Raw:         string(file),
 				ContentType: "star",
+				Filename:    filename,
 			}
 			requestSlice = append(requestSlice, request)
 

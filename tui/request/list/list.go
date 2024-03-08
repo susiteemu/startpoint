@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"goful/core/client/validator"
 	"goful/core/model"
-	"os"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -98,18 +97,17 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyEnter:
+		switch {
+		case msg.Type == tea.KeyEnter:
 			i, ok := m.List.SelectedItem().(Request)
 			if ok {
-				if !validator.IsValidUrl(i.Url) || !validator.IsValidMethod(i.Method) {
+				/* if !validator.IsValidUrl(i.Url) || !validator.IsValidMethod(i.Method) {
 					statusCmd := m.List.NewStatusMessage(statusMessageStyle.Render("\ue654 Invalid request."))
 					return m, tea.Batch(statusCmd)
-				} else {
-					m.Selection = i
-					m.Selected = true
-					return m, tea.Cmd(func() tea.Msg { return RequestSelectedMsg{} })
-				}
+				} */
+				m.Selection = i
+				m.Selected = true
+				return m, tea.Cmd(func() tea.Msg { return RequestSelectedMsg{} })
 			} else {
 				statusCmd := m.List.NewStatusMessage(statusMessageStyle.Render("\ue654 Invalid request."))
 				return m, tea.Batch(statusCmd)
@@ -166,15 +164,6 @@ func New(requests []Request, width, height int, additionalFullHelpKeys []key.Bin
 }
 
 func (m Model) View() string {
-
-	f, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println("fatal:", err)
-		os.Exit(1)
-	}
-	f.Write([]byte(fmt.Sprintf("w:%v, h: %v\n", m.width, m.height)))
-
-	defer f.Close()
 	return m.List.View()
 }
 

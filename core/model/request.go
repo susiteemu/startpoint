@@ -14,6 +14,7 @@ type RequestMold struct {
 	Starlark    *StarlarkRequest
 	ContentType string
 	Raw         string
+	Filename    string
 }
 
 type YamlRequest struct {

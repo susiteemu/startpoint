@@ -7,7 +7,7 @@ import (
 func SprintYaml(rawYaml string) (string, error) {
 	buf := new(bytes.Buffer)
 
-	lexer := resolveLexerForContentType("text/x-yaml")
+	lexer := resolveLexer("text/x-yaml")
 	style := resolveStyle()
 	formatter := resolveFormatter()
 	iterator, err := lexer.Tokenise(nil, rawYaml)

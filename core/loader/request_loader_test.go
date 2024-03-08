@@ -22,9 +22,7 @@ func TestReadRequests(t *testing.T) {
 
 	var wantedRequests []model.RequestMold
 
-	starlarkRequest := model.RequestMold{
-		Starlark: &model.StarlarkRequest{
-			Script: `"""
+	script := `"""
 meta:name: Starlark request
 meta:prev_req: Some previous request
 doc:url: http://foobar.com
@@ -37,7 +35,15 @@ body = { "id": 1474, "prev": prev, "bar": [
     {"name": "Joe"},
     {"name": "Jane"},
 ] }
-`},
+`
+
+	starlarkRequest := model.RequestMold{
+		Starlark: &model.StarlarkRequest{
+			Script: script,
+		},
+		Raw:         script,
+		ContentType: "star",
+		Filename:    "starlark_request.star",
 	}
 
 	wantedRequests = append(wantedRequests, starlarkRequest)
@@ -53,6 +59,20 @@ body = { "id": 1474, "prev": prev, "bar": [
 			},
 			Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}\n",
 		},
+		Raw: `name: yaml_request
+prev_req:
+url: foobar.com
+method: POST
+headers:
+  X-Foo-Bar: SomeValue
+body: >
+  {
+    "id": 1,
+    "name": "Jane"
+  }
+`,
+		ContentType: "yaml",
+		Filename:    "yaml_request.yaml",
 	}
 
 	wantedRequests = append(wantedRequests, yamlRequest)
@@ -75,7 +95,16 @@ body = { "id": 1474, "prev": prev, "bar": [
 				t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", r, w)
 			}
 		}
+		if !cmp.Equal(request.Raw, wantedRequest.Raw) {
+			t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", request, wantedRequest)
+		}
+		if !cmp.Equal(request.ContentType, wantedRequest.ContentType) {
+			t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", request, wantedRequest)
+		}
 
+		if !cmp.Equal(request.Filename, wantedRequest.Filename) {
+			t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", request, wantedRequest)
+		}
 	}
 
 }

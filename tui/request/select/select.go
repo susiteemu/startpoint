@@ -146,7 +146,7 @@ func Start(loadedRequests []model.RequestMold) {
 		requests = append(requests, r)
 	}
 
-	m := selectModel{list: list.New(requests, 0, 0, nil), stopwatch: stopwatch.NewWithInterval(time.Millisecond), preview: preview.New()}
+	m := selectModel{list: list.New(requests, true, 0, 0, nil), stopwatch: stopwatch.NewWithInterval(time.Millisecond), preview: preview.New()}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

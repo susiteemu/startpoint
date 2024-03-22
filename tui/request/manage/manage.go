@@ -156,7 +156,7 @@ func Start(loadedRequests []model.RequestMold) {
 	}
 	defer f.Close()
 
-	m := uiModel{list: list.New(requests, 0, 0, keys), create: create.New(false), createComplex: create.New(true), active: List}
+	m := uiModel{list: list.New(requests, false, 0, 0, keys), create: create.New(false), createComplex: create.New(true), active: List}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

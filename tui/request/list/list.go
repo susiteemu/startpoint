@@ -83,11 +83,12 @@ func (i Request) Description() string {
 func (i Request) FilterValue() string { return fmt.Sprintf("%s %s %s", i.Name, i.Method, i.Url) }
 
 type Model struct {
-	List      list.Model
-	Selection Request
-	Selected  bool
-	width     int
-	height    int
+	List            list.Model
+	Selection       Request
+	Selected        bool
+	width           int
+	height          int
+	validateRequest bool
 }
 
 func (m Model) Init() tea.Cmd {
@@ -101,10 +102,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case msg.Type == tea.KeyEnter:
 			i, ok := m.List.SelectedItem().(Request)
 			if ok {
-				/* if !validator.IsValidUrl(i.Url) || !validator.IsValidMethod(i.Method) {
+				if m.validateRequest && (!validator.IsValidUrl(i.Url) || !validator.IsValidMethod(i.Method)) {
 					statusCmd := m.List.NewStatusMessage(statusMessageStyle.Render("\ue654 Invalid request."))
 					return m, tea.Batch(statusCmd)
-				} */
+				}
 				m.Selection = i
 				m.Selected = true
 				return m, tea.Cmd(func() tea.Msg { return RequestSelectedMsg{} })
@@ -129,7 +130,7 @@ func (m Model) SelectedItem() Request {
 	return m.List.SelectedItem().(Request)
 }
 
-func New(requests []Request, width, height int, additionalFullHelpKeys []key.Binding) Model {
+func New(requests []Request, validateRequest bool, width, height int, additionalFullHelpKeys []key.Binding) Model {
 	items := []list.Item{}
 
 	for _, v := range requests {
@@ -156,9 +157,10 @@ func New(requests []Request, width, height int, additionalFullHelpKeys []key.Bin
 	}
 
 	m := Model{
-		List:      requestList,
-		Selection: Request{},
-		Selected:  false,
+		List:            requestList,
+		Selection:       Request{},
+		Selected:        false,
+		validateRequest: validateRequest,
 	}
 	return m
 }

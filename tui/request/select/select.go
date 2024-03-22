@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/bubbles/key"
 	list "goful/tui/request/list"
 	preview "goful/tui/request/preview"
 
@@ -23,6 +24,17 @@ const (
 	List ActiveView = iota
 	Preview
 )
+
+var keys = []key.Binding{
+	key.NewBinding(
+		key.WithKeys("p"),
+		key.WithHelp("p", "Preview"),
+	),
+	key.NewBinding(
+		key.WithKeys(tea.KeyEnter.String()),
+		key.WithHelp(tea.KeyEnter.String(), "Run request"),
+	),
+}
 
 var stopwatchStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center).Bold(true)
 
@@ -57,7 +69,7 @@ func (m selectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.active != Preview {
 				m.active = Preview
 				m.preview.Viewport.Width = m.width
-				m.preview.Viewport.Height = m.height / 2 // - m.preview.VerticalMarginHeight()
+				m.preview.Viewport.Height = m.height - m.preview.VerticalMarginHeight()
 				selected := m.list.SelectedItem()
 				var formatted string
 				var err error
@@ -146,7 +158,7 @@ func Start(loadedRequests []model.RequestMold) {
 		requests = append(requests, r)
 	}
 
-	m := selectModel{list: list.New(requests, true, 0, 0, nil), stopwatch: stopwatch.NewWithInterval(time.Millisecond), preview: preview.New()}
+	m := selectModel{list: list.New(requests, true, 0, 0, keys), stopwatch: stopwatch.NewWithInterval(time.Millisecond), preview: preview.New()}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

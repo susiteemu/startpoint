@@ -3,8 +3,11 @@ package managetui
 import (
 	"fmt"
 	"goful/core/model"
+	"goful/core/print"
+
 	create "goful/tui/request/create"
 	list "goful/tui/request/list"
+	preview "goful/tui/request/preview"
 	"log"
 	"os"
 	"os/exec"
@@ -23,6 +26,7 @@ const (
 	Create
 	CreateComplex
 	Update
+	Preview
 )
 
 var keys = []key.Binding{
@@ -35,6 +39,10 @@ var keys = []key.Binding{
 		key.WithHelp("A", "Add complex"),
 	),
 	key.NewBinding(
+		key.WithKeys("p"),
+		key.WithHelp("p", "Preview"),
+	),
+	key.NewBinding(
 		key.WithKeys(tea.KeyEnter.String()),
 		key.WithHelp(tea.KeyEnter.String(), "Edit"),
 	),
@@ -45,6 +53,7 @@ type uiModel struct {
 	create        create.Model
 	createComplex create.Model
 	active        ActiveView
+	preview       preview.Model
 	selected      list.Request
 	width         int
 	height        int
@@ -63,7 +72,11 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "ctrl+c":
+		case "ctrl+c", "q", "esc":
+			if m.active == Preview {
+				m.active = List
+				return m, nil
+			}
 			return m, tea.Quit
 		case "a":
 			if m.active == List {
@@ -75,6 +88,29 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.active = CreateComplex
 				return m, nil
 			}
+		case "p":
+			if m.active != Preview {
+				m.active = Preview
+				m.preview.Viewport.Width = m.width
+				m.preview.Viewport.Height = m.height - m.preview.VerticalMarginHeight()
+				selected := m.list.SelectedItem()
+				var formatted string
+				var err error
+				switch selected.Mold.ContentType {
+				case "yaml":
+					formatted, err = print.SprintYaml(selected.Mold.Raw)
+				case "star":
+					formatted, err = print.SprintStar(selected.Mold.Raw)
+				}
+
+				if formatted == "" || err != nil {
+					formatted = selected.Mold.Raw
+				}
+				m.preview.Viewport.SetContent(formatted)
+				m.preview.Viewport.YPosition = 0
+				return m, nil
+			}
+
 		}
 	case list.RequestSelectedMsg:
 		m.active = Update
@@ -92,6 +128,8 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.create, cmd = m.create.Update(msg)
 	case CreateComplex:
 		m.createComplex, cmd = m.createComplex.Update(msg)
+	case Preview:
+		m.preview, cmd = m.preview.Update(msg)
 	}
 	return m, cmd
 }
@@ -104,6 +142,8 @@ func (m uiModel) View() string {
 		return renderCreate(m)
 	case CreateComplex:
 		return renderCreateComplex(m)
+	case Preview:
+		return m.preview.View()
 	default:
 		return renderList(m)
 	}

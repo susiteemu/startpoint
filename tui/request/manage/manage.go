@@ -126,7 +126,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.statusbar.SetSize(msg.Width)
-		m.statusbar.SetContent(modeStr(m.mode), "", "", "goful")
+		m.statusbar.SetContent(modeStr(m.mode), "", "Dev", "goful")
 		m.list.SetWidth(msg.Width)
 		m.list.SetHeight(m.height - 2)
 
@@ -151,7 +151,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.mode = Select
 				m.list.SetDelegate(newSelectDelegate())
 				m.statusbar.FirstColumnColors.Background = statusbarModeSelectBg
-				m.statusbar.SetContent(modeStr(m.mode), "", "", "goful")
+				m.statusbar.SetContent(modeStr(m.mode), "", "Dev", "goful")
 				return m, nil
 			}
 			return m, tea.Quit
@@ -170,7 +170,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.mode = Edit
 				m.list.SetDelegate(newEditModeDelegate())
 				m.statusbar.FirstColumnColors.Background = statusbarModeEditBg
-				m.statusbar.SetContent(modeStr(m.mode), "", "", "goful")
+				m.statusbar.SetContent(modeStr(m.mode), "", "Dev", "goful")
 				return m, nil
 			}
 		}
@@ -212,7 +212,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case create.CreateMsg:
 		return m, tea.Quit
 	case StatusMessage:
-		m.statusbar.SetContent(modeStr(m.mode), string(msg), "", "goful")
+		m.statusbar.SetContent(modeStr(m.mode), string(msg), "Dev", "goful")
 		return m, nil
 	}
 

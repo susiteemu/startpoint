@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mistakenelf/teacup/statusbar"
 )
 
 type ActiveView int
@@ -35,6 +36,16 @@ const (
 	Select Mode = iota
 	Edit
 )
+
+func modeStr(mode Mode) string {
+	switch mode {
+	case Select:
+		return "SELECT"
+	case Edit:
+		return "EDIT"
+	}
+	return ""
+}
 
 type Request struct {
 	Name   string
@@ -95,12 +106,14 @@ type uiModel struct {
 	active        ActiveView
 	preview       preview.Model
 	stopwatch     stopwatch.Model
-	selected      Request
-	response      string
-	width         int
-	height        int
-	debug         string
-	help          help.Model
+	statusbar     statusbar.Model
+
+	selected Request
+	response string
+	width    int
+	height   int
+	debug    string
+	help     help.Model
 }
 
 func (m uiModel) Init() tea.Cmd {
@@ -112,7 +125,11 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.list.SetSize(msg.Width, msg.Height)
+		m.statusbar.SetSize(msg.Width)
+		m.statusbar.SetContent(modeStr(m.mode), "", "", "goful")
+		m.list.SetWidth(msg.Width)
+		m.list.SetHeight(m.height - 2)
+
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case tea.KeyCtrlC.String():
@@ -133,6 +150,8 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.mode == Edit && m.active == List {
 				m.mode = Select
 				m.list.SetDelegate(newSelectDelegate())
+				m.statusbar.FirstColumnColors.Background = statusbarModeSelectBg
+				m.statusbar.SetContent(modeStr(m.mode), "", "", "goful")
 				return m, nil
 			}
 			return m, tea.Quit
@@ -150,6 +169,8 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.mode == Select && m.active == List {
 				m.mode = Edit
 				m.list.SetDelegate(newEditModeDelegate())
+				m.statusbar.FirstColumnColors.Background = statusbarModeEditBg
+				m.statusbar.SetContent(modeStr(m.mode), "", "", "goful")
 				return m, nil
 			}
 		}
@@ -226,12 +247,11 @@ func (m uiModel) View() string {
 }
 
 func renderList(m uiModel) string {
-	return lipgloss.Place(
-		m.width,
-		m.height,
-		lipgloss.Left,
+	return lipgloss.JoinVertical(
 		lipgloss.Top,
-		m.list.View())
+		lipgloss.NewStyle().Height(m.height-statusbar.Height).Render(m.list.View()),
+		m.statusbar.View(),
+	)
 }
 
 func renderCreate(m uiModel) string {
@@ -266,17 +286,45 @@ func Start(loadedRequests []model.RequestMold, mode Mode) {
 	}
 
 	var d list.DefaultDelegate
+	var modeColor lipgloss.AdaptiveColor
 	if mode == Select {
 		d = newSelectDelegate()
+		modeColor = statusbarFirstColFg
 	} else {
 		d = newEditModeDelegate()
+		modeColor = statusbarModeEditBg
 	}
 
 	requestList := list.New(requests, d, 0, 0)
 	requestList.Title = "Requests"
 	requestList.Styles.Title = titleStyle
 
-	m := uiModel{list: requestList, create: create.New(false), createComplex: create.New(true), active: List, mode: mode, stopwatch: stopwatch.NewWithInterval(time.Millisecond)}
+	requestList.Help.Styles.FullKey = helpKeyStyle
+	requestList.Help.Styles.FullDesc = helpDescStyle
+	requestList.Help.Styles.ShortKey = helpKeyStyle
+	requestList.Help.Styles.ShortDesc = helpDescStyle
+	requestList.Help.Styles.ShortSeparator = helpSeparatorStyle
+	requestList.Help.Styles.FullSeparator = helpSeparatorStyle
+
+	sb := statusbar.New(
+		statusbar.ColorConfig{
+			Foreground: statusbarFourthColFg,
+			Background: modeColor,
+		},
+		statusbar.ColorConfig{
+			Foreground: statusbarSecondColFg,
+			Background: statusbarSecondColBg,
+		},
+		statusbar.ColorConfig{
+			Foreground: statusbarThirdColFg,
+			Background: statusbarThirdColBg,
+		},
+		statusbar.ColorConfig{
+			Foreground: statusbarFourthColFg,
+			Background: statusbarFourthColBg,
+		},
+	)
+	m := uiModel{list: requestList, create: create.New(false), createComplex: create.New(true), active: List, mode: mode, stopwatch: stopwatch.NewWithInterval(time.Millisecond), statusbar: sb}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

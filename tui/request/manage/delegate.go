@@ -11,42 +11,42 @@ import (
 var selectModeKeys = []key.Binding{
 	key.NewBinding(
 		key.WithKeys("p"),
-		key.WithHelp("p", "Preview"),
+		key.WithHelp("p", "preview"),
 	),
 	key.NewBinding(
 		key.WithKeys(tea.KeyEnter.String()),
-		key.WithHelp(tea.KeyEnter.String(), "Run request"),
+		key.WithHelp(tea.KeyEnter.String(), "run request"),
 	),
 	key.NewBinding(
 		key.WithKeys("i"),
-		key.WithHelp("i", "Edit mode"),
+		key.WithHelp("i", "edit mode"),
 	),
 }
 
 var editModeKeys = []key.Binding{
 	key.NewBinding(
 		key.WithKeys("a"),
-		key.WithHelp("a", "Add simple"),
+		key.WithHelp("a", "add simple"),
 	),
 	key.NewBinding(
 		key.WithKeys("A"),
-		key.WithHelp("A", "Add complex"),
+		key.WithHelp("A", "add complex"),
 	),
 	key.NewBinding(
 		key.WithKeys("p"),
-		key.WithHelp("p", "Preview"),
+		key.WithHelp("p", "preview"),
 	),
 	key.NewBinding(
 		key.WithKeys("x"),
-		key.WithHelp("x", "Delete"),
+		key.WithHelp("x", "delete"),
 	),
 	key.NewBinding(
 		key.WithKeys(tea.KeyEnter.String(), "e"),
-		key.WithHelp(tea.KeyEnter.String()+"/e", "Edit"),
+		key.WithHelp(tea.KeyEnter.String()+"/e", "edit"),
 	),
 	key.NewBinding(
 		key.WithKeys(tea.KeyEsc.String()),
-		key.WithHelp(tea.KeyEsc.String(), "View mode"),
+		key.WithHelp(tea.KeyEsc.String(), "view mode"),
 	),
 }
 

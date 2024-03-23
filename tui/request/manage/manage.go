@@ -2,21 +2,20 @@ package managetui
 
 import (
 	"fmt"
+	"goful/core/client/validator"
 	"goful/core/model"
 	"goful/core/print"
+	"time"
 
 	create "goful/tui/request/create"
-	list "goful/tui/request/list"
 	preview "goful/tui/request/preview"
-	"log"
 	"os"
-	"os/exec"
 
 	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
+	list "github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/spf13/viper"
 )
 
 type ActiveView int
@@ -27,34 +26,77 @@ const (
 	CreateComplex
 	Update
 	Preview
+	Stopwatch
 )
 
-var keys = []key.Binding{
-	key.NewBinding(
-		key.WithKeys("a"),
-		key.WithHelp("a", "Add simple"),
-	),
-	key.NewBinding(
-		key.WithKeys("A"),
-		key.WithHelp("A", "Add complex"),
-	),
-	key.NewBinding(
-		key.WithKeys("p"),
-		key.WithHelp("p", "Preview"),
-	),
-	key.NewBinding(
-		key.WithKeys(tea.KeyEnter.String()),
-		key.WithHelp(tea.KeyEnter.String(), "Edit"),
-	),
+type Mode int
+
+const (
+	Select Mode = iota
+	Edit
+)
+
+type Request struct {
+	Name   string
+	Url    string
+	Method string
+	Mold   model.RequestMold
 }
+
+func (i Request) Title() string {
+	return i.Name
+}
+
+func (i Request) Description() string {
+	validMethod := validator.IsValidMethod(i.Method)
+
+	var methodStyle = lipgloss.NewStyle()
+
+	var color = ""
+	if validMethod {
+		color = methodColors[i.Method]
+		if color == "" {
+			color = "#cdd6f4"
+		}
+		methodStyle = methodStyle.Background(lipgloss.Color(color)).Foreground(lipgloss.Color("#1e1e2e")).PaddingRight(1).PaddingLeft(1)
+	} else {
+		methodStyle = methodStyle.Foreground(lipgloss.Color("#f38ba8")).Border(lipgloss.Border{Bottom: "^"}, false, false, true, false).BorderForeground(lipgloss.Color("#f38ba8"))
+
+	}
+
+	var urlStyle = lipgloss.NewStyle()
+
+	validUrl := validator.IsValidUrl(i.Url)
+	if validUrl {
+		urlStyle = urlStyle.Foreground(lipgloss.Color("#b4befe"))
+	} else {
+		urlStyle = urlStyle.Foreground(lipgloss.Color("#f38ba8")).Border(lipgloss.Border{Bottom: "^"}, false, false, true, false).BorderForeground(lipgloss.Color("#f38ba8"))
+	}
+
+	method := i.Method
+	if i.Method == "" {
+		method = "<method>"
+	}
+
+	url := i.Url
+	if url == "" {
+		url = "<url>"
+	}
+
+	return lipgloss.JoinHorizontal(0, methodStyle.Render(method), " ", urlStyle.Render(url))
+}
+func (i Request) FilterValue() string { return fmt.Sprintf("%s %s %s", i.Name, i.Method, i.Url) }
 
 type uiModel struct {
 	list          list.Model
 	create        create.Model
 	createComplex create.Model
+	mode          Mode
 	active        ActiveView
 	preview       preview.Model
-	selected      list.Request
+	stopwatch     stopwatch.Model
+	selected      Request
+	response      string
 	width         int
 	height        int
 	debug         string
@@ -70,52 +112,82 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.list.SetSize(msg.Width, msg.Height)
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "ctrl+c", "q", "esc":
+		case tea.KeyCtrlC.String():
+			return m, tea.Quit
+		case "q":
 			if m.active == Preview {
 				m.active = List
 				return m, nil
 			}
+			if m.active == List {
+				return m, tea.Quit
+			}
+		case tea.KeyEsc.String():
+			if m.active == Preview {
+				m.active = List
+				return m, nil
+			}
+			if m.mode == Edit && m.active == List {
+				m.mode = Select
+				m.list.SetDelegate(newSelectDelegate())
+				return m, nil
+			}
 			return m, tea.Quit
 		case "a":
-			if m.active == List {
+			if m.mode == Edit && m.active == List {
 				m.active = Create
 				return m, nil
 			}
 		case "A":
-			if m.active == List {
+			if m.mode == Edit && m.active == List {
 				m.active = CreateComplex
 				return m, nil
 			}
-		case "p":
-			if m.active != Preview {
-				m.active = Preview
-				m.preview.Viewport.Width = m.width
-				m.preview.Viewport.Height = m.height - m.preview.VerticalMarginHeight()
-				selected := m.list.SelectedItem()
-				var formatted string
-				var err error
-				switch selected.Mold.ContentType {
-				case "yaml":
-					formatted, err = print.SprintYaml(selected.Mold.Raw)
-				case "star":
-					formatted, err = print.SprintStar(selected.Mold.Raw)
-				}
-
-				if formatted == "" || err != nil {
-					formatted = selected.Mold.Raw
-				}
-				m.preview.Viewport.SetContent(formatted)
-				m.preview.Viewport.YPosition = 0
+		case "i":
+			if m.mode == Select && m.active == List {
+				m.mode = Edit
+				m.list.SetDelegate(newEditModeDelegate())
 				return m, nil
 			}
-
 		}
-	case list.RequestSelectedMsg:
-		m.active = Update
-		m.selected = m.list.Selection
+	case RunRequestMsg:
+		m.active = Stopwatch
+		return m, tea.Batch(
+			m.stopwatch.Init(),
+			doRequest(msg.Request),
+		)
+	case RequestFinishedMsg:
+		m.response = string(msg)
 		return m, tea.Quit
+	case EditRequestMsg:
+		m.active = Update
+		m.selected = msg.Request
+		return m, tea.Quit
+	case PreviewRequestMsg:
+		if m.active != Preview {
+			m.active = Preview
+			m.preview.Viewport.Width = m.width
+			m.preview.Viewport.Height = m.height - m.preview.VerticalMarginHeight()
+			selected := msg.Request
+			var formatted string
+			var err error
+			switch selected.Mold.ContentType {
+			case "yaml":
+				formatted, err = print.SprintYaml(selected.Mold.Raw)
+			case "star":
+				formatted, err = print.SprintStar(selected.Mold.Raw)
+			}
+
+			if formatted == "" || err != nil {
+				formatted = selected.Mold.Raw
+			}
+			m.preview.Viewport.SetContent(formatted)
+			m.preview.Viewport.YPosition = 0
+			return m, nil
+		}
 	case create.CreateMsg:
 		return m, tea.Quit
 	}
@@ -130,6 +202,8 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.createComplex, cmd = m.createComplex.Update(msg)
 	case Preview:
 		m.preview, cmd = m.preview.Update(msg)
+	case Stopwatch:
+		m.stopwatch, cmd = m.stopwatch.Update(msg)
 	}
 	return m, cmd
 }
@@ -144,6 +218,8 @@ func (m uiModel) View() string {
 		return renderCreateComplex(m)
 	case Preview:
 		return m.preview.View()
+	case Stopwatch:
+		return stopwatchStyle.Render("Running request... :: Elapsed time: " + m.stopwatch.View())
 	default:
 		return renderList(m)
 	}
@@ -176,11 +252,11 @@ func renderCreateComplex(m uiModel) string {
 		m.createComplex.View())
 }
 
-func Start(loadedRequests []model.RequestMold) {
-	var requests []list.Request
+func Start(loadedRequests []model.RequestMold, mode Mode) {
+	var requests []list.Item
 
 	for _, v := range loadedRequests {
-		r := list.Request{
+		r := Request{
 			Name:   v.Name(),
 			Url:    v.Url(),
 			Method: v.Method(),
@@ -189,14 +265,18 @@ func Start(loadedRequests []model.RequestMold) {
 		requests = append(requests, r)
 	}
 
-	f, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println("fatal:", err)
-		os.Exit(1)
+	var d list.DefaultDelegate
+	if mode == Select {
+		d = newSelectDelegate()
+	} else {
+		d = newEditModeDelegate()
 	}
-	defer f.Close()
 
-	m := uiModel{list: list.New(requests, false, 0, 0, keys), create: create.New(false), createComplex: create.New(true), active: List}
+	requestList := list.New(requests, d, 0, 0)
+	requestList.Title = "Requests"
+	requestList.Styles.Title = titleStyle
+
+	m := uiModel{list: requestList, create: create.New(false), createComplex: create.New(true), active: List, mode: mode, stopwatch: stopwatch.NewWithInterval(time.Millisecond)}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -209,119 +289,12 @@ func Start(loadedRequests []model.RequestMold) {
 	if m, ok := r.(uiModel); ok {
 
 		if m.active == Create || m.active == CreateComplex {
-			createRequestFile(m, f)
+			createRequestFile(m)
 		} else if m.active == Update {
-			openRequestFileForUpdate(m, f)
+			openRequestFileForUpdate(m)
+		} else if m.response != "" {
+			fmt.Printf("%s", m.response)
 		}
 
-	}
-}
-
-func createRequestFile(m uiModel, logFile *os.File) {
-
-	fileName := ""
-	content := ""
-	createFile := false
-	if m.active == Create {
-		fileName = fmt.Sprintf("%s.yaml", m.create.Name)
-		createFile = true
-		// TODO read from a template file
-		content = fmt.Sprintf(`name: %s
-# Possible request to call _before_ this one
-prev_req:
-# Request url, may contain template variables in a form of {var}
-url:
-# HTTP method
-method:
-# HTTP headers as key-val list, e.g. X-Foo-Bar: SomeValue
-headers:
-# Request body, e.g.
-# {
-#    "id": 1,
-#    "name": "Jane">
-# }
-body: >
-`, m.create.Name)
-	} else if m.active == CreateComplex {
-		fileName = fmt.Sprintf("%s.star", m.createComplex.Name)
-		// TODO read from template
-		content = fmt.Sprintf(`"""
-meta:name: %s
-meta:prev_req: <call other request before this>
-doc:url: <your url for display>
-doc:method: <your http method for display>
-"""
-# insert contents of your script here, for more see https://github.com/google/starlark-go/blob/master/doc/spec.md
-# Request url
-url = ""
-# HTTP method
-method = ""
-# HTTP headers, e.g. { "X-Foo": "bar", "X-Foos": [ "Bar1", "Bar2" ] }
-headers = {}
-# Request body, e.g. { "id": 1, "people": [ {"name": "Joe"}, {"name": "Jane"}, ] }
-body = {}
-`, m.createComplex.Name)
-		createFile = true
-	}
-
-	if !createFile {
-		return
-	}
-
-	logFile.WriteString(fmt.Sprintf("About to create new request with name %v\n", fileName))
-	if len(fileName) > 0 {
-		file, err := os.Create("tmp/" + fileName)
-		if err == nil {
-			defer file.Close()
-			// TODO handle err
-			file.WriteString(content)
-			file.Sync()
-			filename := file.Name()
-			editor := viper.GetString("editor")
-			if editor == "" {
-				logFile.WriteString("Editor is not configured through configuration file or $EDITOR environment variable.")
-			}
-
-			logFile.WriteString(fmt.Sprintf("Opening file %s\n", filename))
-			cmd := exec.Command(editor, filename)
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-
-			err = cmd.Run()
-			if err != nil {
-				logFile.WriteString(fmt.Sprintf("Failed to open file with editor: %v\n", err))
-			}
-			log.Printf("Successfully edited file %v", file.Name())
-			fmt.Printf("Saved new request to file %v", file.Name())
-		} else {
-			logFile.WriteString(fmt.Sprintf("Failed to create file %v\n", err))
-		}
-	}
-}
-
-func openRequestFileForUpdate(m uiModel, logFile *os.File) {
-	if m.active == Update && m.selected.Name != "" {
-
-		fileName := fmt.Sprintf("tmp/%s", m.selected.Mold.Filename)
-		logFile.WriteString(fmt.Sprintf("About to open request file %v\n", fileName))
-		if len(fileName) > 0 {
-			// TODO handle err
-			editor := viper.GetString("editor")
-			if editor == "" {
-				logFile.WriteString("Editor is not configured through configuration file or $EDITOR environment variable.")
-			}
-
-			cmd := exec.Command(editor, fileName)
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-
-			err := cmd.Run()
-			if err != nil {
-				logFile.WriteString(fmt.Sprintf("Failed to open file with editor: %v\n", err))
-			}
-			logFile.WriteString(fmt.Sprintf("Successfully edited file %v\n", fileName))
-		}
 	}
 }

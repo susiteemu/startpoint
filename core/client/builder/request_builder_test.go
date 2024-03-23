@@ -115,7 +115,7 @@ body = {
 		Body: map[string]interface{}{
 			"id":     big.NewInt(1),
 			"amount": 1.2001,
-			"name":   "Jane",
+			"name":   "Jane1",
 		},
 	}
 

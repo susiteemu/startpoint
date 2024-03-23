@@ -5,9 +5,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 )
 
 var cfgFile string
@@ -40,7 +43,19 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	runLogFile, _ := os.OpenFile(
+		"myapp.log",
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0664,
+	)
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+		multi := zerolog.MultiLevelWriter(os.Stdout, runLogFile)
+		log.Logger = zerolog.New(multi).With().Timestamp().Logger()
 
+		log.Info().Msg("Initialized logging")
+		return nil
+	}
 	rootCmd.PersistentFlags().Bool("help", false, "Displays help")
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,

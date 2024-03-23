@@ -1,6 +1,12 @@
 package model
 
-import "regexp"
+import (
+	"fmt"
+	"os"
+	"regexp"
+
+	"github.com/rs/zerolog/log"
+)
 
 type Request struct {
 	Url     string
@@ -14,6 +20,7 @@ type RequestMold struct {
 	Starlark    *StarlarkRequest
 	ContentType string
 	Raw         string
+	Root        string
 	Filename    string
 }
 
@@ -77,4 +84,13 @@ func (r *RequestMold) Method() string {
 	}
 	return ""
 
+}
+
+func (r *RequestMold) DeleteFromFS() bool {
+	err := os.Remove(fmt.Sprintf("%s/%s", r.Root, r.Filename))
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to remove file %s", r.Filename)
+		return false
+	}
+	return true
 }

@@ -4,11 +4,12 @@ import (
 	"goful/core/model"
 	starlarkng "goful/core/scripting/starlark"
 	"goful/core/templating/yamlng"
-	"net/http"
 	"reflect"
+
+	"github.com/rs/zerolog/log"
 )
 
-var builders = []func(requestMold model.RequestMold, previousResponse *http.Response, profile model.Profile) (model.Request, bool, error){
+var builders = []func(requestMold model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, bool, error){
 	buildYamlRequest,
 	buildStarlarkRequest,
 }
@@ -16,7 +17,7 @@ var builders = []func(requestMold model.RequestMold, previousResponse *http.Resp
 func BuildRequest(requestMold model.RequestMold, profile model.Profile) (model.Request, error) {
 	var request model.Request
 	for _, builder := range builders {
-		result, accept, err := builder(requestMold, nil, profile)
+		result, accept, err := builder(requestMold, model.Response{}, profile)
 		if err != nil {
 			return model.Request{}, err
 		}
@@ -28,47 +29,11 @@ func BuildRequest(requestMold model.RequestMold, profile model.Profile) (model.R
 	return request, nil
 }
 
-/*
-		test := make(map[string]bool)
-		test["one"] = true
-		test["two"] = false
-		r, _, _ := starlarkconv.ConvertDict(test)
-
-		predeclared := starlark.StringDict{
-			"prev":    starlark.String("hello"),
-			"profile": r,
-		}
-
-		thread := &starlark.Thread{Name: "my thread"}
-		fileOptions := syntax.FileOptions{
-			Set:               true,
-			While:             true,
-			TopLevelControl:   true,
-			GlobalReassign:    true,
-			LoadBindsGlobally: true,
-			Recursion:         true,
-		}
-		globals, _ := starlark.ExecFileOptions(&fileOptions, thread, "starlark_request_r.star", nil, predeclared)
-		fmt.Println("\nGlobals:")
-		for _, name := range globals.Keys() {
-			v := globals[name]
-			//fmt.Printf("%s (%s) = %s\n", name, v.Type(), v.String())
-			goValue, err := goconv.ConvertValue(v)
-			if err != nil {
-				fmt.Printf("error %v", err)
-			} else {
-				fmt.Printf("converted %v\n", goValue)
-			}
-		}
-
-		return model.Request{}, nil
-	}
-*/
-func BuildRequestUsingPreviousResponse(requestMold model.RequestMold, previousResponse *http.Response, profile model.Profile) (model.Request, error) {
+func BuildRequestUsingPreviousResponse(requestMold model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, error) {
 	return model.Request{}, nil
 }
 
-func buildYamlRequest(requestMold model.RequestMold, _ *http.Response, profile model.Profile) (model.Request, bool, error) {
+func buildYamlRequest(requestMold model.RequestMold, _ model.Response, profile model.Profile) (model.Request, bool, error) {
 	if requestMold.Yaml == nil {
 		return model.Request{}, false, nil
 	}
@@ -93,34 +58,35 @@ func buildYamlRequest(requestMold model.RequestMold, _ *http.Response, profile m
 		Body:    yamlRequest.Body,
 	}
 
-	// TODO map values from YamlRequest to Request
 	return request, true, nil
 }
 
-func buildStarlarkRequest(requestMold model.RequestMold, previousResponse *http.Response, profile model.Profile) (model.Request, bool, error) {
+func buildStarlarkRequest(requestMold model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, bool, error) {
 	if requestMold.Starlark == nil {
 		return model.Request{}, false, nil
 	}
 
 	res, err := starlarkng.RunStarlarkScript(requestMold, previousResponse, profile)
 	if err != nil {
+		log.Error().Err(err).Msg("Running Starlark script resulted to error")
 		return model.Request{}, true, err
 	}
 
 	headers := make(map[string][]string)
-	for k, v := range res["headers"].(map[string]interface{}) {
-		t := reflect.TypeOf(v)
+	for k, headerVal := range res["headers"].(map[string]interface{}) {
+		t := reflect.TypeOf(headerVal)
 		if t.String() == "string" {
-			headers[k] = []string{v.(string)}
+			headers[k] = []string{headerVal.(string)}
 		} else if t.String() == "[]interface {}" {
-			vv := v.([]interface{})
 			var l []string
-			for _, vvv := range vv {
-				l = append(l, vvv.(string))
+			for _, singleHeaderVal := range headerVal.([]interface{}) {
+				l = append(l, singleHeaderVal.(string))
 			}
 			headers[k] = l
 		}
 	}
+
+	log.Debug().Msgf("Converted headers %v", headers)
 
 	req := model.Request{
 		Url:     res["url"].(string),
@@ -128,6 +94,8 @@ func buildStarlarkRequest(requestMold model.RequestMold, previousResponse *http.
 		Headers: new(model.Headers).FromMap(headers),
 		Body:    res["body"],
 	}
+
+	log.Debug().Msgf("Built request %v", req)
 
 	return req, true, nil
 }

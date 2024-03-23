@@ -211,6 +211,9 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case create.CreateMsg:
 		return m, tea.Quit
+	case StatusMessage:
+		m.statusbar.SetContent(modeStr(m.mode), string(msg), "", "goful")
+		return m, nil
 	}
 
 	var cmd tea.Cmd

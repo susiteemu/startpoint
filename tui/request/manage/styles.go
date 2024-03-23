@@ -28,7 +28,7 @@ var (
 	statusbarModeEditBg   = lipgloss.AdaptiveColor{Light: "#a6e3a1", Dark: "#a6e3a1"}
 	statusbarFirstColFg   = lipgloss.AdaptiveColor{Light: "#1e1e2e", Dark: "#1e1e2e"}
 	statusbarSecondColBg  = lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"}
-	statusbarSecondColFg  = lipgloss.AdaptiveColor{Light: "#1e1e2e", Dark: "#1e1e2e"}
+	statusbarSecondColFg  = lipgloss.AdaptiveColor{Light: "#FFFDF5", Dark: "#FFFDF5"}
 	statusbarThirdColBg   = lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"}
 	statusbarThirdColFg   = lipgloss.AdaptiveColor{Light: "#1e1e2e", Dark: "#1e1e2e"}
 	statusbarFourthColBg  = lipgloss.AdaptiveColor{Light: "#89b4fa", Dark: "#89b4fa"}

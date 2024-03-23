@@ -1,7 +1,9 @@
 package managetui
 
 import (
+	"fmt"
 	"goful/core/client/validator"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -74,7 +76,10 @@ func newSelectDelegate() list.DefaultDelegate {
 			switch keypress := msg.String(); keypress {
 			case "enter", "e":
 				if !validator.IsValidUrl(request.Url) || !validator.IsValidMethod(request.Method) {
-					return m.NewStatusMessage(statusMessageStyle.Render("\ue654 Invalid request."))
+					return tea.Cmd(func() tea.Msg {
+						nowTime := time.Now().Format("15:04:05")
+						return StatusMessage(fmt.Sprintf("%s Error! Invalid request", nowTime))
+					})
 				}
 				return tea.Cmd(func() tea.Msg {
 					return RunRequestMsg{
@@ -124,9 +129,15 @@ func newEditModeDelegate() list.DefaultDelegate {
 				if deleted {
 					index := m.Index()
 					m.RemoveItem(index)
-					return m.NewStatusMessage("Deleted " + request.Title())
+					return tea.Cmd(func() tea.Msg {
+						nowTime := time.Now().Format("15:04:05")
+						return StatusMessage(fmt.Sprintf("%s Deleted %s", nowTime, request.Title()))
+					})
 				} else {
-					return m.NewStatusMessage("Failed to delete " + request.Title())
+					return tea.Cmd(func() tea.Msg {
+						nowTime := time.Now().Format("15:04:05")
+						return StatusMessage(fmt.Sprintf("%s Failed to delete %s", nowTime, request.Title()))
+					})
 				}
 			case "enter", "e":
 				return tea.Cmd(func() tea.Msg {

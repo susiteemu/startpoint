@@ -12,13 +12,13 @@ import (
 
 // manageCmd represents the manage command
 var manageCmd = &cobra.Command{
-	Use:   "manage",
+	Use:   "requests",
 	Short: "A brief description of your command",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO handle err
 		loadedRequests, _ := loader.ReadRequests("tmp")
-		requestManageTui.Start(loadedRequests, requestManageTui.Edit)
+		requestManageTui.Start(loadedRequests, requestManageTui.Select)
 	},
 }
 

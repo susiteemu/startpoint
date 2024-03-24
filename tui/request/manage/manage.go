@@ -98,6 +98,21 @@ func (i Request) Description() string {
 }
 func (i Request) FilterValue() string { return fmt.Sprintf("%s %s %s", i.Name, i.Method, i.Url) }
 
+func updateStatusbar(m *uiModel, msg string) {
+
+	profileText := ""
+	if m.mode == Edit {
+		m.statusbar.FirstColumnColors.Background = statusbarModeEditBg
+		m.statusbar.ThirdColumnColors.Background = statusbarSecondColBg
+	} else {
+		profileText = "dev" // TODO get profile for realz
+		m.statusbar.FirstColumnColors.Background = statusbarModeSelectBg
+		m.statusbar.ThirdColumnColors.Background = statusbarThirdColBg
+	}
+
+	m.statusbar.SetContent(modeStr(m.mode), msg, profileText, "goful")
+}
+
 type uiModel struct {
 	list          list.Model
 	create        create.Model
@@ -126,7 +141,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.statusbar.SetSize(msg.Width)
-		m.statusbar.SetContent(modeStr(m.mode), "", "Dev", "goful")
+		updateStatusbar(&m, "")
 		m.list.SetWidth(msg.Width)
 		m.list.SetHeight(m.height - 2)
 
@@ -150,8 +165,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.mode == Edit && m.active == List {
 				m.mode = Select
 				m.list.SetDelegate(newSelectDelegate())
-				m.statusbar.FirstColumnColors.Background = statusbarModeSelectBg
-				m.statusbar.SetContent(modeStr(m.mode), "", "Dev", "goful")
+				updateStatusbar(&m, "")
 				return m, nil
 			}
 			return m, tea.Quit
@@ -169,8 +183,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.mode == Select && m.active == List {
 				m.mode = Edit
 				m.list.SetDelegate(newEditModeDelegate())
-				m.statusbar.FirstColumnColors.Background = statusbarModeEditBg
-				m.statusbar.SetContent(modeStr(m.mode), "", "Dev", "goful")
+				updateStatusbar(&m, "")
 				return m, nil
 			}
 		}
@@ -212,7 +225,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case create.CreateMsg:
 		return m, tea.Quit
 	case StatusMessage:
-		m.statusbar.SetContent(modeStr(m.mode), string(msg), "Dev", "goful")
+		updateStatusbar(&m, string(msg))
 		return m, nil
 	}
 
@@ -292,7 +305,7 @@ func Start(loadedRequests []model.RequestMold, mode Mode) {
 	var modeColor lipgloss.AdaptiveColor
 	if mode == Select {
 		d = newSelectDelegate()
-		modeColor = statusbarFirstColFg
+		modeColor = statusbarModeSelectBg
 	} else {
 		d = newEditModeDelegate()
 		modeColor = statusbarModeEditBg

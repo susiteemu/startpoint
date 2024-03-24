@@ -23,7 +23,7 @@ var manageProfilesCmd = &cobra.Command{
 }
 
 func init() {
-	manageCmd.AddCommand(manageProfilesCmd)
+	rootCmd.AddCommand(manageProfilesCmd)
 
 	// Here you will define your flags and configuration settings.
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"goful/core/model"
 	list "goful/tui/profile/list"
-	create "goful/tui/request/create"
+	create "goful/tui/request/prompt"
 	"os"
 
 	"github.com/charmbracelet/bubbles/help"

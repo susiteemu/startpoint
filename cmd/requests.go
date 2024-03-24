@@ -18,7 +18,7 @@ var manageCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO handle err
 		loadedRequests, _ := loader.ReadRequests("tmp")
-		requestManageTui.Start(loadedRequests, requestManageTui.Select)
+		requestManageTui.Start(loadedRequests)
 	},
 }
 

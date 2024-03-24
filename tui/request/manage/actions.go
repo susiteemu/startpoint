@@ -40,8 +40,8 @@ func createRequestFile(m uiModel) {
 	fileName := ""
 	content := ""
 	createFile := false
-	if m.active == Create {
-		fileName = fmt.Sprintf("%s.yaml", m.create.Name)
+	if !m.prompt.Complex {
+		fileName = fmt.Sprintf("%s.yaml", m.prompt.Name)
 		createFile = true
 		// TODO read from a template file
 		content = fmt.Sprintf(`name: %s
@@ -59,9 +59,9 @@ headers:
 #    "name": "Jane">
 # }
 body: >
-`, m.create.Name)
-	} else if m.active == CreateComplex {
-		fileName = fmt.Sprintf("%s.star", m.createComplex.Name)
+`, m.prompt.Name)
+	} else if m.prompt.Complex {
+		fileName = fmt.Sprintf("%s.star", m.prompt.Name)
 		// TODO read from template
 		content = fmt.Sprintf(`"""
 meta:name: %s
@@ -78,7 +78,7 @@ method = ""
 headers = {}
 # Request body, e.g. { "id": 1, "people": [ {"name": "Joe"}, {"name": "Jane"}, ] }
 body = {}
-`, m.createComplex.Name)
+`, m.prompt.Name)
 		createFile = true
 	}
 

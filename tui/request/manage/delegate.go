@@ -47,6 +47,10 @@ var editModeKeys = []key.Binding{
 		key.WithHelp(tea.KeyEnter.String()+"/e", "edit"),
 	),
 	key.NewBinding(
+		key.WithKeys("r"),
+		key.WithHelp("r", "rename"),
+	),
+	key.NewBinding(
 		key.WithKeys(tea.KeyEsc.String()),
 		key.WithHelp(tea.KeyEsc.String(), "view mode"),
 	),

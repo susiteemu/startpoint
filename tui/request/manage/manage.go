@@ -7,8 +7,8 @@ import (
 	"goful/core/print"
 	"time"
 
-	create "goful/tui/request/create"
 	preview "goful/tui/request/preview"
+	prompt "goful/tui/request/prompt"
 	"os"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -24,8 +24,8 @@ type ActiveView int
 const (
 	List ActiveView = iota
 	Create
-	CreateComplex
 	Update
+	Duplicate
 	Preview
 	Stopwatch
 )
@@ -114,21 +114,19 @@ func updateStatusbar(m *uiModel, msg string) {
 }
 
 type uiModel struct {
-	list          list.Model
-	create        create.Model
-	createComplex create.Model
-	mode          Mode
-	active        ActiveView
-	preview       preview.Model
-	stopwatch     stopwatch.Model
-	statusbar     statusbar.Model
-
-	selected Request
-	response string
-	width    int
-	height   int
-	debug    string
-	help     help.Model
+	list      list.Model
+	prompt    prompt.Model
+	mode      Mode
+	active    ActiveView
+	preview   preview.Model
+	stopwatch stopwatch.Model
+	statusbar statusbar.Model
+	selected  Request
+	response  string
+	width     int
+	height    int
+	debug     string
+	help      help.Model
 }
 
 func (m uiModel) Init() tea.Cmd {
@@ -172,11 +170,13 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "a":
 			if m.mode == Edit && m.active == List {
 				m.active = Create
+				m.prompt = prompt.New(false)
 				return m, nil
 			}
 		case "A":
 			if m.mode == Edit && m.active == List {
-				m.active = CreateComplex
+				m.active = Create
+				m.prompt = prompt.New(true)
 				return m, nil
 			}
 		case "i":
@@ -222,7 +222,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.preview.Viewport.YPosition = 0
 			return m, nil
 		}
-	case create.CreateMsg:
+	case prompt.CreateMsg:
 		return m, tea.Quit
 	case StatusMessage:
 		updateStatusbar(&m, string(msg))
@@ -234,9 +234,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case List:
 		m.list, cmd = m.list.Update(msg)
 	case Create:
-		m.create, cmd = m.create.Update(msg)
-	case CreateComplex:
-		m.createComplex, cmd = m.createComplex.Update(msg)
+		m.prompt, cmd = m.prompt.Update(msg)
 	case Preview:
 		m.preview, cmd = m.preview.Update(msg)
 	case Stopwatch:
@@ -250,9 +248,7 @@ func (m uiModel) View() string {
 	case List:
 		return renderList(m)
 	case Create:
-		return renderCreate(m)
-	case CreateComplex:
-		return renderCreateComplex(m)
+		return renderPrompt(m)
 	case Preview:
 		return m.preview.View()
 	case Stopwatch:
@@ -270,25 +266,16 @@ func renderList(m uiModel) string {
 	)
 }
 
-func renderCreate(m uiModel) string {
+func renderPrompt(m uiModel) string {
 	return lipgloss.Place(
 		m.width,
 		m.height,
 		lipgloss.Center,
 		lipgloss.Center,
-		m.create.View())
+		m.prompt.View())
 }
 
-func renderCreateComplex(m uiModel) string {
-	return lipgloss.Place(
-		m.width,
-		m.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		m.createComplex.View())
-}
-
-func Start(loadedRequests []model.RequestMold, mode Mode) {
+func Start(loadedRequests []model.RequestMold) {
 	var requests []list.Item
 
 	for _, v := range loadedRequests {
@@ -303,13 +290,8 @@ func Start(loadedRequests []model.RequestMold, mode Mode) {
 
 	var d list.DefaultDelegate
 	var modeColor lipgloss.AdaptiveColor
-	if mode == Select {
-		d = newSelectDelegate()
-		modeColor = statusbarModeSelectBg
-	} else {
-		d = newEditModeDelegate()
-		modeColor = statusbarModeEditBg
-	}
+	d = newSelectDelegate()
+	modeColor = statusbarModeSelectBg
 
 	requestList := list.New(requests, d, 0, 0)
 	requestList.Title = "Requests"
@@ -340,7 +322,7 @@ func Start(loadedRequests []model.RequestMold, mode Mode) {
 			Background: statusbarFourthColBg,
 		},
 	)
-	m := uiModel{list: requestList, create: create.New(false), createComplex: create.New(true), active: List, mode: mode, stopwatch: stopwatch.NewWithInterval(time.Millisecond), statusbar: sb}
+	m := uiModel{list: requestList, active: List, mode: Select, stopwatch: stopwatch.NewWithInterval(time.Millisecond), statusbar: sb}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -352,7 +334,7 @@ func Start(loadedRequests []model.RequestMold, mode Mode) {
 
 	if m, ok := r.(uiModel); ok {
 
-		if m.active == Create || m.active == CreateComplex {
+		if m.active == Create {
 			createRequestFile(m)
 		} else if m.active == Update {
 			openRequestFileForUpdate(m)

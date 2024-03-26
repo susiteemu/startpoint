@@ -11,20 +11,19 @@ import (
 	prompt "goful/tui/request/prompt"
 	"os"
 
-	"github.com/charmbracelet/bubbles/help"
 	list "github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mistakenelf/teacup/statusbar"
+	"github.com/rs/zerolog/log"
 )
 
 type ActiveView int
 
 const (
 	List ActiveView = iota
-	Create
-	Update
+	Prompt
 	Duplicate
 	Preview
 	Stopwatch
@@ -32,9 +31,29 @@ const (
 
 type Mode int
 
+type PostAction struct {
+	Type             string
+	Payload          interface{}
+	AddtionalContext interface{}
+}
+
 const (
 	Select Mode = iota
 	Edit
+)
+
+const (
+	CreateSimpleRequestLabel  = "Choose a name for your complex request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
+	CreateComplexRequestLabel = "Choose a name for your request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
+	RenameRequestLabel        = "Rename your request."
+)
+
+const (
+	CreateSimpleRequest  = "CSmplReq"
+	CreateComplexRequest = "CCmplxReq"
+	EditRequest          = "EReq"
+	PrintRequest         = "PReq"
+	RenameRequest        = "RReq"
 )
 
 func modeStr(mode Mode) string {
@@ -114,19 +133,16 @@ func updateStatusbar(m *uiModel, msg string) {
 }
 
 type uiModel struct {
-	list      list.Model
-	prompt    prompt.Model
-	mode      Mode
-	active    ActiveView
-	preview   preview.Model
-	stopwatch stopwatch.Model
-	statusbar statusbar.Model
-	selected  Request
-	response  string
-	width     int
-	height    int
-	debug     string
-	help      help.Model
+	mode       Mode
+	active     ActiveView
+	list       list.Model
+	preview    preview.Model
+	prompt     prompt.Model
+	stopwatch  stopwatch.Model
+	statusbar  statusbar.Model
+	width      int
+	height     int
+	postAction PostAction
 }
 
 func (m uiModel) Init() tea.Cmd {
@@ -156,7 +172,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		case tea.KeyEsc.String():
-			if m.active == Preview {
+			if m.active == Preview || m.active == Prompt {
 				m.active = List
 				return m, nil
 			}
@@ -169,14 +185,18 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "a":
 			if m.mode == Edit && m.active == List {
-				m.active = Create
-				m.prompt = prompt.New(false)
+				m.active = Prompt
+				m.prompt = prompt.New(prompt.PromptContext{
+					Key: CreateSimpleRequest,
+				}, "", CreateSimpleRequestLabel)
 				return m, nil
 			}
 		case "A":
 			if m.mode == Edit && m.active == List {
-				m.active = Create
-				m.prompt = prompt.New(true)
+				m.active = Prompt
+				m.prompt = prompt.New(prompt.PromptContext{
+					Key: CreateComplexRequest,
+				}, "", CreateComplexRequestLabel)
 				return m, nil
 			}
 		case "i":
@@ -194,11 +214,16 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			doRequest(msg.Request),
 		)
 	case RequestFinishedMsg:
-		m.response = string(msg)
+		m.postAction = PostAction{
+			Type:    PrintRequest,
+			Payload: string(msg),
+		}
 		return m, tea.Quit
 	case EditRequestMsg:
-		m.active = Update
-		m.selected = msg.Request
+		m.postAction = PostAction{
+			Type:    EditRequest,
+			Payload: msg.Request,
+		}
 		return m, tea.Quit
 	case PreviewRequestMsg:
 		if m.active != Preview {
@@ -222,8 +247,42 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.preview.Viewport.YPosition = 0
 			return m, nil
 		}
-	case prompt.CreateMsg:
-		return m, tea.Quit
+	case RenameRequestMsg:
+		if m.active != Prompt {
+			m.active = Prompt
+			m.prompt = prompt.New(prompt.PromptContext{
+				Key:        RenameRequest,
+				Additional: msg.Request,
+			}, msg.Request.Name, RenameRequestLabel)
+			return m, nil
+		}
+	case prompt.PromptAnsweredMsg:
+		if msg.Context.Key == RenameRequest {
+			m.active = List
+			renamedRequest, ok := renameRequest(msg.Input, msg.Context.Additional.(Request))
+			if ok {
+				setCmd := m.list.SetItem(m.list.Index(), renamedRequest)
+				statusCmd := tea.Cmd(func() tea.Msg {
+					nowTime := time.Now().Format("15:04:05")
+					return StatusMessage(fmt.Sprintf("%s Renamed request to %s", nowTime, renamedRequest.Title()))
+				})
+				return m, tea.Batch(setCmd, statusCmd)
+			} else {
+				statusCmd := tea.Cmd(func() tea.Msg {
+					nowTime := time.Now().Format("15:04:05")
+					return StatusMessage(fmt.Sprintf("%s Failed to rename request", nowTime))
+				})
+				return m, statusCmd
+			}
+		} else {
+			m.postAction = PostAction{
+				Type:             msg.Context.Key,
+				Payload:          msg.Input,
+				AddtionalContext: msg.Context.Additional,
+			}
+			return m, tea.Quit
+		}
+
 	case StatusMessage:
 		updateStatusbar(&m, string(msg))
 		return m, nil
@@ -233,7 +292,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.active {
 	case List:
 		m.list, cmd = m.list.Update(msg)
-	case Create:
+	case Prompt:
 		m.prompt, cmd = m.prompt.Update(msg)
 	case Preview:
 		m.preview, cmd = m.preview.Update(msg)
@@ -247,7 +306,7 @@ func (m uiModel) View() string {
 	switch m.active {
 	case List:
 		return renderList(m)
-	case Create:
+	case Prompt:
 		return renderPrompt(m)
 	case Preview:
 		return m.preview.View()
@@ -276,6 +335,8 @@ func renderPrompt(m uiModel) string {
 }
 
 func Start(loadedRequests []model.RequestMold) {
+	log.Info().Msgf("Starting up manage TUI with %d loaded requests", len(loadedRequests))
+
 	var requests []list.Item
 
 	for _, v := range loadedRequests {
@@ -333,14 +394,6 @@ func Start(loadedRequests []model.RequestMold) {
 	}
 
 	if m, ok := r.(uiModel); ok {
-
-		if m.active == Create {
-			createRequestFile(m)
-		} else if m.active == Update {
-			openRequestFileForUpdate(m)
-		} else if m.response != "" {
-			fmt.Printf("%s", m.response)
-		}
-
+		handlePostAction(m)
 	}
 }

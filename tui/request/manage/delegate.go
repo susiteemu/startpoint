@@ -78,7 +78,7 @@ func newSelectDelegate() list.DefaultDelegate {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch keypress := msg.String(); keypress {
-			case "enter", "e":
+			case "enter":
 				if !validator.IsValidUrl(request.Url) || !validator.IsValidMethod(request.Method) {
 					return tea.Cmd(func() tea.Msg {
 						nowTime := time.Now().Format("15:04:05")
@@ -152,6 +152,12 @@ func newEditModeDelegate() list.DefaultDelegate {
 			case "p":
 				return tea.Cmd(func() tea.Msg {
 					return PreviewRequestMsg{
+						Request: request,
+					}
+				})
+			case "r":
+				return tea.Cmd(func() tea.Msg {
+					return RenameRequestMsg{
 						Request: request,
 					}
 				})

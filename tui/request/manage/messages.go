@@ -15,3 +15,7 @@ type PreviewRequestMsg struct {
 type RequestFinishedMsg string
 
 type StatusMessage string
+
+type RenameRequestMsg struct {
+	Request Request
+}

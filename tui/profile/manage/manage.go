@@ -59,7 +59,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case list.ProfileSelectedMsg:
 		return m, tea.Quit
-	case create.CreateMsg:
+	case create.PromptAnsweredMsg:
 		return m, tea.Quit
 	}
 
@@ -120,7 +120,7 @@ func Start(loadedProfiles []model.Profile) {
 	}
 	defer f.Close()
 
-	m := uiModel{list: list.New(profiles, 0, 0, keys), create: create.New(false), active: List}
+	m := uiModel{list: list.New(profiles, 0, 0, keys), active: List}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

@@ -7,6 +7,7 @@ import (
 	"goful/core/model"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"goful/core/print"
 
@@ -35,16 +36,28 @@ func doRequest(r Request) tea.Cmd {
 	}
 }
 
-func createRequestFile(m uiModel) {
+func handlePostAction(m uiModel) {
+	switch m.postAction.Type {
+	case CreateSimpleRequest:
+		createSimpleRequestFile(m.postAction.Payload.(string))
+	case CreateComplexRequest:
+		createComplexRequestFile(m.postAction.Payload.(string))
+	case EditRequest:
+		openRequestFileForUpdate(m.postAction.Payload.(Request))
+	case PrintRequest:
+		fmt.Printf("%s\n", m.postAction.Payload.(string))
+	}
+}
 
-	fileName := ""
-	content := ""
-	createFile := false
-	if !m.prompt.Complex {
-		fileName = fmt.Sprintf("%s.yaml", m.prompt.Name)
-		createFile = true
-		// TODO read from a template file
-		content = fmt.Sprintf(`name: %s
+func createSimpleRequestFile(name string) {
+	if len(name) == 0 {
+		return
+	}
+
+	filename := fmt.Sprintf("%s.yaml", name)
+	// TODO read from a template file
+	content := fmt.Sprintf(`name: %s
+
 # Possible request to call _before_ this one
 prev_req:
 # Request url, may contain template variables in a form of {var}
@@ -59,11 +72,20 @@ headers:
 #    "name": "Jane">
 # }
 body: >
-`, m.prompt.Name)
-	} else if m.prompt.Complex {
-		fileName = fmt.Sprintf("%s.star", m.prompt.Name)
-		// TODO read from template
-		content = fmt.Sprintf(`"""
+`, name)
+
+	createFile(filename, content)
+}
+
+func createComplexRequestFile(name string) {
+	if len(name) == 0 {
+		return
+	}
+
+	filename := fmt.Sprintf("%s.star", name)
+	// TODO read from template
+	content := fmt.Sprintf(`"""
+
 meta:name: %s
 meta:prev_req: <call other request before this>
 doc:url: <your url for display>
@@ -78,29 +100,28 @@ method = ""
 headers = {}
 # Request body, e.g. { "id": 1, "people": [ {"name": "Joe"}, {"name": "Jane"}, ] }
 body = {}
-`, m.prompt.Name)
-		createFile = true
-	}
+`, name)
 
-	if !createFile {
-		return
-	}
+	createFile(filename, content)
+}
 
-	log.Info().Msgf("About to create new request with name %v", fileName)
-	if len(fileName) > 0 {
-		file, err := os.Create("tmp/" + fileName)
+func createFile(filename string, content string) {
+
+	if len(filename) > 0 {
+		// TODO get workdir from configuration
+		file, err := os.Create(filepath.Join("tmp", filename))
 		if err == nil {
 			defer file.Close()
-			// TODO handle err
+			// todo handle err
 			file.WriteString(content)
 			file.Sync()
 			filename := file.Name()
 			editor := viper.GetString("editor")
 			if editor == "" {
-				log.Error().Msg("Editor is not configured through configuration file or $EDITOR environment variable.")
+				log.Error().Msg("editor is not configured through configuration file or $editor environment variable.")
 			}
 
-			log.Info().Msgf("Opening file %s\n", filename)
+			log.Info().Msgf("opening file %s\n", filename)
 			cmd := exec.Command(editor, filename)
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
@@ -108,20 +129,20 @@ body = {}
 
 			err = cmd.Run()
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to open file with editor")
+				log.Error().Err(err).Msg("failed to open file with editor")
 			}
-			log.Printf("Successfully edited file %v", file.Name())
-			fmt.Printf("Saved new request to file %v", file.Name())
+			log.Printf("successfully edited file %v", file.Name())
+			fmt.Printf("saved new request to file %v", file.Name())
 		} else {
-			log.Error().Err(err).Msg("Failed to create file")
+			log.Error().Err(err).Msg("failed to create file")
 		}
 	}
+
 }
 
-func openRequestFileForUpdate(m uiModel) {
-	if m.active == Update && m.selected.Name != "" {
-
-		fileName := fmt.Sprintf("tmp/%s", m.selected.Mold.Filename)
+func openRequestFileForUpdate(r Request) {
+	if r.Mold.Filename != "" {
+		fileName := filepath.Join(r.Mold.Root, r.Mold.Filename)
 
 		log.Info().Msgf("About to open request file %v\n", fileName)
 		if len(fileName) > 0 {
@@ -143,4 +164,42 @@ func openRequestFileForUpdate(m uiModel) {
 			log.Info().Msgf("Successfully edited file %v", fileName)
 		}
 	}
+}
+
+func renameRequest(newName string, r Request) (Request, bool) {
+	renamed := Request{
+		Name:   r.Name,
+		Url:    r.Url,
+		Method: r.Method,
+		Mold:   r.Mold,
+	}
+	oldPath := filepath.Join(r.Mold.Root, r.Mold.Filename)
+	log.Info().Msgf("Renaming from %s with newName %s", oldPath, newName)
+	ok := r.Mold.Rename(newName)
+	log.Debug().Msgf("Renaming data succeed? %v", ok)
+	if ok {
+		renamed.Name = newName
+		renamed.Mold = r.Mold
+		newPath := filepath.Join(renamed.Mold.Root, renamed.Mold.Filename)
+		log.Debug().Msgf("Renaming file to %s", newPath)
+		err := os.Rename(oldPath, newPath)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to rename file to %s", newPath)
+			return renamed, false
+		}
+
+		file, err := os.Create(newPath)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to open file %s", newPath)
+			return renamed, false
+		}
+		defer file.Close()
+		log.Debug().Msgf("About to write contents %s", renamed.Mold.Raw)
+		_, err = file.WriteString(renamed.Mold.Raw)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to write to file %s", newPath)
+			return renamed, false
+		}
+	}
+	return renamed, ok
 }

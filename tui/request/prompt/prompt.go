@@ -29,18 +29,18 @@ func (k keyMap) FullHelp() [][]key.Binding {
 var keys = keyMap{
 	Save: key.NewBinding(
 		key.WithKeys("enter"),
-		key.WithHelp("enter", "create"),
+		key.WithHelp("enter", "ok"),
 	),
 	Quit: key.NewBinding(
-		key.WithKeys("esc", "ctrl+c"),
-		key.WithHelp("esc", "quit"),
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "cancel"),
 	),
 }
 
 type Model struct {
 	nameInput textinput.Model
-	Name      string
-	Complex   bool
+	context   PromptContext
+	label     string
 	keys      keyMap
 	help      help.Model
 }
@@ -53,11 +53,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
-			return m, tea.Quit
+		case tea.KeyEsc:
+			return m, tea.Cmd(func() tea.Msg {
+				return PromptCancelledMsg{}
+			})
 		case tea.KeyEnter:
-			m.Name = m.nameInput.Value()
-			return m, tea.Cmd(func() tea.Msg { return CreateMsg{} })
+			return m, tea.Cmd(func() tea.Msg {
+				return PromptAnsweredMsg{
+					Context: m.context,
+					Input:   m.nameInput.Value(),
+				}
+			})
 		}
 	}
 
@@ -73,14 +79,7 @@ func (m Model) View() string {
 
 	inputViews := []string{}
 	inputViews = append(inputViews, "Name")
-
-	if m.Complex {
-		inputViews = append(inputViews, descriptionStyle.Render("Choose a name for your complex request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."))
-
-	} else {
-		inputViews = append(inputViews, descriptionStyle.Render("Choose a name for your request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."))
-
-	}
+	inputViews = append(inputViews, descriptionStyle.Render(m.label))
 
 	inputViews = append(inputViews, inputStyle.Render(m.nameInput.View()))
 	inputViews = append(inputViews, helpView)
@@ -89,21 +88,32 @@ func (m Model) View() string {
 
 }
 
-func New(complex bool) Model {
+func New(context PromptContext, initialValue string, label string) Model {
 	nameInput := textinput.New()
-	nameInput.Placeholder = "Name your request"
 	nameInput.Focus()
 	nameInput.CharLimit = 64
 	nameInput.Width = 70
+	nameInput.SetValue(initialValue)
 	nameInput.Prompt = ""
 	//inputs[ccn].Validate = ccnValidator
 
 	return Model{
+		context:   context,
 		nameInput: nameInput,
-		Complex:   complex,
+		label:     label,
 		keys:      keys,
 		help:      help.New(),
 	}
 }
 
-type CreateMsg struct{}
+type PromptContext struct {
+	Key        string
+	Additional interface{}
+}
+
+type PromptAnsweredMsg struct {
+	Context PromptContext
+	Input   string
+}
+
+type PromptCancelledMsg struct{}

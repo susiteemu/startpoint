@@ -2,11 +2,13 @@ package loader
 
 import (
 	"goful/core/model"
-	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 )
 
 func ReadRequests(root string) ([]model.RequestMold, error) {
@@ -22,7 +24,7 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 		}
 
 		filename := info.Name()
-
+		log.Debug().Msgf("Walk crossed a file %s", filename)
 		var extension = filepath.Ext(filename)
 
 		switch {
@@ -30,12 +32,13 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 
 			file, err := os.ReadFile(path)
 			if err != nil {
-				return err
+				log.Error().Err(err).Msgf("Failed to read %s", path)
+				return nil
 			}
 			yamlRequest := &model.YamlRequest{}
 			err = yaml.Unmarshal(file, yamlRequest)
 			if err != nil {
-				return err
+				return nil
 			}
 			if yamlRequest.Name != "" {
 				request := model.RequestMold{
@@ -52,7 +55,8 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 
 			file, err := os.ReadFile(path)
 			if err != nil {
-				return err
+				log.Error().Err(err).Msgf("Failed to read %s", path)
+				return nil
 			}
 			starlarkRequest := &model.StarlarkRequest{
 				Script: string(file),
@@ -71,6 +75,7 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 		return nil
 	})
 	if err != nil {
+		log.Error().Err(err).Msgf("Error occurred while walking %s", root)
 		return nil, err
 	}
 

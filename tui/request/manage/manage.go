@@ -46,6 +46,7 @@ const (
 	CreateSimpleRequestLabel  = "Choose a name for your complex request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
 	CreateComplexRequestLabel = "Choose a name for your request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
 	RenameRequestLabel        = "Rename your request."
+	CopyRequestLabel          = "Choose name for your request."
 )
 
 const (
@@ -53,7 +54,8 @@ const (
 	CreateComplexRequest = "CCmplxReq"
 	EditRequest          = "EReq"
 	PrintRequest         = "PReq"
-	RenameRequest        = "RReq"
+	RenameRequest        = "RnReq"
+	CopyRequest          = "CpReq"
 )
 
 func modeStr(mode Mode) string {
@@ -160,6 +162,11 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetHeight(m.height - 2)
 
 	case tea.KeyMsg:
+		// if we are filtering, it gets all the input
+		if m.list.FilterState() == list.Filtering {
+			break
+		}
+
 		switch keypress := msg.String(); keypress {
 		case tea.KeyCtrlC.String():
 			return m, tea.Quit
@@ -182,13 +189,13 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				updateStatusbar(&m, "")
 				return m, nil
 			}
-			return m, tea.Quit
+			return m, nil
 		case "a":
 			if m.mode == Edit && m.active == List {
 				m.active = Prompt
 				m.prompt = prompt.New(prompt.PromptContext{
 					Key: CreateSimpleRequest,
-				}, "", CreateSimpleRequestLabel)
+				}, "", CreateSimpleRequestLabel, checkRequestWithNameDoesNotExist(m), m.width)
 				return m, nil
 			}
 		case "A":
@@ -196,7 +203,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.active = Prompt
 				m.prompt = prompt.New(prompt.PromptContext{
 					Key: CreateComplexRequest,
-				}, "", CreateComplexRequestLabel)
+				}, "", CreateComplexRequestLabel, checkRequestWithNameDoesNotExist(m), m.width)
 				return m, nil
 			}
 		case "i":
@@ -226,7 +233,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Quit
 	case PreviewRequestMsg:
-		if m.active != Preview {
+		if m.active == List {
 			m.active = Preview
 			m.preview.Viewport.Width = m.width
 			m.preview.Viewport.Height = m.height - m.preview.VerticalMarginHeight()
@@ -235,32 +242,41 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var err error
 			switch selected.Mold.ContentType {
 			case "yaml":
-				formatted, err = print.SprintYaml(selected.Mold.Raw)
+				formatted, err = print.SprintYaml(selected.Mold.Raw())
 			case "star":
-				formatted, err = print.SprintStar(selected.Mold.Raw)
+				formatted, err = print.SprintStar(selected.Mold.Raw())
 			}
 
 			if formatted == "" || err != nil {
-				formatted = selected.Mold.Raw
+				formatted = selected.Mold.Raw()
 			}
 			m.preview.Viewport.SetContent(formatted)
 			m.preview.Viewport.YPosition = 0
 			return m, nil
 		}
 	case RenameRequestMsg:
-		if m.active != Prompt {
+		if m.active == List {
 			m.active = Prompt
 			m.prompt = prompt.New(prompt.PromptContext{
 				Key:        RenameRequest,
 				Additional: msg.Request,
-			}, msg.Request.Name, RenameRequestLabel)
+			}, msg.Request.Name, RenameRequestLabel, checkRequestWithNameDoesNotExist(m), m.width)
 			return m, nil
+		}
+	case CopyRequestMsg:
+		if m.active == List {
+			m.active = Prompt
+			m.prompt = prompt.New(prompt.PromptContext{
+				Key:        CopyRequest,
+				Additional: msg.Request,
+			}, fmt.Sprintf("Copy of %s", msg.Request.Name), CopyRequestLabel, checkRequestWithNameDoesNotExist(m), m.width)
 		}
 	case prompt.PromptAnsweredMsg:
 		if msg.Context.Key == RenameRequest {
 			m.active = List
 			renamedRequest, ok := renameRequest(msg.Input, msg.Context.Additional.(Request))
 			if ok {
+				log.Debug().Msgf("Index of renamed item is %d", m.list.Index())
 				setCmd := m.list.SetItem(m.list.Index(), renamedRequest)
 				statusCmd := tea.Cmd(func() tea.Msg {
 					nowTime := time.Now().Format("15:04:05")
@@ -274,6 +290,24 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 				return m, statusCmd
 			}
+		} else if msg.Context.Key == CopyRequest {
+			m.active = List
+			copiedRequest, ok := copyRequest(msg.Input, msg.Context.Additional.(Request))
+			if ok {
+				setCmd := m.list.InsertItem(m.list.Index()+1, copiedRequest)
+				statusCmd := tea.Cmd(func() tea.Msg {
+					nowTime := time.Now().Format("15:04:05")
+					return StatusMessage(fmt.Sprintf("%s Copied request to %s", nowTime, copiedRequest.Title()))
+				})
+				return m, tea.Batch(setCmd, statusCmd)
+			} else {
+				statusCmd := tea.Cmd(func() tea.Msg {
+					nowTime := time.Now().Format("15:04:05")
+					return StatusMessage(fmt.Sprintf("%s Failed to copy request", nowTime))
+				})
+				return m, statusCmd
+			}
+
 		} else {
 			m.postAction = PostAction{
 				Type:             msg.Context.Key,

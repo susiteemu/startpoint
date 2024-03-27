@@ -20,7 +20,6 @@ type RequestMold struct {
 	Yaml        *YamlRequest
 	Starlark    *StarlarkRequest
 	ContentType string
-	Raw         string
 	Root        string
 	Filename    string
 }
@@ -32,8 +31,10 @@ type YamlRequest struct {
 	Method  string  `yaml:"method"`
 	Headers Headers `yaml:"headers"`
 	Body    Body    `yaml:"body"`
+	Raw     string
 }
 
+// FIXME has the same value as RequestMold Raw
 type StarlarkRequest struct {
 	Script string
 }
@@ -98,14 +99,50 @@ func (r *RequestMold) Rename(newName string) bool {
 	if r.Yaml != nil {
 		r.Yaml.Name = newName
 		pattern := regexp.MustCompile(`(?mU)^name:(.*)$`)
-		nameChanged := pattern.ReplaceAllString(r.Raw, fmt.Sprintf("name: %s", newName))
-		r.Raw = nameChanged
+		nameChanged := pattern.ReplaceAllString(r.Yaml.Raw, fmt.Sprintf("name: %s", newName))
+		r.Yaml.Raw = nameChanged
 	} else if r.Starlark != nil {
 		pattern := regexp.MustCompile(`(?mU)^.*meta:name:(.*)$`)
 		nameChanged := pattern.ReplaceAllString(r.Starlark.Script, fmt.Sprintf("meta:name: %s", newName))
-		r.Raw = nameChanged
 		r.Starlark.Script = nameChanged
 
 	}
 	return true
+}
+
+func (r *RequestMold) Raw() string {
+	if r.Yaml != nil {
+		return r.Yaml.Raw
+	} else if r.Starlark != nil {
+		return r.Starlark.Script
+	}
+	return ""
+}
+
+func (r *RequestMold) Clone() RequestMold {
+	copy := RequestMold{
+		ContentType: r.ContentType,
+		Root:        r.Root,
+		Filename:    r.Filename,
+	}
+
+	if r.Yaml != nil {
+		yamlRequest := YamlRequest{
+			Name:    r.Yaml.Name,
+			PrevReq: r.Yaml.PrevReq,
+			Url:     r.Yaml.Url,
+			Method:  r.Yaml.Method,
+			Headers: r.Yaml.Headers,
+			Body:    r.Yaml.Body,
+			Raw:     r.Yaml.Raw,
+		}
+		copy.Yaml = &yamlRequest
+	} else if r.Starlark != nil {
+		starlarkRequest := StarlarkRequest{
+			Script: r.Starlark.Script,
+		}
+		copy.Starlark = &starlarkRequest
+	}
+
+	return copy
 }

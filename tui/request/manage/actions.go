@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 
 	"goful/core/print"
 
@@ -43,7 +44,7 @@ func handlePostAction(m uiModel) {
 	case CreateComplexRequest:
 		createComplexRequestFile(m.postAction.Payload.(string))
 	case EditRequest:
-		openRequestFileForUpdate(m.postAction.Payload.(Request))
+		openFileToEditor(m.postAction.Payload.(Request))
 	case PrintRequest:
 		fmt.Printf("%s\n", m.postAction.Payload.(string))
 	}
@@ -57,7 +58,6 @@ func createSimpleRequestFile(name string) {
 	filename := fmt.Sprintf("%s.yaml", name)
 	// TODO read from a template file
 	content := fmt.Sprintf(`name: %s
-
 # Possible request to call _before_ this one
 prev_req:
 # Request url, may contain template variables in a form of {var}
@@ -74,7 +74,7 @@ headers:
 body: >
 `, name)
 
-	createFile(filename, content)
+	createFileAndOpenToEditor(filename, content)
 }
 
 func createComplexRequestFile(name string) {
@@ -85,7 +85,6 @@ func createComplexRequestFile(name string) {
 	filename := fmt.Sprintf("%s.star", name)
 	// TODO read from template
 	content := fmt.Sprintf(`"""
-
 meta:name: %s
 meta:prev_req: <call other request before this>
 doc:url: <your url for display>
@@ -102,10 +101,10 @@ headers = {}
 body = {}
 `, name)
 
-	createFile(filename, content)
+	createFileAndOpenToEditor(filename, content)
 }
 
-func createFile(filename string, content string) {
+func createFileAndOpenToEditor(filename string, content string) {
 
 	if len(filename) > 0 {
 		// TODO get workdir from configuration
@@ -113,15 +112,18 @@ func createFile(filename string, content string) {
 		if err == nil {
 			defer file.Close()
 			// todo handle err
-			file.WriteString(content)
+			_, err = file.WriteString(content)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to write file")
+			}
 			file.Sync()
 			filename := file.Name()
 			editor := viper.GetString("editor")
 			if editor == "" {
-				log.Error().Msg("editor is not configured through configuration file or $editor environment variable.")
+				log.Error().Msg("Editor is not configured through configuration file or $editor environment variable.")
 			}
 
-			log.Info().Msgf("opening file %s\n", filename)
+			log.Info().Msgf("Opening file %s\n", filename)
 			cmd := exec.Command(editor, filename)
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
@@ -129,18 +131,18 @@ func createFile(filename string, content string) {
 
 			err = cmd.Run()
 			if err != nil {
-				log.Error().Err(err).Msg("failed to open file with editor")
+				log.Error().Err(err).Msg("Failed to open file with editor")
 			}
-			log.Printf("successfully edited file %v", file.Name())
-			fmt.Printf("saved new request to file %v", file.Name())
+			log.Printf("Successfully edited file %v", file.Name())
+			fmt.Printf("Saved new request to file %v", file.Name())
 		} else {
-			log.Error().Err(err).Msg("failed to create file")
+			log.Error().Err(err).Msg("Failed to create file")
 		}
 	}
 
 }
 
-func openRequestFileForUpdate(r Request) {
+func openFileToEditor(r Request) {
 	if r.Mold.Filename != "" {
 		fileName := filepath.Join(r.Mold.Root, r.Mold.Filename)
 
@@ -167,39 +169,80 @@ func openRequestFileForUpdate(r Request) {
 }
 
 func renameRequest(newName string, r Request) (Request, bool) {
-	renamed := Request{
+	original := Request{
 		Name:   r.Name,
 		Url:    r.Url,
 		Method: r.Method,
-		Mold:   r.Mold,
+		Mold:   r.Mold.Clone(),
 	}
-	oldPath := filepath.Join(r.Mold.Root, r.Mold.Filename)
-	log.Info().Msgf("Renaming from %s with newName %s", oldPath, newName)
-	ok := r.Mold.Rename(newName)
-	log.Debug().Msgf("Renaming data succeed? %v", ok)
-	if ok {
-		renamed.Name = newName
-		renamed.Mold = r.Mold
-		newPath := filepath.Join(renamed.Mold.Root, renamed.Mold.Filename)
-		log.Debug().Msgf("Renaming file to %s", newPath)
-		err := os.Rename(oldPath, newPath)
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed to rename file to %s", newPath)
-			return renamed, false
-		}
 
-		file, err := os.Create(newPath)
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed to open file %s", newPath)
-			return renamed, false
-		}
-		defer file.Close()
-		log.Debug().Msgf("About to write contents %s", renamed.Mold.Raw)
-		_, err = file.WriteString(renamed.Mold.Raw)
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed to write to file %s", newPath)
-			return renamed, false
-		}
+	oldPath := filepath.Join(r.Mold.Root, r.Mold.Filename)
+	r.Name = newName
+	changeMoldName(newName, &r.Mold)
+
+	log.Info().Msgf("Renaming from %s with name %s", oldPath, newName)
+	newPath := filepath.Join(r.Mold.Root, r.Mold.Filename)
+	log.Debug().Msgf("Renaming file to %s", newPath)
+	err := os.Rename(oldPath, newPath)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to rename file to %s", newPath)
+		return original, false
 	}
-	return renamed, ok
+
+	file, err := os.Create(newPath)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to open file %s", newPath)
+		return original, false
+	}
+	defer file.Close()
+	log.Debug().Msgf("About to write contents %s", r.Mold.Raw())
+	_, err = file.WriteString(r.Mold.Raw())
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to write to file %s", newPath)
+		return original, false
+	}
+	file.Sync()
+	return r, true
+}
+
+func copyRequest(name string, r Request) (Request, bool) {
+	copy := Request{
+		Name:   name,
+		Url:    r.Url,
+		Method: r.Method,
+		Mold:   r.Mold.Clone(),
+	}
+
+	changeMoldName(name, &copy.Mold)
+	path := filepath.Join(copy.Mold.Root, copy.Mold.Filename)
+	file, err := os.Create(path)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to open file %s", path)
+		return copy, false
+	}
+	defer file.Close()
+	log.Debug().Msgf("About to write contents %s", copy.Mold.Raw())
+	_, err = file.WriteString(copy.Mold.Raw())
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to write to file %s", path)
+		return copy, false
+	}
+	file.Sync()
+	return copy, true
+
+}
+
+func changeMoldName(name string, m *model.RequestMold) {
+	if m.Yaml != nil {
+		m.Filename = fmt.Sprintf("%s.yaml", name)
+		m.Yaml.Name = name
+		pattern := regexp.MustCompile(`(?mU)^name:(.*)$`)
+		nameChanged := pattern.ReplaceAllString(m.Yaml.Raw, fmt.Sprintf("name: %s", name))
+		m.Yaml.Raw = nameChanged
+	} else if m.Starlark != nil {
+		m.Filename = fmt.Sprintf("%s.star", name)
+		pattern := regexp.MustCompile(`(?mU)^.*meta:name:(.*)$`)
+		nameChanged := pattern.ReplaceAllString(m.Starlark.Script, fmt.Sprintf("meta:name: %s", name))
+		m.Starlark.Script = nameChanged
+	}
 }

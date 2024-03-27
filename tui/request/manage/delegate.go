@@ -23,6 +23,10 @@ var selectModeKeys = []key.Binding{
 		key.WithKeys("i"),
 		key.WithHelp("i", "edit mode"),
 	),
+	key.NewBinding(
+		key.WithKeys("q", tea.KeyCtrlC.String()),
+		key.WithHelp("q/ctrl+c", "quit"),
+	),
 }
 
 var editModeKeys = []key.Binding{
@@ -51,8 +55,16 @@ var editModeKeys = []key.Binding{
 		key.WithHelp("r", "rename"),
 	),
 	key.NewBinding(
+		key.WithKeys("c"),
+		key.WithHelp("c", "copy request"),
+	),
+	key.NewBinding(
 		key.WithKeys(tea.KeyEsc.String()),
 		key.WithHelp(tea.KeyEsc.String(), "view mode"),
+	),
+	key.NewBinding(
+		key.WithKeys("q", tea.KeyCtrlC.String()),
+		key.WithHelp("q/ctrl+c", "quit"),
 	),
 }
 
@@ -158,6 +170,12 @@ func newEditModeDelegate() list.DefaultDelegate {
 			case "r":
 				return tea.Cmd(func() tea.Msg {
 					return RenameRequestMsg{
+						Request: request,
+					}
+				})
+			case "c":
+				return tea.Cmd(func() tea.Msg {
+					return CopyRequestMsg{
 						Request: request,
 					}
 				})

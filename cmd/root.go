@@ -50,9 +50,8 @@ func init() {
 	)
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
-		multi := zerolog.MultiLevelWriter(os.Stdout, runLogFile)
+		multi := zerolog.MultiLevelWriter(runLogFile)
 		log.Logger = zerolog.New(multi).With().Timestamp().Logger()
-
 		log.Info().Msg("Initialized logging")
 		return nil
 	}

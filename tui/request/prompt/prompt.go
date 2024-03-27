@@ -8,8 +8,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("36")).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(70)
-var descriptionStyle = lipgloss.NewStyle().Padding(1).Width(70)
+var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#a6e3a1")).BorderStyle(lipgloss.NormalBorder()).Padding(1)
+var errInputStyle = inputStyle.Copy().BorderForeground(lipgloss.Color("#f38ba8"))
+var descriptionStyle = lipgloss.NewStyle().Padding(1)
 
 type keyMap struct {
 	Save key.Binding
@@ -51,6 +52,9 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		newWidth := min(64, msg.Width-2)
+		m.nameInput.Width = newWidth
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:
@@ -79,23 +83,32 @@ func (m Model) View() string {
 
 	inputViews := []string{}
 	inputViews = append(inputViews, "Name")
-	inputViews = append(inputViews, descriptionStyle.Render(m.label))
+	var descStyle = descriptionStyle.Width(m.nameInput.Width)
+	inputViews = append(inputViews, descStyle.Render(m.label))
 
-	inputViews = append(inputViews, inputStyle.Render(m.nameInput.View()))
+	var style = inputStyle.Width(m.nameInput.Width)
+	if m.nameInput.Err != nil {
+		style = errInputStyle.Width(m.nameInput.Width)
+	}
+
+	inputViews = append(inputViews, style.Render(m.nameInput.View()))
 	inputViews = append(inputViews, helpView)
 
 	return lipgloss.JoinVertical(lipgloss.Left, inputViews...)
 
 }
 
-func New(context PromptContext, initialValue string, label string) Model {
+func New(context PromptContext, initialValue string, label string, validator func(s string) error, w int) Model {
 	nameInput := textinput.New()
 	nameInput.Focus()
-	nameInput.CharLimit = 64
-	nameInput.Width = 70
+	nameInput.CharLimit = 32
+	nameInput.Width = min(64, w-2)
 	nameInput.SetValue(initialValue)
 	nameInput.Prompt = ""
-	//inputs[ccn].Validate = ccnValidator
+	if validator != nil {
+		// validator blocks writing on invalid input; there is a fix for this, but it is not released yet
+		nameInput.Validate = validator
+	}
 
 	return Model{
 		context:   context,

@@ -94,8 +94,7 @@ func TestYamlRequestNameRename(t *testing.T) {
 			Name:   "A GET request",
 			Url:    "https://httpbin.org/anything",
 			Method: "GET",
-		},
-		Raw: `name: A GET request
+			Raw: `name: A GET request
 url: 'https://httpbin.org/anything'
 method: GET
 headers:
@@ -105,6 +104,7 @@ body: >
     "id": 1,
     "name": "Jane"
   }`,
+		},
 	}
 
 	ok := yamlRequest.Rename("A changed GET request")
@@ -127,7 +127,7 @@ body: >
     "name": "Jane"
   }`
 
-	if wantedRaw != yamlRequest.Raw {
-		t.Errorf("raw is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.Raw, wantedRaw)
+	if wantedRaw != yamlRequest.Yaml.Raw {
+		t.Errorf("raw is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.Yaml.Raw, wantedRaw)
 	}
 }

@@ -40,10 +40,10 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 			if err != nil {
 				return nil
 			}
+			yamlRequest.Raw = string(file)
 			if yamlRequest.Name != "" {
 				request := model.RequestMold{
 					Yaml:        yamlRequest,
-					Raw:         string(file),
 					ContentType: "yaml",
 					Root:        root,
 					Filename:    filename,
@@ -63,7 +63,6 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 			}
 			request := model.RequestMold{
 				Starlark:    starlarkRequest,
-				Raw:         string(file),
 				ContentType: "star",
 				Root:        root,
 				Filename:    filename,

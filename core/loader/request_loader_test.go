@@ -41,7 +41,6 @@ body = { "id": 1474, "prev": prev, "bar": [
 		Starlark: &model.StarlarkRequest{
 			Script: script,
 		},
-		Raw:         script,
 		ContentType: "star",
 		Filename:    "starlark_request.star",
 	}
@@ -58,8 +57,7 @@ body = { "id": 1474, "prev": prev, "bar": [
 				"X-Foo-Bar": {"SomeValue"},
 			},
 			Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}\n",
-		},
-		Raw: `name: yaml_request
+			Raw: `name: yaml_request
 prev_req:
 url: foobar.com
 method: POST
@@ -71,6 +69,7 @@ body: >
     "name": "Jane"
   }
 `,
+		},
 		ContentType: "yaml",
 		Filename:    "yaml_request.yaml",
 	}

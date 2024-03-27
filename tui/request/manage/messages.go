@@ -19,3 +19,7 @@ type StatusMessage string
 type RenameRequestMsg struct {
 	Request Request
 }
+
+type CopyRequestMsg struct {
+	Request Request
+}

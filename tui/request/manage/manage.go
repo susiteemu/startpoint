@@ -5,6 +5,7 @@ import (
 	"goful/core/client/validator"
 	"goful/core/model"
 	"goful/core/print"
+	"os/exec"
 	"time"
 
 	preview "goful/tui/request/preview"
@@ -227,11 +228,30 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Quit
 	case EditRequestMsg:
-		m.postAction = PostAction{
-			Type:    EditRequest,
-			Payload: msg.Request,
+		cmd, err := openFileToEditorCmd(msg.Request)
+		if err != nil {
+			statusCmd := createStatusMsg("Failed preparing editor")
+			return m, statusCmd
 		}
-		return m, tea.Quit
+		cb := func(err error) tea.Msg {
+			return EditRequestFinishedMsg{
+				Request: msg.Request,
+				err:     err,
+			}
+		}
+		return m, tea.ExecProcess(cmd, cb)
+	case EditRequestFinishedMsg:
+		oldRequest := msg.Request
+		if msg.err == nil {
+			newRequest, ok := readRequest(oldRequest.Mold.Root, oldRequest.Mold.Filename)
+			if ok {
+				setCmd := m.list.SetItem(m.list.Index(), newRequest)
+				statusCmd := createStatusMsg(fmt.Sprintf("Edited request %s", oldRequest.Title()))
+				return m, tea.Batch(setCmd, statusCmd)
+			}
+		}
+		statusCmd := createStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
+		return m, statusCmd
 	case PreviewRequestMsg:
 		if m.active == List {
 			m.active = Preview
@@ -272,50 +292,65 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}, fmt.Sprintf("Copy of %s", msg.Request.Name), CopyRequestLabel, checkRequestWithNameDoesNotExist(m), m.width)
 		}
 	case prompt.PromptAnsweredMsg:
+		m.active = List
 		if msg.Context.Key == RenameRequest {
-			m.active = List
 			renamedRequest, ok := renameRequest(msg.Input, msg.Context.Additional.(Request))
 			if ok {
 				log.Debug().Msgf("Index of renamed item is %d", m.list.Index())
 				setCmd := m.list.SetItem(m.list.Index(), renamedRequest)
-				statusCmd := tea.Cmd(func() tea.Msg {
-					nowTime := time.Now().Format("15:04:05")
-					return StatusMessage(fmt.Sprintf("%s Renamed request to %s", nowTime, renamedRequest.Title()))
-				})
+				statusCmd := createStatusMsg(fmt.Sprintf("Renamed request to %s", renamedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			} else {
-				statusCmd := tea.Cmd(func() tea.Msg {
-					nowTime := time.Now().Format("15:04:05")
-					return StatusMessage(fmt.Sprintf("%s Failed to rename request", nowTime))
-				})
+				statusCmd := createStatusMsg("Failed to rename request")
 				return m, statusCmd
 			}
 		} else if msg.Context.Key == CopyRequest {
-			m.active = List
 			copiedRequest, ok := copyRequest(msg.Input, msg.Context.Additional.(Request))
 			if ok {
 				setCmd := m.list.InsertItem(m.list.Index()+1, copiedRequest)
-				statusCmd := tea.Cmd(func() tea.Msg {
-					nowTime := time.Now().Format("15:04:05")
-					return StatusMessage(fmt.Sprintf("%s Copied request to %s", nowTime, copiedRequest.Title()))
-				})
+				statusCmd := createStatusMsg(fmt.Sprintf("Copied request to %s", copiedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			} else {
-				statusCmd := tea.Cmd(func() tea.Msg {
-					nowTime := time.Now().Format("15:04:05")
-					return StatusMessage(fmt.Sprintf("%s Failed to copy request", nowTime))
-				})
+				statusCmd := createStatusMsg("Failed to copy request")
 				return m, statusCmd
 			}
 
-		} else {
-			m.postAction = PostAction{
-				Type:             msg.Context.Key,
-				Payload:          msg.Input,
-				AddtionalContext: msg.Context.Additional,
+		} else if msg.Context.Key == CreateSimpleRequest || msg.Context.Key == CreateComplexRequest {
+			var (
+				root     string
+				filepath string
+				cmd      *exec.Cmd
+				err      error
+			)
+			if msg.Context.Key == CreateSimpleRequest {
+				root, filepath, cmd, err = createSimpleRequestFileCmd(msg.Input)
+			} else {
+				root, filepath, cmd, err = createComplexRequestFileCmd(msg.Input)
 			}
-			return m, tea.Quit
+			if err != nil {
+				statusCmd := createStatusMsg("Failed preparing editor")
+				return m, statusCmd
+			}
+			cb := func(err error) tea.Msg {
+				return CreateRequestFinishedMsg{
+					root:     root,
+					filename: filepath,
+					err:      err,
+				}
+			}
+			return m, tea.ExecProcess(cmd, cb)
 		}
+	case CreateRequestFinishedMsg:
+		if msg.err == nil {
+			newRequest, ok := readRequest(msg.root, msg.filename)
+			if ok {
+				setCmd := m.list.InsertItem(m.list.Index()+1, newRequest)
+				statusCmd := createStatusMsg(fmt.Sprintf("Created request %s", newRequest.Title()))
+				return m, tea.Batch(setCmd, statusCmd)
+			}
+		}
+		statusCmd := createStatusMsg("Failed to create request")
+		return m, statusCmd
 
 	case StatusMessage:
 		updateStatusbar(&m, string(msg))

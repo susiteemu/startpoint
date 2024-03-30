@@ -1,14 +1,17 @@
 package managetui
 
 import (
+	"errors"
 	"fmt"
 	"goful/core/client"
 	"goful/core/client/builder"
+	"goful/core/loader"
 	"goful/core/model"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"goful/core/print"
 
@@ -39,20 +42,14 @@ func doRequest(r Request) tea.Cmd {
 
 func handlePostAction(m uiModel) {
 	switch m.postAction.Type {
-	case CreateSimpleRequest:
-		createSimpleRequestFile(m.postAction.Payload.(string))
-	case CreateComplexRequest:
-		createComplexRequestFile(m.postAction.Payload.(string))
-	case EditRequest:
-		openFileToEditor(m.postAction.Payload.(Request))
 	case PrintRequest:
 		fmt.Printf("%s\n", m.postAction.Payload.(string))
 	}
 }
 
-func createSimpleRequestFile(name string) {
+func createSimpleRequestFileCmd(name string) (string, string, *exec.Cmd, error) {
 	if len(name) == 0 {
-		return
+		return "", "", nil, errors.New("name must not be empty")
 	}
 
 	filename := fmt.Sprintf("%s.yaml", name)
@@ -74,12 +71,14 @@ headers:
 body: >
 `, name)
 
-	createFileAndOpenToEditor(filename, content)
+	cmd, err := createFileAndReturnOpenToEditorCmd(filename, content)
+	// TODO get root
+	return "tmp/", filename, cmd, err
 }
 
-func createComplexRequestFile(name string) {
+func createComplexRequestFileCmd(name string) (string, string, *exec.Cmd, error) {
 	if len(name) == 0 {
-		return
+		return "", "", nil, errors.New("name must not be empty")
 	}
 
 	filename := fmt.Sprintf("%s.star", name)
@@ -101,11 +100,12 @@ headers = {}
 body = {}
 `, name)
 
-	createFileAndOpenToEditor(filename, content)
+	cmd, err := createFileAndReturnOpenToEditorCmd(filename, content)
+	// TODO get root
+	return "tmp/", filename, cmd, err
 }
 
-func createFileAndOpenToEditor(filename string, content string) {
-
+func createFileAndReturnOpenToEditorCmd(filename string, content string) (*exec.Cmd, error) {
 	if len(filename) > 0 {
 		// TODO get workdir from configuration
 		file, err := os.Create(filepath.Join("tmp", filename))
@@ -115,57 +115,67 @@ func createFileAndOpenToEditor(filename string, content string) {
 			_, err = file.WriteString(content)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to write file")
+				return nil, err
 			}
 			file.Sync()
-			filename := file.Name()
-			editor := viper.GetString("editor")
-			if editor == "" {
-				log.Error().Msg("Editor is not configured through configuration file or $editor environment variable.")
-			}
+			fileName := file.Name()
 
-			log.Info().Msgf("Opening file %s\n", filename)
-			cmd := exec.Command(editor, filename)
+			editor, args, err := getEditor()
+			log.Debug().Msgf("Using %s as editor", editor)
+			if err != nil {
+				log.Error().Err(err)
+				return nil, err
+			}
+			args = append(args, fileName)
+
+			cmd := exec.Command(editor, args...)
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-
-			err = cmd.Run()
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to open file with editor")
-			}
-			log.Printf("Successfully edited file %v", file.Name())
-			fmt.Printf("Saved new request to file %v", file.Name())
+			return cmd, nil
 		} else {
 			log.Error().Err(err).Msg("Failed to create file")
+			return nil, err
 		}
 	}
+	return nil, errors.New("filename must not be empty")
 
 }
 
-func openFileToEditor(r Request) {
+func openFileToEditorCmd(r Request) (*exec.Cmd, error) {
 	if r.Mold.Filename != "" {
 		fileName := filepath.Join(r.Mold.Root, r.Mold.Filename)
 
 		log.Info().Msgf("About to open request file %v\n", fileName)
 		if len(fileName) > 0 {
-			// TODO handle err
-			editor := viper.GetString("editor")
-			if editor == "" {
-				log.Error().Msg("Editor is not configured through configuration file or $EDITOR environment variable.")
+			editor, args, err := getEditor()
+			log.Debug().Msgf("Using %s as editor", editor)
+			if err != nil {
+				log.Error().Err(err)
+				return nil, err
 			}
+			args = append(args, fileName)
 
-			cmd := exec.Command(editor, fileName)
+			cmd := exec.Command(editor, args...)
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-
-			err := cmd.Run()
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to open file with editor")
-			}
-			log.Info().Msgf("Successfully edited file %v", fileName)
+			return cmd, nil
 		}
 	}
+	return nil, errors.New("request mold does not have a filename")
+}
+
+func getEditor() (string, []string, error) {
+	editor := strings.Fields(viper.GetString("editor"))
+	if len(editor) == 1 {
+		return editor[0], []string{}, nil
+	}
+	if len(editor) > 1 {
+		return editor[0], editor[1:], nil
+	}
+	// TODO read default editor from configuration
+	return "", []string{}, errors.New("Editor is not configured through configuration file or $EDITOR environment variable.")
 }
 
 func renameRequest(newName string, r Request) (Request, bool) {
@@ -245,4 +255,19 @@ func changeMoldName(name string, m *model.RequestMold) {
 		nameChanged := pattern.ReplaceAllString(m.Starlark.Script, fmt.Sprintf("meta:name: %s", name))
 		m.Starlark.Script = nameChanged
 	}
+}
+
+func readRequest(root, filename string) (Request, bool) {
+	mold, err := loader.ReadRequest(root, filename)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read request")
+		return Request{}, false
+	}
+	request := Request{
+		Name:   mold.Name(),
+		Method: mold.Method(),
+		Url:    mold.Url(),
+		Mold:   mold,
+	}
+	return request, true
 }

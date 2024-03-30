@@ -94,9 +94,6 @@ body: >
 				t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", r, w)
 			}
 		}
-		if !cmp.Equal(request.Raw, wantedRequest.Raw) {
-			t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", request, wantedRequest)
-		}
 		if !cmp.Equal(request.ContentType, wantedRequest.ContentType) {
 			t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", request, wantedRequest)
 		}

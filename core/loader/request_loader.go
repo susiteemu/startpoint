@@ -11,6 +11,54 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func ReadRequest(root, filename string) (model.RequestMold, error) {
+	path := filepath.Join(root, filename)
+	extension := filepath.Ext(filename)
+	request := model.RequestMold{}
+
+	switch {
+	case extension == ".yaml" || extension == ".yml":
+		file, err := os.ReadFile(path)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to read %s", path)
+			return model.RequestMold{}, err
+		}
+		yamlRequest := &model.YamlRequest{}
+		err = yaml.Unmarshal(file, yamlRequest)
+		if err != nil {
+			return model.RequestMold{}, err
+		}
+		yamlRequest.Raw = string(file)
+		if yamlRequest.Name != "" {
+			request = model.RequestMold{
+				Yaml:        yamlRequest,
+				ContentType: "yaml",
+				Root:        root,
+				Filename:    filename,
+			}
+		}
+
+	case extension == ".star":
+		file, err := os.ReadFile(path)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to read %s", path)
+			return model.RequestMold{}, err
+		}
+		starlarkRequest := &model.StarlarkRequest{
+			Script: string(file),
+		}
+		request = model.RequestMold{
+			Starlark:    starlarkRequest,
+			ContentType: "star",
+			Root:        root,
+			Filename:    filename,
+		}
+
+	}
+
+	return request, nil
+}
+
 func ReadRequests(root string) ([]model.RequestMold, error) {
 	var requestSlice []model.RequestMold
 	maxDepth := 0
@@ -26,7 +74,7 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 		filename := info.Name()
 		log.Debug().Msgf("Walk crossed a file %s", filename)
 		var extension = filepath.Ext(filename)
-
+		// TODO use ReadRequest function
 		switch {
 		case extension == ".yaml" || extension == ".yml":
 

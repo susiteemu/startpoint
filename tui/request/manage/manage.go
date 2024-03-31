@@ -164,7 +164,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		// if we are filtering, it gets all the input
-		if m.list.FilterState() == list.Filtering {
+		if m.active == List && m.list.FilterState() == list.Filtering {
 			break
 		}
 
@@ -227,6 +227,16 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}, "", promptLabel, checkRequestWithNameDoesNotExist(m), m.width)
 			return m, nil
 		}
+	case CreateRequestFinishedMsg:
+		if msg.err == nil {
+			newRequest, ok := readRequest(msg.root, msg.filename)
+			if ok {
+				setCmd := m.list.InsertItem(m.list.Index()+1, newRequest)
+				statusCmd := createStatusMsg(fmt.Sprintf("Created request %s", newRequest.Title()))
+				return m, tea.Batch(setCmd, statusCmd)
+			}
+		}
+		return m, createStatusMsg("Failed to create request")
 	case EditRequestMsg:
 		if m.mode == Edit && m.active == List {
 			cmd, err := openFileToEditorCmd(msg.Request)
@@ -243,13 +253,15 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.ExecProcess(cmd, cb)
 		}
 	case DeleteRequestMsg:
-		deleted := msg.Request.Mold.DeleteFromFS()
-		if deleted {
-			index := m.list.Index()
-			m.list.RemoveItem(index)
-			return m, createStatusMsg(fmt.Sprintf("Deleted %s", msg.Request.Title()))
-		} else {
-			return m, createStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
+		if m.mode == Edit && m.active == List {
+			deleted := msg.Request.Mold.DeleteFromFS()
+			if deleted {
+				index := m.list.Index()
+				m.list.RemoveItem(index)
+				return m, createStatusMsg(fmt.Sprintf("Deleted %s", msg.Request.Title()))
+			} else {
+				return m, createStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
+			}
 		}
 	case EditRequestFinishedMsg:
 		oldRequest := msg.Request
@@ -285,7 +297,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case RenameRequestMsg:
-		if m.active == List {
+		if m.mode == Edit && m.active == List {
 			m.active = Prompt
 			m.prompt = prompt.New(prompt.PromptContext{
 				Key:        RenameRequest,
@@ -294,7 +306,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case CopyRequestMsg:
-		if m.active == List {
+		if m.mode == Edit && m.active == List {
 			m.active = Prompt
 			m.prompt = prompt.New(prompt.PromptContext{
 				Key:        CopyRequest,
@@ -347,16 +359,6 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.ExecProcess(cmd, cb)
 		}
-	case CreateRequestFinishedMsg:
-		if msg.err == nil {
-			newRequest, ok := readRequest(msg.root, msg.filename)
-			if ok {
-				setCmd := m.list.InsertItem(m.list.Index()+1, newRequest)
-				statusCmd := createStatusMsg(fmt.Sprintf("Created request %s", newRequest.Title()))
-				return m, tea.Batch(setCmd, statusCmd)
-			}
-		}
-		return m, createStatusMsg("Failed to create request")
 
 	case StatusMessage:
 		updateStatusbar(&m, string(msg))

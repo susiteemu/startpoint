@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"goful/core/loader"
-	profileManageTui "goful/tui/profile/manage"
+	profileManageTui "goful/tui/profile"
 
 	"github.com/spf13/cobra"
 )

@@ -191,22 +191,6 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			return m, nil
-		case "a":
-			if m.mode == Edit && m.active == List {
-				m.active = Prompt
-				m.prompt = prompt.New(prompt.PromptContext{
-					Key: CreateSimpleRequest,
-				}, "", CreateSimpleRequestLabel, checkRequestWithNameDoesNotExist(m), m.width)
-				return m, nil
-			}
-		case "A":
-			if m.mode == Edit && m.active == List {
-				m.active = Prompt
-				m.prompt = prompt.New(prompt.PromptContext{
-					Key: CreateComplexRequest,
-				}, "", CreateComplexRequestLabel, checkRequestWithNameDoesNotExist(m), m.width)
-				return m, nil
-			}
 		case "i":
 			if m.mode == Select && m.active == List {
 				m.mode = Edit
@@ -215,31 +199,58 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		}
+
 	case RunRequestMsg:
 		m.active = Stopwatch
 		return m, tea.Batch(
 			m.stopwatch.Init(),
 			doRequest(msg.Request),
 		)
-	case RequestFinishedMsg:
+	case RunRequestFinishedMsg:
 		m.postAction = PostAction{
 			Type:    PrintRequest,
 			Payload: string(msg),
 		}
 		return m, tea.Quit
-	case EditRequestMsg:
-		cmd, err := openFileToEditorCmd(msg.Request)
-		if err != nil {
-			statusCmd := createStatusMsg("Failed preparing editor")
-			return m, statusCmd
-		}
-		cb := func(err error) tea.Msg {
-			return EditRequestFinishedMsg{
-				Request: msg.Request,
-				err:     err,
+
+	case CreateRequestMsg:
+		if m.mode == Edit && m.active == List {
+			promptKey := CreateSimpleRequest
+			promptLabel := CreateSimpleRequestLabel
+			if !msg.Simple {
+				promptKey = CreateComplexRequest
+				promptLabel = CreateComplexRequestLabel
 			}
+			m.active = Prompt
+			m.prompt = prompt.New(prompt.PromptContext{
+				Key: promptKey,
+			}, "", promptLabel, checkRequestWithNameDoesNotExist(m), m.width)
+			return m, nil
 		}
-		return m, tea.ExecProcess(cmd, cb)
+	case EditRequestMsg:
+		if m.mode == Edit && m.active == List {
+			cmd, err := openFileToEditorCmd(msg.Request)
+			if err != nil {
+				statusCmd := createStatusMsg("Failed preparing editor")
+				return m, statusCmd
+			}
+			cb := func(err error) tea.Msg {
+				return EditRequestFinishedMsg{
+					Request: msg.Request,
+					err:     err,
+				}
+			}
+			return m, tea.ExecProcess(cmd, cb)
+		}
+	case DeleteRequestMsg:
+		deleted := msg.Request.Mold.DeleteFromFS()
+		if deleted {
+			index := m.list.Index()
+			m.list.RemoveItem(index)
+			return m, createStatusMsg(fmt.Sprintf("Deleted %s", msg.Request.Title()))
+		} else {
+			return m, createStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
+		}
 	case EditRequestFinishedMsg:
 		oldRequest := msg.Request
 		if msg.err == nil {
@@ -250,8 +261,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Batch(setCmd, statusCmd)
 			}
 		}
-		statusCmd := createStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
-		return m, statusCmd
+		return m, createStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
 	case PreviewRequestMsg:
 		if m.active == List {
 			m.active = Preview
@@ -301,8 +311,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				statusCmd := createStatusMsg(fmt.Sprintf("Renamed request to %s", renamedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			} else {
-				statusCmd := createStatusMsg("Failed to rename request")
-				return m, statusCmd
+				return m, createStatusMsg("Failed to rename request")
 			}
 		} else if msg.Context.Key == CopyRequest {
 			copiedRequest, ok := copyRequest(msg.Input, msg.Context.Additional.(Request))
@@ -311,8 +320,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				statusCmd := createStatusMsg(fmt.Sprintf("Copied request to %s", copiedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			} else {
-				statusCmd := createStatusMsg("Failed to copy request")
-				return m, statusCmd
+				return m, createStatusMsg("Failed to copy request")
 			}
 
 		} else if msg.Context.Key == CreateSimpleRequest || msg.Context.Key == CreateComplexRequest {
@@ -328,8 +336,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				root, filepath, cmd, err = createComplexRequestFileCmd(msg.Input)
 			}
 			if err != nil {
-				statusCmd := createStatusMsg("Failed preparing editor")
-				return m, statusCmd
+				return m, createStatusMsg("Failed preparing editor")
 			}
 			cb := func(err error) tea.Msg {
 				return CreateRequestFinishedMsg{
@@ -349,8 +356,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Batch(setCmd, statusCmd)
 			}
 		}
-		statusCmd := createStatusMsg("Failed to create request")
-		return m, statusCmd
+		return m, createStatusMsg("Failed to create request")
 
 	case StatusMessage:
 		updateStatusbar(&m, string(msg))

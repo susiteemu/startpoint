@@ -25,18 +25,18 @@ func doRequest(r Request) tea.Cmd {
 	return func() tea.Msg {
 		req, err := builder.BuildRequest(r.Mold, model.Profile{})
 		if err != nil {
-			return RequestFinishedMsg(fmt.Sprintf("failed to build request err: %v", err))
+			return RunRequestFinishedMsg(fmt.Sprintf("failed to build request err: %v", err))
 		}
 		resp, err := client.DoRequest(req)
 		if err != nil {
-			return RequestFinishedMsg(fmt.Sprintf("failed to do request err: %v", err))
+			return RunRequestFinishedMsg(fmt.Sprintf("failed to do request err: %v", err))
 		}
 
 		printed, err := print.SprintPrettyFullResponse(resp)
 		if err != nil {
-			return RequestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))
+			return RunRequestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))
 		}
-		return RequestFinishedMsg(printed)
+		return RunRequestFinishedMsg(printed)
 	}
 }
 

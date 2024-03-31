@@ -11,6 +11,10 @@ type RunRequestMsg struct {
 	Request Request
 }
 
+type CreateRequestMsg struct {
+	Simple bool
+}
+
 type CreateRequestFinishedMsg struct {
 	root     string
 	filename string
@@ -26,11 +30,15 @@ type EditRequestFinishedMsg struct {
 	err     error
 }
 
+type DeleteRequestMsg struct {
+	Request Request
+}
+
 type PreviewRequestMsg struct {
 	Request Request
 }
 
-type RequestFinishedMsg string
+type RunRequestFinishedMsg string
 
 type StatusMessage string
 

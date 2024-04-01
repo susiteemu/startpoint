@@ -13,6 +13,8 @@ import (
 )
 
 var (
+	contentStyle = lipgloss.NewStyle().MarginLeft(1).MarginRight(1)
+
 	titleStyle = func() lipgloss.Style {
 		b := lipgloss.RoundedBorder()
 		b.Right = "├"
@@ -60,7 +62,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return fmt.Sprintf("%s\n%s\n%s", m.headerView(), m.Viewport.View(), m.footerView())
+	return fmt.Sprintf("%s\n%s\n%s", m.headerView(), contentStyle.Render(m.Viewport.View()), m.footerView())
 }
 
 func (m Model) VerticalMarginHeight() int {

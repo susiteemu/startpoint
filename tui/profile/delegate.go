@@ -1,4 +1,4 @@
-package managetui
+package profileui
 
 import (
 	"github.com/charmbracelet/bubbles/key"
@@ -6,11 +6,44 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-var keys = []key.Binding{
+type embeddedKeyMap struct {
+	Select key.Binding
+	Cancel key.Binding
+}
+
+var embeddedKeys = embeddedKeyMap{
+	Select: key.NewBinding(
+		key.WithKeys(tea.KeyEnter.String()),
+		key.WithHelp(tea.KeyEnter.String(), "select"),
+	),
+	Cancel: key.NewBinding(
+		key.WithKeys(tea.KeyEsc.String()),
+		key.WithHelp(tea.KeyEsc.String(), "cancel"),
+	),
+}
+
+var editKeys = []key.Binding{
 	key.NewBinding(
 		key.WithKeys("a"),
-		key.WithHelp("a", "Add new profile"),
-	)}
+		key.WithHelp("a", "add"),
+	),
+	key.NewBinding(
+		key.WithKeys("x"),
+		key.WithHelp("x", "delete"),
+	),
+	key.NewBinding(
+		key.WithKeys("c"),
+		key.WithHelp("c", "copy profile"),
+	),
+	key.NewBinding(
+		key.WithKeys("r"),
+		key.WithHelp("r", "rename"),
+	),
+	key.NewBinding(
+		key.WithKeys(tea.KeyEnter.String(), "e"),
+		key.WithHelp(tea.KeyEnter.String()+"/e", "edit"),
+	),
+}
 
 func newBaseDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
@@ -20,7 +53,7 @@ func newBaseDelegate() list.DefaultDelegate {
 	return d
 }
 
-func newSelectDelegate() list.DefaultDelegate {
+func newEmbeddedDelegate() list.DefaultDelegate {
 	d := newBaseDelegate()
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
 		var profile Profile
@@ -33,26 +66,76 @@ func newSelectDelegate() list.DefaultDelegate {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch keypress := msg.String(); keypress {
-			case "enter":
+			case tea.KeyEnter.String():
 				return tea.Cmd(func() tea.Msg {
 					return ProfileSelectedMsg{
 						Profile: profile,
 					}
 				})
+			case tea.KeyEsc.String():
+				return tea.Cmd(func() tea.Msg {
+					return ProfileSelectCancelledMsg{}
+				})
 			}
 		}
+		return nil
+	}
 
+	return d
+}
+func newNormalDelegate() list.DefaultDelegate {
+	d := newBaseDelegate()
+	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
+		var profile Profile
+		if i, ok := m.SelectedItem().(Profile); ok {
+			profile = i
+		} else {
+			return nil
+		}
+
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch keypress := msg.String(); keypress {
+			case "a":
+				return tea.Cmd(func() tea.Msg {
+					return CreateProfileMsg{}
+				})
+			case "x":
+				return tea.Cmd(func() tea.Msg {
+					return DeleteProfileMsg{
+						Profile: profile,
+					}
+				})
+			case "c":
+				return tea.Cmd(func() tea.Msg {
+					return CopyProfileMsg{
+						Profile: profile,
+					}
+				})
+			case "r":
+				return tea.Cmd(func() tea.Msg {
+					return RenameProfileMsg{
+						Profile: profile,
+					}
+				})
+			case tea.KeyEnter.String(), "e":
+				return tea.Cmd(func() tea.Msg {
+					return EditProfileMsg{
+						Profile: profile,
+					}
+				})
+			}
+		}
 		return nil
 	}
 
 	d.ShortHelpFunc = func() []key.Binding {
-		return keys
+		return editKeys
 	}
 
 	d.FullHelpFunc = func() [][]key.Binding {
-		return [][]key.Binding{keys}
+		return [][]key.Binding{editKeys}
 	}
 
 	return d
-
 }

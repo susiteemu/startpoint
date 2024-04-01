@@ -82,7 +82,6 @@ func (m Model) View() string {
 	helpView := m.help.View(m.keys)
 
 	inputViews := []string{}
-	inputViews = append(inputViews, "Name")
 	var descStyle = descriptionStyle.Width(m.nameInput.Width)
 	inputViews = append(inputViews, descStyle.Render(m.label))
 

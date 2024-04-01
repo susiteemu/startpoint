@@ -25,6 +25,10 @@ var selectModeKeys = []key.Binding{
 		key.WithKeys("q", tea.KeyCtrlC.String()),
 		key.WithHelp("q/ctrl+c", "quit"),
 	),
+	key.NewBinding(
+		key.WithKeys("a"),
+		key.WithHelp("a", "activate profile"),
+	),
 }
 
 var editModeKeys = []key.Binding{
@@ -104,6 +108,10 @@ func newSelectDelegate() list.DefaultDelegate {
 					return PreviewRequestMsg{
 						Request: request,
 					}
+				})
+			case "a":
+				return tea.Cmd(func() tea.Msg {
+					return ActivateProfile{}
 				})
 			}
 		}

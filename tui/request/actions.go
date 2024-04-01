@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"goful/core/client"
 	"goful/core/client/builder"
+	"goful/core/editor"
 	"goful/core/loader"
 	"goful/core/model"
-	"os"
+	"goful/core/writer"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -40,7 +41,7 @@ func doRequest(r Request) tea.Cmd {
 	}
 }
 
-func handlePostAction(m uiModel) {
+func handlePostAction(m Model) {
 	switch m.postAction.Type {
 	case PrintRequest:
 		fmt.Printf("%s\n", m.postAction.Payload.(string))
@@ -71,7 +72,7 @@ headers:
 body: >
 `, name)
 
-	cmd, err := createFileAndReturnOpenToEditorCmd(filename, content)
+	cmd, err := createFileAndReturnOpenToEditorCmd("tmp", filename, content)
 	// TODO get root
 	return "tmp/", filename, cmd, err
 }
@@ -100,70 +101,35 @@ headers = {}
 body = {}
 `, name)
 
-	cmd, err := createFileAndReturnOpenToEditorCmd(filename, content)
+	cmd, err := createFileAndReturnOpenToEditorCmd("tmp", filename, content)
 	// TODO get root
 	return "tmp/", filename, cmd, err
 }
 
-func createFileAndReturnOpenToEditorCmd(filename string, content string) (*exec.Cmd, error) {
-	if len(filename) > 0 {
-		// TODO get workdir from configuration
-		file, err := os.Create(filepath.Join("tmp", filename))
-		if err == nil {
-			defer file.Close()
-			// todo handle err
-			_, err = file.WriteString(content)
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to write file")
-				return nil, err
-			}
-			file.Sync()
-			fileName := file.Name()
-
-			editor, args, err := getEditor()
-			log.Debug().Msgf("Using %s as editor", editor)
-			if err != nil {
-				log.Error().Err(err)
-				return nil, err
-			}
-			args = append(args, fileName)
-
-			cmd := exec.Command(editor, args...)
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			return cmd, nil
-		} else {
-			log.Error().Err(err).Msg("Failed to create file")
-			return nil, err
-		}
+func createFileAndReturnOpenToEditorCmd(root, filename, content string) (*exec.Cmd, error) {
+	if len(root) <= 0 {
+		return nil, errors.New("root must not be empty")
 	}
-	return nil, errors.New("filename must not be empty")
+	if len(filename) <= 0 {
+		return nil, errors.New("filename must not be empty")
+	}
 
+	path, err := writer.WriteFile(filepath.Join(root, filename), content)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create file")
+		return nil, err
+	}
+
+	return editor.OpenFileToEditorCmd(path)
 }
 
 func openFileToEditorCmd(r Request) (*exec.Cmd, error) {
-	if r.Mold.Filename != "" {
-		fileName := filepath.Join(r.Mold.Root, r.Mold.Filename)
-
-		log.Info().Msgf("About to open request file %v\n", fileName)
-		if len(fileName) > 0 {
-			editor, args, err := getEditor()
-			log.Debug().Msgf("Using %s as editor", editor)
-			if err != nil {
-				log.Error().Err(err)
-				return nil, err
-			}
-			args = append(args, fileName)
-
-			cmd := exec.Command(editor, args...)
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			return cmd, nil
-		}
+	if len(r.Mold.Filename) <= 0 {
+		return nil, errors.New("request mold does not have a filename")
 	}
-	return nil, errors.New("request mold does not have a filename")
+	path := filepath.Join(r.Mold.Root, r.Mold.Filename)
+	log.Info().Msgf("About to open request file %v\n", path)
+	return editor.OpenFileToEditorCmd(path)
 }
 
 func getEditor() (string, []string, error) {
@@ -190,28 +156,20 @@ func renameRequest(newName string, r Request) (Request, bool) {
 	r.Name = newName
 	changeMoldName(newName, &r.Mold)
 
-	log.Info().Msgf("Renaming from %s with name %s", oldPath, newName)
+	log.Info().Msgf("Renaming from %s to %s", oldPath, newName)
 	newPath := filepath.Join(r.Mold.Root, r.Mold.Filename)
-	log.Debug().Msgf("Renaming file to %s", newPath)
-	err := os.Rename(oldPath, newPath)
+	err := writer.RenameFile(oldPath, newPath)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to rename file to %s", newPath)
 		return original, false
 	}
 
-	file, err := os.Create(newPath)
+	_, err = writer.WriteFile(newPath, r.Mold.Raw())
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to open file %s", newPath)
-		return original, false
-	}
-	defer file.Close()
-	log.Debug().Msgf("About to write contents %s", r.Mold.Raw())
-	_, err = file.WriteString(r.Mold.Raw())
-	if err != nil {
+		// FIXME in this case, rename file back to what it was?
 		log.Error().Err(err).Msgf("Failed to write to file %s", newPath)
 		return original, false
 	}
-	file.Sync()
 	return r, true
 }
 
@@ -222,24 +180,15 @@ func copyRequest(name string, r Request) (Request, bool) {
 		Method: r.Method,
 		Mold:   r.Mold.Clone(),
 	}
-
 	changeMoldName(name, &copy.Mold)
+
 	path := filepath.Join(copy.Mold.Root, copy.Mold.Filename)
-	file, err := os.Create(path)
-	if err != nil {
-		log.Error().Err(err).Msgf("Failed to open file %s", path)
-		return copy, false
-	}
-	defer file.Close()
-	log.Debug().Msgf("About to write contents %s", copy.Mold.Raw())
-	_, err = file.WriteString(copy.Mold.Raw())
+	_, err := writer.WriteFile(path, copy.Mold.Raw())
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to write to file %s", path)
 		return copy, false
 	}
-	file.Sync()
 	return copy, true
-
 }
 
 func changeMoldName(name string, m *model.RequestMold) {

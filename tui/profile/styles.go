@@ -1,4 +1,4 @@
-package managetui
+package profileui
 
 import (
 	"github.com/charmbracelet/lipgloss"

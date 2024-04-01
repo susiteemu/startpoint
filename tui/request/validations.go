@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func checkRequestWithNameDoesNotExist(m uiModel) func(s string) error {
+func checkRequestWithNameDoesNotExist(m Model) func(s string) error {
 	return func(s string) error {
 		log.Debug().Msgf("Validating %s against list of existing requests %d", s, len(m.list.Items()))
 		for _, item := range m.list.Items() {

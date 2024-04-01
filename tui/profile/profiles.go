@@ -1,11 +1,12 @@
-package managetui
+package profileui
 
 import (
 	"fmt"
 	"goful/core/model"
 	prompt "goful/tui/prompt"
-	"os"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -19,40 +20,69 @@ const (
 	Update
 )
 
+type Mode int
+
+const (
+	Normal Mode = iota
+	Embedded
+)
+
 type Profile struct {
 	Name      string
 	Variables int
+}
+
+/*
+* In embedded mode we disable help from list bubble and instead show our own:
+* could not find a reasonable way to remove key bindings from list's help and
+* in embedded mode we only really want to see select/cancel keys
+*
+ */
+func (k embeddedKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Select, k.Cancel}
+}
+
+func (k embeddedKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Cancel, k.Cancel},
+	}
 }
 
 func (i Profile) Title() string       { return i.Name }
 func (i Profile) Description() string { return fmt.Sprintf("Vars: %d", i.Variables) }
 func (i Profile) FilterValue() string { return i.Name }
 
-type uiModel struct {
-	list   list.Model
-	prompt prompt.Model
-	active ActiveView
-	width  int
-	height int
+type Model struct {
+	list         list.Model
+	prompt       prompt.Model
+	embeddedHelp help.Model
+	active       ActiveView
+	mode         Mode
+	width        int
+	height       int
 }
 
-func (m uiModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.list.SetSize(msg.Width, msg.Height)
+		h := msg.Height
+		if m.mode == Embedded {
+			h = max(0, msg.Height-2)
+		}
+		m.list.SetSize(msg.Width, h)
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "a":
-			if m.active != Create {
+			if m.mode == Normal && m.active != Create {
 				m.active = Create
 				return m, nil
 			}
@@ -73,7 +103,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m uiModel) View() string {
+func (m Model) View() string {
 	switch m.active {
 	case List:
 		return renderList(m)
@@ -84,16 +114,21 @@ func (m uiModel) View() string {
 	}
 }
 
-func renderList(m uiModel) string {
-	return lipgloss.Place(
-		m.width,
-		m.height,
-		lipgloss.Left,
-		lipgloss.Top,
-		m.list.View())
+func renderList(m Model) string {
+	if m.mode == Embedded {
+		helpView := m.embeddedHelp.View(embeddedKeys)
+
+		views := []string{}
+		views = append(views, m.list.View())
+		views = append(views, helpView)
+
+		return lipgloss.JoinVertical(lipgloss.Center, views...)
+
+	}
+	return m.list.View()
 }
 
-func renderCreate(m uiModel) string {
+func renderCreate(m Model) string {
 	return lipgloss.Place(
 		m.width,
 		m.height,
@@ -102,7 +137,15 @@ func renderCreate(m uiModel) string {
 		m.prompt.View())
 }
 
-func Start(loadedProfiles []model.Profile) {
+func NewEmbedded(loadedProfiles []model.Profile, width, height int) Model {
+	return newModel(loadedProfiles, true, width, height)
+}
+
+func New(loadedProfiles []model.Profile) Model {
+	return newModel(loadedProfiles, false, 0, 0)
+}
+
+func newModel(loadedProfiles []model.Profile, embedded bool, width, height int) Model {
 	var profiles []list.Item
 
 	for _, v := range loadedProfiles {
@@ -113,30 +156,40 @@ func Start(loadedProfiles []model.Profile) {
 		profiles = append(profiles, r)
 	}
 
-	d := newSelectDelegate()
-
-	profileList := list.New(profiles, d, 0, 0)
+	d := newNormalDelegate()
+	if embedded {
+		d = newEmbeddedDelegate()
+	}
+	profileList := list.New(profiles, d, width, max(0, height-2))
 	profileList.Title = "Profiles"
 	profileList.Styles.Title = titleStyle
 
-	profileList.Help.Styles.FullKey = helpKeyStyle
-	profileList.Help.Styles.FullDesc = helpDescStyle
-	profileList.Help.Styles.ShortKey = helpKeyStyle
-	profileList.Help.Styles.ShortDesc = helpDescStyle
-	profileList.Help.Styles.ShortSeparator = helpSeparatorStyle
-	profileList.Help.Styles.FullSeparator = helpSeparatorStyle
-
+	var embeddedHelp help.Model
+	if !embedded {
+		profileList.Help.Styles.FullKey = helpKeyStyle
+		profileList.Help.Styles.FullDesc = helpDescStyle
+		profileList.Help.Styles.ShortKey = helpKeyStyle
+		profileList.Help.Styles.ShortDesc = helpDescStyle
+		profileList.Help.Styles.ShortSeparator = helpSeparatorStyle
+		profileList.Help.Styles.FullSeparator = helpSeparatorStyle
+	} else {
+		profileList.SetShowHelp(false)
+		embeddedHelp = help.New()
+		embeddedHelp.Styles.ShortKey = helpKeyStyle
+		embeddedHelp.Styles.ShortDesc = helpDescStyle
+		embeddedHelp.Styles.FullKey = helpKeyStyle
+		embeddedHelp.Styles.FullDesc = helpDescStyle
+		embeddedHelp.Styles.ShortSeparator = helpSeparatorStyle
+		embeddedHelp.Styles.FullSeparator = helpSeparatorStyle
+	}
 	profileList.SetShowStatusBar(false)
 	profileList.SetFilteringEnabled(false)
 
-	m := uiModel{list: profileList, active: List}
-
-	p := tea.NewProgram(m, tea.WithAltScreen())
-
-	_, err := p.Run()
-	if err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
+	mode := Normal
+	if embedded {
+		profileList.DisableQuitKeybindings()
+		mode = Embedded
 	}
 
+	return Model{list: profileList, active: List, mode: mode, width: width, height: height, embeddedHelp: embeddedHelp}
 }

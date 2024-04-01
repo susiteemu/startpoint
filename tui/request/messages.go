@@ -50,6 +50,8 @@ type CopyRequestMsg struct {
 	Request Request
 }
 
+type ActivateProfile struct{}
+
 func createStatusMsg(msg string) tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
 		nowTime := time.Now().Format("15:04:05")

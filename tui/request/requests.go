@@ -3,16 +3,18 @@ package requestui
 import (
 	"fmt"
 	"goful/core/client/validator"
+	"goful/core/loader"
 	"goful/core/model"
 	"goful/core/print"
 	"os/exec"
 	"time"
 
 	preview "goful/tui/preview"
+	profiles "goful/tui/profile"
 	prompt "goful/tui/prompt"
 	"os"
 
-	list "github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -28,6 +30,7 @@ const (
 	Duplicate
 	Preview
 	Stopwatch
+	Profiles
 )
 
 type Mode int
@@ -44,8 +47,8 @@ const (
 )
 
 const (
-	CreateSimpleRequestLabel  = "Choose a name for your complex request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
-	CreateComplexRequestLabel = "Choose a name for your request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
+	CreateComplexRequestLabel = "Choose a name for your complex request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
+	CreateSimpleRequestLabel  = "Choose a name for your request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
 	RenameRequestLabel        = "Rename your request."
 	CopyRequestLabel          = "Choose name for your request."
 )
@@ -120,14 +123,17 @@ func (i Request) Description() string {
 }
 func (i Request) FilterValue() string { return fmt.Sprintf("%s %s %s", i.Name, i.Method, i.Url) }
 
-func updateStatusbar(m *uiModel, msg string) {
+func updateStatusbar(m *Model, msg string) {
 
 	profileText := ""
 	if m.mode == Edit {
 		m.statusbar.FirstColumnColors.Background = statusbarModeEditBg
 		m.statusbar.ThirdColumnColors.Background = statusbarSecondColBg
 	} else {
-		profileText = "dev" // TODO get profile for realz
+		profileText = m.activeProfile.Name
+		if profileText == "" {
+			profileText = "default"
+		}
 		m.statusbar.FirstColumnColors.Background = statusbarModeSelectBg
 		m.statusbar.ThirdColumnColors.Background = statusbarThirdColBg
 	}
@@ -135,24 +141,26 @@ func updateStatusbar(m *uiModel, msg string) {
 	m.statusbar.SetContent(modeStr(m.mode), msg, profileText, "goful")
 }
 
-type uiModel struct {
-	mode       Mode
-	active     ActiveView
-	list       list.Model
-	preview    preview.Model
-	prompt     prompt.Model
-	stopwatch  stopwatch.Model
-	statusbar  statusbar.Model
-	width      int
-	height     int
-	postAction PostAction
+type Model struct {
+	mode          Mode
+	active        ActiveView
+	list          list.Model
+	preview       preview.Model
+	prompt        prompt.Model
+	stopwatch     stopwatch.Model
+	statusbar     statusbar.Model
+	profiles      profiles.Model
+	activeProfile profiles.Profile
+	width         int
+	height        int
+	postAction    PostAction
 }
 
-func (m uiModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -180,7 +188,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		case tea.KeyEsc.String():
-			if m.active == Preview || m.active == Prompt {
+			if m.active == Preview || m.active == Prompt || m.active == Profiles {
 				m.active = List
 				return m, nil
 			}
@@ -359,6 +367,21 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.ExecProcess(cmd, cb)
 		}
+	case ActivateProfile:
+		if m.mode == Select && m.active == List {
+			m.active = Profiles
+			loadedProfiles, err := loader.ReadProfiles("tmp")
+			if err != nil {
+				return m, createStatusMsg("Failed to read profiles")
+			}
+			m.profiles = profiles.NewEmbedded(loadedProfiles, m.width, m.height)
+		}
+
+	case profiles.ProfileSelectedMsg:
+		m.active = List
+		m.activeProfile = msg.Profile
+		updateStatusbar(&m, "")
+		return m, nil
 
 	case StatusMessage:
 		updateStatusbar(&m, string(msg))
@@ -373,13 +396,15 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.prompt, cmd = m.prompt.Update(msg)
 	case Preview:
 		m.preview, cmd = m.preview.Update(msg)
+	case Profiles:
+		m.profiles, cmd = m.profiles.Update(msg)
 	case Stopwatch:
 		m.stopwatch, cmd = m.stopwatch.Update(msg)
 	}
 	return m, cmd
 }
 
-func (m uiModel) View() string {
+func (m Model) View() string {
 	switch m.active {
 	case List:
 		return renderList(m)
@@ -389,12 +414,19 @@ func (m uiModel) View() string {
 		return m.preview.View()
 	case Stopwatch:
 		return stopwatchStyle.Render("Running request... :: Elapsed time: " + m.stopwatch.View())
+	case Profiles:
+		return lipgloss.Place(
+			m.width,
+			m.height,
+			lipgloss.Center,
+			lipgloss.Center,
+			m.profiles.View())
 	default:
 		return renderList(m)
 	}
 }
 
-func renderList(m uiModel) string {
+func renderList(m Model) string {
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
 		lipgloss.NewStyle().Height(m.height-statusbar.Height).Render(m.list.View()),
@@ -402,7 +434,7 @@ func renderList(m uiModel) string {
 	)
 }
 
-func renderPrompt(m uiModel) string {
+func renderPrompt(m Model) string {
 	return lipgloss.Place(
 		m.width,
 		m.height,
@@ -460,7 +492,7 @@ func Start(loadedRequests []model.RequestMold) {
 			Background: statusbarFourthColBg,
 		},
 	)
-	m := uiModel{list: requestList, active: List, mode: Select, stopwatch: stopwatch.NewWithInterval(time.Millisecond), statusbar: sb}
+	m := Model{list: requestList, active: List, mode: Select, stopwatch: stopwatch.NewWithInterval(time.Millisecond), statusbar: sb}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -470,7 +502,7 @@ func Start(loadedRequests []model.RequestMold) {
 		os.Exit(1)
 	}
 
-	if m, ok := r.(uiModel); ok {
+	if m, ok := r.(Model); ok {
 		handlePostAction(m)
 	}
 }

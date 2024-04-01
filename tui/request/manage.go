@@ -1,4 +1,4 @@
-package managetui
+package requestui
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"time"
 
-	preview "goful/tui/request/preview"
-	prompt "goful/tui/request/prompt"
+	preview "goful/tui/preview"
+	prompt "goful/tui/prompt"
 	"os"
 
 	list "github.com/charmbracelet/bubbles/list"

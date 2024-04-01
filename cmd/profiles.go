@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"goful/core/loader"
-	profileManageTui "goful/tui/profile"
+	profileUI "goful/tui/profile"
 
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ var manageProfilesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO handle err
 		loadedProfiles, _ := loader.ReadProfiles("tmp")
-		profileManageTui.Start(loadedProfiles)
+		profileUI.Start(loadedProfiles)
 	},
 }
 

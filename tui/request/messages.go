@@ -1,4 +1,4 @@
-package managetui
+package requestui
 
 import (
 	"fmt"

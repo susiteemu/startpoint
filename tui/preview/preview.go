@@ -1,4 +1,4 @@
-package previewtui
+package previewui
 
 // An example program demonstrating the pager component from the Bubbles
 // component library.

@@ -1,4 +1,4 @@
-package editui
+package promptui
 
 import (
 	"github.com/charmbracelet/bubbles/help"

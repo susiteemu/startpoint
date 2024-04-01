@@ -3,7 +3,7 @@ package managetui
 import (
 	"fmt"
 	"goful/core/model"
-	create "goful/tui/request/prompt"
+	prompt "goful/tui/prompt"
 	"os"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -30,7 +30,7 @@ func (i Profile) FilterValue() string { return i.Name }
 
 type uiModel struct {
 	list   list.Model
-	create create.Model
+	prompt prompt.Model
 	active ActiveView
 	width  int
 	height int
@@ -59,7 +59,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case ProfileSelectedMsg:
 		return m, tea.Quit
-	case create.PromptAnsweredMsg:
+	case prompt.PromptAnsweredMsg:
 		return m, tea.Quit
 	}
 
@@ -68,7 +68,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case List:
 		m.list, cmd = m.list.Update(msg)
 	case Create:
-		m.create, cmd = m.create.Update(msg)
+		m.prompt, cmd = m.prompt.Update(msg)
 	}
 	return m, cmd
 }
@@ -99,7 +99,7 @@ func renderCreate(m uiModel) string {
 		m.height,
 		lipgloss.Center,
 		lipgloss.Center,
-		m.create.View())
+		m.prompt.View())
 }
 
 func Start(loadedProfiles []model.Profile) {

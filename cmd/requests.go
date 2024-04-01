@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"goful/core/loader"
-	requestManageTui "goful/tui/request/manage"
+	requestUI "goful/tui/request"
 
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ var manageCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO handle err
 		loadedRequests, _ := loader.ReadRequests("tmp")
-		requestManageTui.Start(loadedRequests)
+		requestUI.Start(loadedRequests)
 	},
 }
 

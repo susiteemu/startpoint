@@ -21,8 +21,8 @@ var (
 
 	stopwatchStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center).Bold(true)
 
-	requestTitleColor = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#cdd6f4"}
-	requestDescColor  = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#bac2de"}
+	profileTitleColor = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#cdd6f4"}
+	profileDescColor  = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#bac2de"}
 
 	statusbarModeSelectBg = lipgloss.AdaptiveColor{Light: "#f9e2af", Dark: "#f9e2af"}
 	statusbarModeEditBg   = lipgloss.AdaptiveColor{Light: "#a6e3a1", Dark: "#a6e3a1"}

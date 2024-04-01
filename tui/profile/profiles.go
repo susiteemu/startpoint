@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mistakenelf/teacup/statusbar"
 )
 
 type ActiveView int
@@ -48,6 +49,10 @@ func (k embeddedKeyMap) FullHelp() [][]key.Binding {
 	}
 }
 
+func updateStatusbar(m *Model, msg string) {
+	m.statusbar.SetContent("EDIT", msg, "", "goful")
+}
+
 func (i Profile) Title() string       { return i.Name }
 func (i Profile) Description() string { return fmt.Sprintf("Vars: %d", i.Variables) }
 func (i Profile) FilterValue() string { return i.Name }
@@ -56,6 +61,7 @@ type Model struct {
 	list         list.Model
 	prompt       prompt.Model
 	embeddedHelp help.Model
+	statusbar    statusbar.Model
 	active       ActiveView
 	mode         Mode
 	width        int
@@ -71,11 +77,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		h := msg.Height
-		if m.mode == Embedded {
-			h = max(0, msg.Height-2)
+		if m.mode == Normal {
+			m.statusbar.SetSize(msg.Width)
+			updateStatusbar(&m, "")
 		}
-		m.list.SetSize(msg.Width, h)
+		m.list.SetWidth(msg.Width)
+		m.list.SetHeight(m.height - 2)
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -125,7 +132,11 @@ func renderList(m Model) string {
 		return lipgloss.JoinVertical(lipgloss.Center, views...)
 
 	}
-	return m.list.View()
+	return lipgloss.JoinVertical(
+		lipgloss.Top,
+		lipgloss.NewStyle().Height(m.height-statusbar.Height).Render(m.list.View()),
+		m.statusbar.View(),
+	)
 }
 
 func renderCreate(m Model) string {
@@ -156,14 +167,17 @@ func newModel(loadedProfiles []model.Profile, embedded bool, width, height int) 
 		profiles = append(profiles, r)
 	}
 
+	title := "Profiles"
 	d := newNormalDelegate()
 	if embedded {
+		title = "Select Profile"
 		d = newEmbeddedDelegate()
 	}
 	profileList := list.New(profiles, d, width, max(0, height-2))
-	profileList.Title = "Profiles"
+	profileList.Title = title
 	profileList.Styles.Title = titleStyle
 
+	var sb statusbar.Model
 	var embeddedHelp help.Model
 	if !embedded {
 		profileList.Help.Styles.FullKey = helpKeyStyle
@@ -172,6 +186,26 @@ func newModel(loadedProfiles []model.Profile, embedded bool, width, height int) 
 		profileList.Help.Styles.ShortDesc = helpDescStyle
 		profileList.Help.Styles.ShortSeparator = helpSeparatorStyle
 		profileList.Help.Styles.FullSeparator = helpSeparatorStyle
+
+		sb = statusbar.New(
+			statusbar.ColorConfig{
+				Foreground: statusbarFourthColFg,
+				Background: statusbarModeEditBg,
+			},
+			statusbar.ColorConfig{
+				Foreground: statusbarSecondColFg,
+				Background: statusbarSecondColBg,
+			},
+			statusbar.ColorConfig{
+				Foreground: statusbarThirdColFg,
+				Background: statusbarSecondColBg,
+			},
+			statusbar.ColorConfig{
+				Foreground: statusbarFourthColFg,
+				Background: statusbarFourthColBg,
+			},
+		)
+
 	} else {
 		profileList.SetShowHelp(false)
 		embeddedHelp = help.New()
@@ -191,5 +225,5 @@ func newModel(loadedProfiles []model.Profile, embedded bool, width, height int) 
 		mode = Embedded
 	}
 
-	return Model{list: profileList, active: List, mode: mode, width: width, height: height, embeddedHelp: embeddedHelp}
+	return Model{list: profileList, active: List, mode: mode, width: width, height: height, embeddedHelp: embeddedHelp, statusbar: sb}
 }

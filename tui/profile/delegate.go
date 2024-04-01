@@ -43,13 +43,17 @@ var editKeys = []key.Binding{
 		key.WithKeys(tea.KeyEnter.String(), "e"),
 		key.WithHelp(tea.KeyEnter.String()+"/e", "edit"),
 	),
+	key.NewBinding(
+		key.WithKeys("p"),
+		key.WithHelp("p", "preview"),
+	),
 }
 
 func newBaseDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
 	d.SetHeight(3)
-	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(requestTitleColor).BorderLeftForeground(requestTitleColor)
-	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(requestDescColor).BorderLeftForeground(requestDescColor)
+	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(profileTitleColor).BorderLeftForeground(profileTitleColor)
+	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(profileDescColor).BorderLeftForeground(profileDescColor)
 	return d
 }
 

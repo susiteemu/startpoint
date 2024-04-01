@@ -285,8 +285,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case PreviewRequestMsg:
 		if m.active == List {
 			m.active = Preview
-			m.preview.Viewport.Width = m.width
-			m.preview.Viewport.Height = m.height - m.preview.VerticalMarginHeight()
 			selected := msg.Request
 			var formatted string
 			var err error
@@ -300,8 +298,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if formatted == "" || err != nil {
 				formatted = selected.Mold.Raw()
 			}
-			m.preview.Viewport.SetContent(formatted)
-			m.preview.Viewport.YPosition = 0
+			// note: cannot give correct height before preview is created
+			// and we can calculate vertical margin height
+			m.preview = preview.New(selected.Mold.Filename, formatted)
+			height := m.height - m.preview.VerticalMarginHeight()
+			m.preview.SetSize(m.width, height)
+
 			return m, nil
 		}
 	case RenameRequestMsg:

@@ -12,8 +12,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const useHighPerformanceRenderer = false
-
 var (
 	titleStyle = func() lipgloss.Style {
 		b := lipgloss.RoundedBorder()
@@ -29,6 +27,7 @@ var (
 )
 
 type Model struct {
+	title    string
 	Viewport viewport.Model
 }
 
@@ -51,14 +50,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		m.Viewport.Width = msg.Width
 		m.Viewport.Height = msg.Height - verticalMarginHeight
-
-		if useHighPerformanceRenderer {
-			// Render (or re-render) the whole viewport. Necessary both to
-			// initialize the viewport and when the window is resized.
-			//
-			// This is needed for high-performance rendering only.
-			cmds = append(cmds, viewport.Sync(m.Viewport))
-		}
 	}
 
 	// Handle keyboard and mouse events in the viewport
@@ -80,7 +71,7 @@ func (m Model) VerticalMarginHeight() int {
 }
 
 func (m Model) headerView() string {
-	title := titleStyle.Render("Request")
+	title := titleStyle.Render(m.title)
 	line := strings.Repeat("─", max(0, m.Viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
@@ -91,25 +82,17 @@ func (m Model) footerView() string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
 }
 
-func (m Model) SetSize(width int, height int) {
+func (m *Model) SetSize(width int, height int) {
 	m.Viewport.Width = width
 	m.Viewport.Height = height
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func New() Model {
-	// Load some text for our viewport
-
+func New(title, content string) Model {
+	v := viewport.New(0, 0)
+	v.SetContent(content)
 	m := Model{
-		Viewport: viewport.New(0, 0),
+		title:    title,
+		Viewport: v,
 	}
-
 	return m
-
 }

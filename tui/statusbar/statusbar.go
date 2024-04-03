@@ -3,6 +3,7 @@ package statusbarui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/truncate"
 )
 
 const Height = 1
@@ -46,7 +47,8 @@ func (m Model) View() string {
 	}
 	if m.mainItemIndex >= 0 && m.mainItemIndex < len(m.items) {
 		renders = append(renders[:m.mainItemIndex+1], renders[m.mainItemIndex:]...)
-		renders[m.mainItemIndex] = m.itemStyles[m.mainItemIndex].Copy().Width(m.width - otherItemWidths).Render(m.items[m.mainItemIndex].Text)
+		truncatedText := truncate.StringWithTail(m.items[m.mainItemIndex].Text, uint(m.width-otherItemWidths-3), "...")
+		renders[m.mainItemIndex] = m.itemStyles[m.mainItemIndex].Copy().Width(m.width - otherItemWidths).Render(truncatedText)
 	}
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Top,
@@ -54,6 +56,14 @@ func (m Model) View() string {
 	)
 
 	return statusBarStyle.Width(m.width).Height(Height).Render(bar)
+}
+
+func (m *Model) ChangeText(text string, index int) {
+	if index >= 0 && index < len(m.items) {
+		item := m.items[index]
+		item.Text = text
+		m.items[index] = item
+	}
 }
 
 func (m *Model) SetItem(item StatusbarItem, index int) {

@@ -1,6 +1,8 @@
 package promptui
 
 import (
+	"goful/tui/styles"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -8,9 +10,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var promptStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f44")).BorderStyle(lipgloss.RoundedBorder()).Padding(1)
 var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#a6e3a1")).BorderStyle(lipgloss.NormalBorder()).Padding(1)
 var errInputStyle = inputStyle.Copy().BorderForeground(lipgloss.Color("#f38ba8"))
-var descriptionStyle = lipgloss.NewStyle().Padding(1)
+var descriptionStyle = lipgloss.NewStyle()
+var helpStyle = lipgloss.NewStyle().Padding(1, 1, 0, 1)
 
 type keyMap struct {
 	Save key.Binding
@@ -79,7 +83,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 
-	helpView := m.help.View(m.keys)
+	helpView := helpStyle.Render(m.help.View(m.keys))
 
 	inputViews := []string{}
 	var descStyle = descriptionStyle.Width(m.nameInput.Width)
@@ -93,7 +97,7 @@ func (m Model) View() string {
 	inputViews = append(inputViews, style.Render(m.nameInput.View()))
 	inputViews = append(inputViews, helpView)
 
-	return lipgloss.JoinVertical(lipgloss.Left, inputViews...)
+	return promptStyle.Render(lipgloss.JoinVertical(lipgloss.Left, inputViews...))
 
 }
 
@@ -109,12 +113,20 @@ func New(context PromptContext, initialValue string, label string, validator fun
 		nameInput.Validate = validator
 	}
 
+	help := help.New()
+	help.Styles.FullKey = styles.HelpKeyStyle
+	help.Styles.FullDesc = styles.HelpDescStyle
+	help.Styles.ShortKey = styles.HelpKeyStyle
+	help.Styles.ShortDesc = styles.HelpDescStyle
+	help.Styles.ShortSeparator = styles.HelpSeparatorStyle
+	help.Styles.FullSeparator = styles.HelpSeparatorStyle
+
 	return Model{
 		context:   context,
 		nameInput: nameInput,
 		label:     label,
 		keys:      keys,
-		help:      help.New(),
+		help:      help,
 	}
 }
 

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"goful/core/model"
 	prompt "goful/tui/prompt"
+	statusbar "goful/tui/statusbar"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mistakenelf/teacup/statusbar"
 )
 
 type ActiveView int
@@ -50,7 +50,10 @@ func (k embeddedKeyMap) FullHelp() [][]key.Binding {
 }
 
 func updateStatusbar(m *Model, msg string) {
-	m.statusbar.SetContent("EDIT", msg, "", "goful")
+	msgItem := statusbar.StatusbarItem{
+		Text: msg, BackgroundColor: statusbarFirstColBg, ForegroundColor: statusbarFirstColFg,
+	}
+	m.statusbar.SetItem(msgItem, 0)
 }
 
 func (i Profile) Title() string       { return i.Name }
@@ -78,7 +81,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		if m.mode == Normal {
-			m.statusbar.SetSize(msg.Width)
+			m.statusbar.SetWidth(msg.Width)
 			updateStatusbar(&m, "")
 		}
 		m.list.SetWidth(msg.Width)
@@ -187,25 +190,12 @@ func newModel(loadedProfiles []model.Profile, embedded bool, width, height int) 
 		profileList.Help.Styles.ShortSeparator = helpSeparatorStyle
 		profileList.Help.Styles.FullSeparator = helpSeparatorStyle
 
-		sb = statusbar.New(
-			statusbar.ColorConfig{
-				Foreground: statusbarFourthColFg,
-				Background: statusbarModeEditBg,
-			},
-			statusbar.ColorConfig{
-				Foreground: statusbarSecondColFg,
-				Background: statusbarSecondColBg,
-			},
-			statusbar.ColorConfig{
-				Foreground: statusbarThirdColFg,
-				Background: statusbarSecondColBg,
-			},
-			statusbar.ColorConfig{
-				Foreground: statusbarFourthColFg,
-				Background: statusbarFourthColBg,
-			},
-		)
+		statusbarItems := []statusbar.StatusbarItem{
+			{Text: "", BackgroundColor: statusbarFirstColBg, ForegroundColor: statusbarFirstColFg},
+			{Text: "goful", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
+		}
 
+		sb = statusbar.New(statusbarItems, 0, 0)
 	} else {
 		profileList.SetShowHelp(false)
 		embeddedHelp = help.New()

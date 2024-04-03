@@ -12,13 +12,14 @@ import (
 	preview "goful/tui/preview"
 	profiles "goful/tui/profile"
 	prompt "goful/tui/prompt"
+	statusbar "goful/tui/statusbar"
+	"goful/tui/styles"
 	"os"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mistakenelf/teacup/statusbar"
 	"github.com/rs/zerolog/log"
 )
 
@@ -47,10 +48,9 @@ const (
 )
 
 const (
-	CreateComplexRequestLabel = "Choose a name for your complex request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
-	CreateSimpleRequestLabel  = "Choose a name for your request. Make it filename compatible and unique within this workspace. After pressing <enter> program will open your $EDITOR and quit. You will then be able to write the contents of the request."
-	RenameRequestLabel        = "Rename your request."
-	CopyRequestLabel          = "Choose name for your request."
+	CreateRequestLabel = "Choose a name for your request. Make it filename compatible and unique within this workspace. After choosing \"ok\" your $EDITOR will open and you will be able to write the contents of the request. Remember to quit your editor window to return back."
+	RenameRequestLabel = "Rename your request."
+	CopyRequestLabel   = "Choose name for your request."
 )
 
 const (
@@ -125,20 +125,36 @@ func (i Request) FilterValue() string { return fmt.Sprintf("%s %s %s", i.Name, i
 
 func updateStatusbar(m *Model, msg string) {
 
+	var modeBg lipgloss.Color
+	var profileBg lipgloss.Color
 	profileText := ""
 	if m.mode == Edit {
-		m.statusbar.FirstColumnColors.Background = statusbarModeEditBg
-		m.statusbar.ThirdColumnColors.Background = statusbarSecondColBg
+		modeBg = statusbarModeEditBg
+		profileBg = statusbarSecondColBg
 	} else {
 		profileText = m.activeProfile.Name
 		if profileText == "" {
 			profileText = "default"
 		}
-		m.statusbar.FirstColumnColors.Background = statusbarModeSelectBg
-		m.statusbar.ThirdColumnColors.Background = statusbarThirdColBg
+		modeBg = statusbarModeSelectBg
+		profileBg = statusbarThirdColBg
 	}
 
-	m.statusbar.SetContent(modeStr(m.mode), msg, profileText, "goful")
+	modeItem := statusbar.StatusbarItem{
+		Text: modeStr(m.mode), BackgroundColor: modeBg, ForegroundColor: statusbarFirstColFg,
+	}
+
+	msgItem := statusbar.StatusbarItem{
+		Text: msg, BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg,
+	}
+
+	profileItem := statusbar.StatusbarItem{
+		Text: profileText, BackgroundColor: profileBg, ForegroundColor: statusbarThirdColFg,
+	}
+
+	m.statusbar.SetItem(modeItem, 0)
+	m.statusbar.SetItem(msgItem, 1)
+	m.statusbar.SetItem(profileItem, 2)
 }
 
 type Model struct {
@@ -165,7 +181,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.statusbar.SetSize(msg.Width)
+		m.statusbar.SetWidth(msg.Width)
 		updateStatusbar(&m, "")
 		m.list.SetWidth(msg.Width)
 		m.list.SetHeight(m.height - 2)
@@ -224,10 +240,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case CreateRequestMsg:
 		if m.mode == Edit && m.active == List {
 			promptKey := CreateSimpleRequest
-			promptLabel := CreateSimpleRequestLabel
+			promptLabel := CreateRequestLabel
 			if !msg.Simple {
 				promptKey = CreateComplexRequest
-				promptLabel = CreateComplexRequestLabel
+				promptLabel = CreateRequestLabel
 			}
 			m.active = Prompt
 			m.prompt = prompt.New(prompt.PromptContext{
@@ -442,7 +458,9 @@ func renderPrompt(m Model) string {
 		m.height,
 		lipgloss.Center,
 		lipgloss.Center,
-		m.prompt.View())
+		m.prompt.View(),
+		lipgloss.WithWhitespaceChars("."),
+		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}))
 }
 
 func Start(loadedRequests []model.RequestMold) {
@@ -461,7 +479,7 @@ func Start(loadedRequests []model.RequestMold) {
 	}
 
 	var d list.DefaultDelegate
-	var modeColor lipgloss.AdaptiveColor
+	var modeColor lipgloss.Color
 	d = newSelectDelegate()
 	modeColor = statusbarModeSelectBg
 
@@ -469,31 +487,21 @@ func Start(loadedRequests []model.RequestMold) {
 	requestList.Title = "Requests"
 	requestList.Styles.Title = titleStyle
 
-	requestList.Help.Styles.FullKey = helpKeyStyle
-	requestList.Help.Styles.FullDesc = helpDescStyle
-	requestList.Help.Styles.ShortKey = helpKeyStyle
-	requestList.Help.Styles.ShortDesc = helpDescStyle
-	requestList.Help.Styles.ShortSeparator = helpSeparatorStyle
-	requestList.Help.Styles.FullSeparator = helpSeparatorStyle
+	requestList.Help.Styles.FullKey = styles.HelpKeyStyle
+	requestList.Help.Styles.FullDesc = styles.HelpDescStyle
+	requestList.Help.Styles.ShortKey = styles.HelpKeyStyle
+	requestList.Help.Styles.ShortDesc = styles.HelpDescStyle
+	requestList.Help.Styles.ShortSeparator = styles.HelpSeparatorStyle
+	requestList.Help.Styles.FullSeparator = styles.HelpSeparatorStyle
 
-	sb := statusbar.New(
-		statusbar.ColorConfig{
-			Foreground: statusbarFourthColFg,
-			Background: modeColor,
-		},
-		statusbar.ColorConfig{
-			Foreground: statusbarSecondColFg,
-			Background: statusbarSecondColBg,
-		},
-		statusbar.ColorConfig{
-			Foreground: statusbarThirdColFg,
-			Background: statusbarThirdColBg,
-		},
-		statusbar.ColorConfig{
-			Foreground: statusbarFourthColFg,
-			Background: statusbarFourthColBg,
-		},
-	)
+	statusbarItems := []statusbar.StatusbarItem{
+		{Text: modeStr(Select), BackgroundColor: modeColor, ForegroundColor: statusbarFirstColFg},
+		{Text: "", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
+		{Text: "", BackgroundColor: statusbarThirdColBg, ForegroundColor: statusbarThirdColFg},
+		{Text: "goful", BackgroundColor: statusbarFourthColBg, ForegroundColor: statusbarFourthColFg},
+	}
+
+	sb := statusbar.New(statusbarItems, 1, 0)
 	m := Model{list: requestList, active: List, mode: Select, stopwatch: stopwatch.NewWithInterval(time.Millisecond), statusbar: sb}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())

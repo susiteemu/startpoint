@@ -30,11 +30,7 @@ var selectModeKeys = []key.Binding{
 var editModeKeys = []key.Binding{
 	key.NewBinding(
 		key.WithKeys("a"),
-		key.WithHelp("a", "add simple"),
-	),
-	key.NewBinding(
-		key.WithKeys("A"),
-		key.WithHelp("A", "add complex"),
+		key.WithHelp("a", "add"),
 	),
 	key.NewBinding(
 		key.WithKeys("p"),
@@ -137,18 +133,18 @@ func newEditModeDelegate() list.DefaultDelegate {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch keypress := msg.String(); keypress {
-			case "a":
-				return tea.Cmd(func() tea.Msg {
-					return CreateRequestMsg{
-						Simple: true,
-					}
-				})
-			case "A":
-				return tea.Cmd(func() tea.Msg {
-					return CreateRequestMsg{
-						Simple: false,
-					}
-				})
+			/*	case "a":
+					return tea.Cmd(func() tea.Msg {
+						return CreateRequestMsg{
+							Simple: true,
+						}
+					})
+				case "A":
+					return tea.Cmd(func() tea.Msg {
+						return CreateRequestMsg{
+							Simple: false,
+						}
+					}) */
 			case "x":
 				return tea.Cmd(func() tea.Msg {
 					return DeleteRequestMsg{

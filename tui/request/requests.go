@@ -188,7 +188,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updateStatusbar(&m, "")
 		m.list.SetWidth(msg.Width)
 		m.list.SetHeight(m.height - 2)
-
 	case tea.KeyMsg:
 		// if we are filtering, it gets all the input
 		if m.active == List && m.list.FilterState() == list.Filtering {
@@ -225,7 +224,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				updateStatusbar(&m, "")
 				return m, nil
 			}
-		case "l":
+		case "a":
 			if m.mode == Edit && m.active == List {
 				m.active = Keyprompt
 				var keys []keyprompt.KeypromptEntry
@@ -416,6 +415,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updateStatusbar(&m, "")
 		return m, nil
 
+	case keyprompt.KeypromptAnsweredMsg:
+		m.active = List
+		if msg.Key == "y" {
+			return m, tea.Cmd(func() tea.Msg {
+				return CreateRequestMsg{
+					Simple: true,
+				}
+			})
+		} else if msg.Key == "s" {
+			return m, tea.Cmd(func() tea.Msg {
+				return CreateRequestMsg{
+					Simple: false,
+				}
+			})
+		} else {
+			return m, nil
+		}
+
 	case StatusMessage:
 		updateStatusbar(&m, string(msg))
 		return m, nil
@@ -454,8 +471,8 @@ func (m Model) View() string {
 			m.width, m.height,
 			lipgloss.Center, lipgloss.Center,
 			stopwatchStyle.Render("Running request\n\n"+m.stopwatch.View()),
-			lipgloss.WithWhitespaceChars("\uea8b"),
-			lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}))
+			lipgloss.WithWhitespaceChars("\u28FF"),
+			lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#313244", Dark: "#313244"}))
 	case Profiles:
 		return lipgloss.Place(
 			m.width,
@@ -483,8 +500,8 @@ func renderPrompt(m Model) string {
 		lipgloss.Center,
 		lipgloss.Center,
 		m.prompt.View(),
-		lipgloss.WithWhitespaceChars("\uea8b"),
-		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}))
+		lipgloss.WithWhitespaceChars("\u28FF"),
+		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#313244", Dark: "#313244"}))
 }
 
 func renderKeyprompt(m Model) string {
@@ -494,8 +511,8 @@ func renderKeyprompt(m Model) string {
 		lipgloss.Center,
 		lipgloss.Center,
 		m.keyprompt.View(),
-		lipgloss.WithWhitespaceChars("\uea8b"),
-		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}))
+		lipgloss.WithWhitespaceChars("\u28FF"),
+		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#313244", Dark: "#313244"}))
 }
 
 func Start(loadedRequests []model.RequestMold) {

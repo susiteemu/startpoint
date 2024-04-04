@@ -2,6 +2,7 @@ package requestui
 
 import (
 	"fmt"
+	keyprompt "goful/tui/keyprompt"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -51,6 +52,11 @@ type CopyRequestMsg struct {
 }
 
 type ActivateProfile struct{}
+
+type ShowKeyprompt struct {
+	Label   string
+	Entries []keyprompt.KeypromptEntry
+}
 
 func createStatusMsg(msg string) tea.Cmd {
 	return tea.Cmd(func() tea.Msg {

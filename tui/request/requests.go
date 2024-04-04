@@ -224,18 +224,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				updateStatusbar(&m, "")
 				return m, nil
 			}
-		case "a":
-			if m.mode == Edit && m.active == List {
-				m.active = Keyprompt
-				var keys []keyprompt.KeypromptEntry
-				keys = append(keys, keyprompt.KeypromptEntry{
-					Text: "yaml", Key: "y",
-				})
-				keys = append(keys, keyprompt.KeypromptEntry{
-					Text: "starlark", Key: "s",
-				})
-				m.keyprompt = keyprompt.New("Select type of request to create", keys)
-			}
+		}
+
+	case ShowKeyprompt:
+		if m.mode == Edit && m.active == List {
+			m.active = Keyprompt
+			m.keyprompt = keyprompt.New(msg.Label, msg.Entries)
 		}
 
 	case RunRequestMsg:

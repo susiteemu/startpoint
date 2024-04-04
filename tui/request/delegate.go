@@ -2,6 +2,7 @@ package requestui
 
 import (
 	"goful/core/client/validator"
+	keyprompt "goful/tui/keyprompt"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -133,18 +134,21 @@ func newEditModeDelegate() list.DefaultDelegate {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch keypress := msg.String(); keypress {
-			/*	case "a":
-					return tea.Cmd(func() tea.Msg {
-						return CreateRequestMsg{
-							Simple: true,
-						}
-					})
-				case "A":
-					return tea.Cmd(func() tea.Msg {
-						return CreateRequestMsg{
-							Simple: false,
-						}
-					}) */
+			case "a":
+				var keys []keyprompt.KeypromptEntry
+				keys = append(keys, keyprompt.KeypromptEntry{
+					Text: "yaml", Key: "y",
+				})
+				keys = append(keys, keyprompt.KeypromptEntry{
+					Text: "starlark", Key: "s",
+				})
+
+				return tea.Cmd(func() tea.Msg {
+					return ShowKeyprompt{
+						Label:   "Select type of request to create",
+						Entries: keys,
+					}
+				})
 			case "x":
 				return tea.Cmd(func() tea.Msg {
 					return DeleteRequestMsg{

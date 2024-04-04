@@ -15,7 +15,7 @@ var (
 	statusMessageStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#f38ba8"))
 
-	stopwatchStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center).Bold(true)
+	stopwatchStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f4")).Border(lipgloss.RoundedBorder()).Align(lipgloss.Center).Bold(true).Padding(2, 5)
 
 	requestTitleColor = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#cdd6f4"}
 	requestDescColor  = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#bac2de"}

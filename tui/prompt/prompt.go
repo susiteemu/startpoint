@@ -11,7 +11,7 @@ import (
 )
 
 var promptStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f44")).BorderStyle(lipgloss.RoundedBorder()).Padding(1)
-var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#a6e3a1")).BorderStyle(lipgloss.NormalBorder()).Padding(1)
+var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f44")).BorderStyle(lipgloss.NormalBorder()).Padding(1).MarginTop(1)
 var errInputStyle = inputStyle.Copy().BorderForeground(lipgloss.Color("#f38ba8"))
 var descriptionStyle = lipgloss.NewStyle()
 var helpStyle = lipgloss.NewStyle().Padding(1, 1, 0, 1)
@@ -104,7 +104,7 @@ func (m Model) View() string {
 func New(context PromptContext, initialValue string, label string, validator func(s string) error, w int) Model {
 	nameInput := textinput.New()
 	nameInput.Focus()
-	nameInput.CharLimit = 32
+	nameInput.CharLimit = 64
 	nameInput.Width = min(64, w-2)
 	nameInput.SetValue(initialValue)
 	nameInput.Prompt = ""
@@ -120,6 +120,8 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	help.Styles.ShortDesc = styles.HelpDescStyle
 	help.Styles.ShortSeparator = styles.HelpSeparatorStyle
 	help.Styles.FullSeparator = styles.HelpSeparatorStyle
+	help.ShortSeparator = "  "
+	help.FullSeparator = "  "
 
 	return Model{
 		context:   context,

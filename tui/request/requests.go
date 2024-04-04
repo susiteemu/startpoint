@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"time"
 
+	keyprompt "goful/tui/keyprompt"
 	preview "goful/tui/preview"
 	profiles "goful/tui/profile"
 	prompt "goful/tui/prompt"
@@ -28,6 +29,7 @@ type ActiveView int
 const (
 	List ActiveView = iota
 	Prompt
+	Keyprompt
 	Duplicate
 	Preview
 	Stopwatch
@@ -163,6 +165,7 @@ type Model struct {
 	list          list.Model
 	preview       preview.Model
 	prompt        prompt.Model
+	keyprompt     keyprompt.Model
 	stopwatch     stopwatch.Model
 	statusbar     statusbar.Model
 	profiles      profiles.Model
@@ -204,7 +207,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		case tea.KeyEsc.String():
-			if m.active == Preview || m.active == Prompt || m.active == Profiles {
+			if m.active == Preview || m.active == Prompt || m.active == Profiles || m.active == Keyprompt {
 				m.active = List
 				return m, nil
 			}
@@ -221,6 +224,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.list.SetDelegate(newEditModeDelegate())
 				updateStatusbar(&m, "")
 				return m, nil
+			}
+		case "l":
+			if m.mode == Edit && m.active == List {
+				m.active = Keyprompt
+				var keys []keyprompt.KeypromptEntry
+				keys = append(keys, keyprompt.KeypromptEntry{
+					Text: "yaml", Key: "y",
+				})
+				keys = append(keys, keyprompt.KeypromptEntry{
+					Text: "starlark", Key: "s",
+				})
+				m.keyprompt = keyprompt.New("Select type of request to create", keys)
 			}
 		}
 
@@ -412,6 +427,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list, cmd = m.list.Update(msg)
 	case Prompt:
 		m.prompt, cmd = m.prompt.Update(msg)
+	case Keyprompt:
+		m.keyprompt, cmd = m.keyprompt.Update(msg)
 	case Preview:
 		m.preview, cmd = m.preview.Update(msg)
 	case Profiles:
@@ -428,10 +445,17 @@ func (m Model) View() string {
 		return renderList(m)
 	case Prompt:
 		return renderPrompt(m)
+	case Keyprompt:
+		return renderKeyprompt(m)
 	case Preview:
 		return m.preview.View()
 	case Stopwatch:
-		return stopwatchStyle.Render("Running request... :: Elapsed time: " + m.stopwatch.View())
+		return lipgloss.Place(
+			m.width, m.height,
+			lipgloss.Center, lipgloss.Center,
+			stopwatchStyle.Render("Running request\n\n"+m.stopwatch.View()),
+			lipgloss.WithWhitespaceChars("\uea8b"),
+			lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}))
 	case Profiles:
 		return lipgloss.Place(
 			m.width,
@@ -459,7 +483,18 @@ func renderPrompt(m Model) string {
 		lipgloss.Center,
 		lipgloss.Center,
 		m.prompt.View(),
-		lipgloss.WithWhitespaceChars("."),
+		lipgloss.WithWhitespaceChars("\uea8b"),
+		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}))
+}
+
+func renderKeyprompt(m Model) string {
+	return lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Center,
+		m.keyprompt.View(),
+		lipgloss.WithWhitespaceChars("\uea8b"),
 		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}))
 }
 
@@ -494,6 +529,8 @@ func Start(loadedRequests []model.RequestMold) {
 	requestList.Help.Styles.ShortSeparator = styles.HelpSeparatorStyle
 	requestList.Help.Styles.FullSeparator = styles.HelpSeparatorStyle
 
+	log.Debug().Msgf("Key maps: %v", requestList.KeyMap)
+
 	statusbarItems := []statusbar.StatusbarItem{
 		{Text: modeStr(Select), BackgroundColor: modeColor, ForegroundColor: statusbarFirstColFg},
 		{Text: "", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
@@ -502,7 +539,7 @@ func Start(loadedRequests []model.RequestMold) {
 	}
 
 	sb := statusbar.New(statusbarItems, 1, 0)
-	m := Model{list: requestList, active: List, mode: Select, stopwatch: stopwatch.NewWithInterval(time.Millisecond), statusbar: sb}
+	m := Model{list: requestList, active: List, mode: Select, stopwatch: stopwatch.NewWithInterval(time.Millisecond * 100), statusbar: sb}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

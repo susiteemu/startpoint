@@ -22,10 +22,6 @@ var selectModeKeys = []key.Binding{
 		key.WithHelp("i", "edit mode"),
 	),
 	key.NewBinding(
-		key.WithKeys("q", tea.KeyCtrlC.String()),
-		key.WithHelp("q/ctrl+c", "quit"),
-	),
-	key.NewBinding(
 		key.WithKeys("a"),
 		key.WithHelp("a", "activate profile"),
 	),
@@ -63,10 +59,6 @@ var editModeKeys = []key.Binding{
 	key.NewBinding(
 		key.WithKeys(tea.KeyEsc.String()),
 		key.WithHelp(tea.KeyEsc.String(), "view mode"),
-	),
-	key.NewBinding(
-		key.WithKeys("q", tea.KeyCtrlC.String()),
-		key.WithHelp("q/ctrl+c", "quit"),
 	),
 }
 

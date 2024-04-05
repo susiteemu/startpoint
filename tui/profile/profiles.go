@@ -5,6 +5,7 @@ import (
 	"goful/core/model"
 	prompt "goful/tui/prompt"
 	statusbar "goful/tui/statusbar"
+	"goful/tui/styles"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -61,14 +62,14 @@ func (i Profile) Description() string { return fmt.Sprintf("Vars: %d", i.Variabl
 func (i Profile) FilterValue() string { return i.Name }
 
 type Model struct {
-	list         list.Model
-	prompt       prompt.Model
-	embeddedHelp help.Model
-	statusbar    statusbar.Model
-	active       ActiveView
-	mode         Mode
-	width        int
-	height       int
+	list      list.Model
+	prompt    prompt.Model
+	help      help.Model
+	statusbar statusbar.Model
+	active    ActiveView
+	mode      Mode
+	width     int
+	height    int
 }
 
 func (m Model) Init() tea.Cmd {
@@ -80,12 +81,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.list.SetWidth(msg.Width)
 		if m.mode == Normal {
 			m.statusbar.SetWidth(msg.Width)
+			m.help.Width = msg.Width
+			listHeight := calculateListHeight(m)
+			m.list.SetHeight(listHeight)
 			updateStatusbar(&m, "")
+		} else {
+			m.list.SetHeight(m.height - 2)
 		}
-		m.list.SetWidth(msg.Width)
-		m.list.SetHeight(m.height - 2)
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -94,6 +99,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case "a":
 			if m.mode == Normal && m.active != Create {
 				m.active = Create
+				return m, nil
+			}
+		case "?":
+			if m.active == List {
+				m.help.ShowAll = !m.help.ShowAll
+				listHeight := calculateListHeight(m)
+				m.list.SetHeight(listHeight)
+
 				return m, nil
 			}
 		}
@@ -126,7 +139,7 @@ func (m Model) View() string {
 
 func renderList(m Model) string {
 	if m.mode == Embedded {
-		helpView := m.embeddedHelp.View(embeddedKeys)
+		helpView := m.help.View(embeddedKeys)
 
 		views := []string{}
 		views = append(views, m.list.View())
@@ -135,11 +148,31 @@ func renderList(m Model) string {
 		return lipgloss.JoinVertical(lipgloss.Center, views...)
 
 	}
+	var views []string
+	if m.help.ShowAll {
+		listHeight := calculateListHeight(m)
+		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
+		views = append(views, m.statusbar.View())
+		views = append(views, styles.HelpPaneStyle.Render(m.help.View(m.list)))
+	} else {
+		listHeight := calculateListHeight(m)
+		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
+		views = append(views, m.statusbar.View())
+	}
+
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
-		lipgloss.NewStyle().Height(m.height-statusbar.Height).Render(m.list.View()),
-		m.statusbar.View(),
+		views...,
 	)
+}
+
+func calculateListHeight(m Model) int {
+	listHeight := m.height - statusbar.Height
+	if m.help.ShowAll {
+		helpHeight := lipgloss.Height(styles.HelpPaneStyle.Render(m.help.View(m.list)))
+		listHeight -= helpHeight
+	}
+	return listHeight
 }
 
 func renderCreate(m Model) string {
@@ -179,33 +212,25 @@ func newModel(loadedProfiles []model.Profile, embedded bool, width, height int) 
 	profileList := list.New(profiles, d, width, max(0, height-2))
 	profileList.Title = title
 	profileList.Styles.Title = titleStyle
+	profileList.SetShowHelp(false)
 
 	var sb statusbar.Model
-	var embeddedHelp help.Model
-	if !embedded {
-		profileList.Help.Styles.FullKey = helpKeyStyle
-		profileList.Help.Styles.FullDesc = helpDescStyle
-		profileList.Help.Styles.ShortKey = helpKeyStyle
-		profileList.Help.Styles.ShortDesc = helpDescStyle
-		profileList.Help.Styles.ShortSeparator = helpSeparatorStyle
-		profileList.Help.Styles.FullSeparator = helpSeparatorStyle
+	help := help.New()
+	help.Styles.ShortKey = helpKeyStyle
+	help.Styles.ShortDesc = helpDescStyle
+	help.Styles.FullKey = helpKeyStyle
+	help.Styles.FullDesc = helpDescStyle
+	help.ShortSeparator = "  "
 
+	if !embedded {
 		statusbarItems := []statusbar.StatusbarItem{
 			{Text: "", BackgroundColor: statusbarFirstColBg, ForegroundColor: statusbarFirstColFg},
-			{Text: "goful", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
+			{Text: "? Help", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
 		}
 
 		sb = statusbar.New(statusbarItems, 0, 0)
-	} else {
-		profileList.SetShowHelp(false)
-		embeddedHelp = help.New()
-		embeddedHelp.Styles.ShortKey = helpKeyStyle
-		embeddedHelp.Styles.ShortDesc = helpDescStyle
-		embeddedHelp.Styles.FullKey = helpKeyStyle
-		embeddedHelp.Styles.FullDesc = helpDescStyle
-		embeddedHelp.Styles.ShortSeparator = helpSeparatorStyle
-		embeddedHelp.Styles.FullSeparator = helpSeparatorStyle
 	}
+
 	profileList.SetShowStatusBar(false)
 	profileList.SetFilteringEnabled(false)
 
@@ -215,5 +240,5 @@ func newModel(loadedProfiles []model.Profile, embedded bool, width, height int) 
 		mode = Embedded
 	}
 
-	return Model{list: profileList, active: List, mode: mode, width: width, height: height, embeddedHelp: embeddedHelp, statusbar: sb}
+	return Model{list: profileList, active: List, mode: mode, width: width, height: height, help: help, statusbar: sb}
 }

@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"goful/core/model"
+	"strings"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/rs/zerolog/log"
 )
 
 func SprintFullResponse(resp *model.Response) (string, error) {
@@ -65,7 +67,11 @@ func sprintResponse(resp *model.Response, pretty bool, printHeaders bool, printB
 func getContentType(headers map[string]model.HeaderValues) (string, error) {
 	for k := range headers {
 		if k == "Content-Type" {
-			return headers[k][0], nil
+			contentType := headers[k][0]
+			if strings.Contains(contentType, ";") {
+				contentType = strings.Split(contentType, ";")[0]
+			}
+			return contentType, nil
 		}
 	}
 	return "", errors.New("could not find Content-Type")
@@ -91,6 +97,7 @@ func prettyPrintBody(respBodyStr string, resp *model.Response) (string, error) {
 func resolveBodyLexer(resp *model.Response) chroma.Lexer {
 	var lexer chroma.Lexer
 	contentType, err := getContentType(resp.Headers)
+	log.Debug().Msgf("Content-type %s", contentType)
 	if err != nil {
 		lexer = lexers.Fallback
 	} else {

@@ -7,6 +7,7 @@ import (
 	"goful/core/loader"
 	requestUI "goful/tui/request"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -16,8 +17,12 @@ var manageCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		log.Info().Msg("Starting to handle requests cmd")
 		// TODO handle err
 		loadedRequests, _ := loader.ReadRequests("tmp")
+		log.Info().Msgf("Loaded %d requests", len(loadedRequests))
+		log.Info().Msg("Starting up ui...")
 		requestUI.Start(loadedRequests)
 	},
 }

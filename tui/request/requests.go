@@ -17,6 +17,7 @@ import (
 	"goful/tui/styles"
 	"os"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
@@ -169,6 +170,7 @@ type Model struct {
 	stopwatch     stopwatch.Model
 	statusbar     statusbar.Model
 	profiles      profiles.Model
+	help          help.Model
 	activeProfile profiles.Profile
 	width         int
 	height        int
@@ -185,9 +187,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.statusbar.SetWidth(msg.Width)
-		updateStatusbar(&m, "")
 		m.list.SetWidth(msg.Width)
-		m.list.SetHeight(m.height - 2)
+		m.help.Width = msg.Width
+		listHeight := calculateListHeight(m)
+		m.list.SetHeight(listHeight)
+		updateStatusbar(&m, "")
 	case tea.KeyMsg:
 		// if we are filtering, it gets all the input
 		if m.active == List && m.list.FilterState() == list.Filtering {
@@ -213,6 +217,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.mode == Edit && m.active == List {
 				m.mode = Select
 				m.list.SetDelegate(newSelectDelegate())
+				listHeight := calculateListHeight(m)
+				m.list.SetHeight(listHeight)
 				updateStatusbar(&m, "")
 				return m, nil
 			}
@@ -221,7 +227,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.mode == Select && m.active == List {
 				m.mode = Edit
 				m.list.SetDelegate(newEditModeDelegate())
+				listHeight := calculateListHeight(m)
+				m.list.SetHeight(listHeight)
 				updateStatusbar(&m, "")
+				return m, nil
+			}
+		case "?":
+			if m.active == List {
+				m.help.ShowAll = !m.help.ShowAll
+				listHeight := calculateListHeight(m)
+				m.list.SetHeight(listHeight)
+
 				return m, nil
 			}
 		}
@@ -432,22 +448,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch m.active {
 	case List:
 		m.list, cmd = m.list.Update(msg)
+		cmds = append(cmds, cmd)
 	case Prompt:
 		m.prompt, cmd = m.prompt.Update(msg)
+		cmds = append(cmds, cmd)
 	case Keyprompt:
 		m.keyprompt, cmd = m.keyprompt.Update(msg)
+		cmds = append(cmds, cmd)
 	case Preview:
 		m.preview, cmd = m.preview.Update(msg)
+		cmds = append(cmds, cmd)
 	case Profiles:
 		m.profiles, cmd = m.profiles.Update(msg)
+		cmds = append(cmds, cmd)
 	case Stopwatch:
 		m.stopwatch, cmd = m.stopwatch.Update(msg)
+		cmds = append(cmds, cmd)
 	}
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -480,11 +503,31 @@ func (m Model) View() string {
 }
 
 func renderList(m Model) string {
+	var views []string
+	if m.help.ShowAll {
+		listHeight := calculateListHeight(m)
+		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
+		views = append(views, m.statusbar.View())
+		views = append(views, styles.HelpPaneStyle.Render(m.help.View(m.list)))
+	} else {
+		listHeight := calculateListHeight(m)
+		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
+		views = append(views, m.statusbar.View())
+	}
+
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
-		lipgloss.NewStyle().Height(m.height-statusbar.Height).Render(m.list.View()),
-		m.statusbar.View(),
+		views...,
 	)
+}
+
+func calculateListHeight(m Model) int {
+	listHeight := m.height - statusbar.Height
+	if m.help.ShowAll {
+		helpHeight := lipgloss.Height(styles.HelpPaneStyle.Render(m.help.View(m.list)))
+		listHeight -= helpHeight
+	}
+	return listHeight
 }
 
 func renderPrompt(m Model) string {
@@ -533,24 +576,23 @@ func Start(loadedRequests []model.RequestMold) {
 	requestList.Title = "Requests"
 	requestList.Styles.Title = titleStyle
 
-	requestList.Help.Styles.FullKey = styles.HelpKeyStyle
-	requestList.Help.Styles.FullDesc = styles.HelpDescStyle
-	requestList.Help.Styles.ShortKey = styles.HelpKeyStyle
-	requestList.Help.Styles.ShortDesc = styles.HelpDescStyle
-	requestList.Help.Styles.ShortSeparator = styles.HelpSeparatorStyle
-	requestList.Help.Styles.FullSeparator = styles.HelpSeparatorStyle
-
-	log.Debug().Msgf("Key maps: %v", requestList.KeyMap)
+	requestList.SetShowHelp(false)
 
 	statusbarItems := []statusbar.StatusbarItem{
 		{Text: modeStr(Select), BackgroundColor: modeColor, ForegroundColor: statusbarFirstColFg},
 		{Text: "", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
 		{Text: "", BackgroundColor: statusbarThirdColBg, ForegroundColor: statusbarThirdColFg},
-		{Text: "goful", BackgroundColor: statusbarFourthColBg, ForegroundColor: statusbarFourthColFg},
+		{Text: "? Help", BackgroundColor: statusbarFourthColBg, ForegroundColor: statusbarFourthColFg},
 	}
 
+	help := help.New()
+	help.Styles.ShortKey = styles.HelpKeyStyle
+	help.Styles.ShortDesc = styles.HelpDescStyle
+	help.Styles.FullKey = styles.HelpKeyStyle
+	help.Styles.FullDesc = styles.HelpDescStyle
+
 	sb := statusbar.New(statusbarItems, 1, 0)
-	m := Model{list: requestList, active: List, mode: Select, stopwatch: stopwatch.NewWithInterval(time.Millisecond * 100), statusbar: sb}
+	m := Model{list: requestList, active: List, mode: Select, stopwatch: stopwatch.NewWithInterval(time.Millisecond * 100), statusbar: sb, help: help}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

@@ -3,9 +3,10 @@ package print
 import (
 	"bytes"
 	"errors"
+	"goful/core/model"
+
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/lexers"
-	"goful/core/model"
 )
 
 func SprintFullResponse(resp *model.Response) (string, error) {
@@ -28,11 +29,11 @@ func sprintResponse(resp *model.Response, pretty bool, printHeaders bool, printB
 	respStr := ""
 
 	if printHeaders {
-		respStatusStr, err := SprintStatus(resp)
+		respStatusStr, err := SprintStatus(resp, pretty)
 		if err != nil {
 			return "", err
 		}
-		respHeadersStr, err := SprintHeaders(resp)
+		respHeadersStr, err := SprintHeaders(resp, pretty)
 		if err != nil {
 			return "", err
 		}
@@ -47,25 +48,15 @@ func sprintResponse(resp *model.Response, pretty bool, printHeaders bool, printB
 		if printHeaders {
 			respStr += "\n"
 		}
+
+		if pretty {
+			respBodyStr, err = prettyPrintBody(respBodyStr, resp)
+			if err != nil {
+				return "", err
+			}
+		}
+
 		respStr += respBodyStr
-	}
-
-	if pretty {
-		buf := new(bytes.Buffer)
-		// FIXME tokenise different parts separately? Now body content-type dictates whole response formatting style
-		lexer := resolveResponseLexer(resp, printHeaders, printBody)
-		style := resolveStyle()
-		formatter := resolveFormatter()
-		iterator, err := lexer.Tokenise(nil, respStr)
-		if err != nil {
-			return "", err
-		}
-		err = formatter.Format(buf, style, iterator)
-		if err != nil {
-			return "", err
-		}
-
-		respStr = buf.String()
 	}
 
 	return respStr, nil
@@ -78,6 +69,40 @@ func getContentType(headers map[string]model.HeaderValues) (string, error) {
 		}
 	}
 	return "", errors.New("could not find Content-Type")
+}
+
+func prettyPrintBody(respBodyStr string, resp *model.Response) (string, error) {
+	buf := new(bytes.Buffer)
+	lexer := resolveBodyLexer(resp)
+	style := resolveStyle()
+	formatter := resolveFormatter()
+	iterator, err := lexer.Tokenise(nil, respBodyStr)
+	if err != nil {
+		return "", err
+	}
+	err = formatter.Format(buf, style, iterator)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+func resolveBodyLexer(resp *model.Response) chroma.Lexer {
+	var lexer chroma.Lexer
+	contentType, err := getContentType(resp.Headers)
+	if err != nil {
+		lexer = lexers.Fallback
+	} else {
+		lexer = lexers.MatchMimeType(contentType)
+	}
+
+	if lexer == nil {
+		lexer = lexers.Fallback
+	}
+
+	lexer = chroma.Coalesce(lexer)
+	return lexer
 }
 
 func resolveResponseLexer(resp *model.Response, printHeaders bool, printBody bool) chroma.Lexer {

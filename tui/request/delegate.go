@@ -15,8 +15,8 @@ var selectModeKeys = []key.Binding{
 		key.WithHelp("p", "preview"),
 	),
 	key.NewBinding(
-		key.WithKeys(tea.KeyEnter.String()),
-		key.WithHelp(tea.KeyEnter.String(), "run request"),
+		key.WithKeys("r"),
+		key.WithHelp("r", "run"),
 	),
 	key.NewBinding(
 		key.WithKeys("i"),
@@ -34,16 +34,16 @@ var editModeKeys = []key.Binding{
 		key.WithHelp("a", "add"),
 	),
 	key.NewBinding(
+		key.WithKeys("e"),
+		key.WithHelp("e", "edit"),
+	),
+	key.NewBinding(
+		key.WithKeys("d"),
+		key.WithHelp("d", "delete"),
+	),
+	key.NewBinding(
 		key.WithKeys("p"),
 		key.WithHelp("p", "preview"),
-	),
-	key.NewBinding(
-		key.WithKeys("x"),
-		key.WithHelp("x", "delete"),
-	),
-	key.NewBinding(
-		key.WithKeys(tea.KeyEnter.String(), "e"),
-		key.WithHelp(tea.KeyEnter.String()+"/e", "edit"),
 	),
 	key.NewBinding(
 		key.WithKeys("r"),
@@ -51,7 +51,7 @@ var editModeKeys = []key.Binding{
 	),
 	key.NewBinding(
 		key.WithKeys("c"),
-		key.WithHelp("c", "copy request"),
+		key.WithHelp("c", "copy"),
 	),
 	key.NewBinding(
 		key.WithKeys(tea.KeyEsc.String()),
@@ -81,7 +81,7 @@ func newSelectDelegate() list.DefaultDelegate {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch keypress := msg.String(); keypress {
-			case "enter":
+			case "r":
 				if !validator.IsValidUrl(request.Url) || !validator.IsValidMethod(request.Method) {
 					return tea.Cmd(func() tea.Msg {
 						return createStatusMsg("Invalid request.")
@@ -149,13 +149,13 @@ func newEditModeDelegate() list.DefaultDelegate {
 						Entries: keys,
 					}
 				})
-			case "x":
+			case "d":
 				return tea.Cmd(func() tea.Msg {
 					return DeleteRequestMsg{
 						Request: request,
 					}
 				})
-			case "enter", "e":
+			case "e":
 				return tea.Cmd(func() tea.Msg {
 					return EditRequestMsg{
 						Request: request,

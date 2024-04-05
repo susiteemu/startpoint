@@ -61,7 +61,7 @@ prev_req:
 # Request url, may contain template variables in a form of {var}
 url:
 # HTTP method
-method:
+method: GET
 # HTTP headers as key-val list, e.g. X-Foo-Bar: SomeValue
 headers:
 # Request body, e.g.
@@ -88,13 +88,13 @@ func createComplexRequestFileCmd(name string) (string, string, *exec.Cmd, error)
 meta:name: %s
 meta:prev_req: <call other request before this>
 doc:url: <your url for display>
-doc:method: <your http method for display>
+doc:method: GET
 """
 # insert contents of your script here, for more see https://github.com/google/starlark-go/blob/master/doc/spec.md
 # Request url
 url = ""
 # HTTP method
-method = ""
+method = "GET"
 # HTTP headers, e.g. { "X-Foo": "bar", "X-Foos": [ "Bar1", "Bar2" ] }
 headers = {}
 # Request body, e.g. { "id": 1, "people": [ {"name": "Joe"}, {"name": "Jane"}, ] }

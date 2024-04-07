@@ -21,9 +21,10 @@ var manageCmd = &cobra.Command{
 		log.Info().Msg("Starting to handle requests cmd")
 		// TODO handle err
 		loadedRequests, _ := loader.ReadRequests("tmp")
+		loadedProfiles, _ := loader.ReadProfiles("tmp")
 		log.Info().Msgf("Loaded %d requests", len(loadedRequests))
 		log.Info().Msg("Starting up ui...")
-		requestUI.Start(loadedRequests)
+		requestUI.Start(loadedRequests, loadedProfiles)
 	},
 }
 

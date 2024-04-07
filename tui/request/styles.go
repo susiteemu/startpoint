@@ -6,11 +6,9 @@ import (
 
 var (
 	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFDF5")).
-			Background(lipgloss.NoColor{}).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#a6e3a1")).
-			Padding(0)
+			Foreground(lipgloss.Color("#11111b")).
+			Background(lipgloss.Color("#a6e3a1")).
+			Padding(0, 1).MarginTop(1)
 
 	statusMessageStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#f38ba8"))

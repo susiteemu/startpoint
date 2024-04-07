@@ -30,7 +30,7 @@ func TestBuildRequestYaml(t *testing.T) {
 		Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
 	}
 
-	request, err := BuildRequest(requestMold, model.Profile{})
+	request, err := BuildRequest(&requestMold, model.Profile{})
 	if err != nil {
 		t.Errorf("did not expect error %v", err)
 		return
@@ -73,7 +73,7 @@ func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 		},
 	}
 
-	request, err := BuildRequest(requestMold, profile)
+	request, err := BuildRequest(&requestMold, profile)
 	if err != nil {
 		t.Errorf("did not expect error %v", err)
 		return
@@ -119,7 +119,7 @@ body = {
 		},
 	}
 
-	request, err := BuildRequest(requestMold, model.Profile{})
+	request, err := BuildRequest(&requestMold, model.Profile{})
 	if err != nil {
 		t.Errorf("did not expect error %v", err)
 		return

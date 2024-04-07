@@ -9,12 +9,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var builders = []func(requestMold model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, bool, error){
+var builders = []func(requestMold *model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, bool, error){
 	buildYamlRequest,
 	buildStarlarkRequest,
 }
 
-func BuildRequest(requestMold model.RequestMold, profile model.Profile) (model.Request, error) {
+func BuildRequest(requestMold *model.RequestMold, profile model.Profile) (model.Request, error) {
+	log.Debug().Msgf("Searching suitable builder for %v", requestMold)
+
 	var request model.Request
 	for _, builder := range builders {
 		result, accept, err := builder(requestMold, model.Response{}, profile)
@@ -29,11 +31,22 @@ func BuildRequest(requestMold model.RequestMold, profile model.Profile) (model.R
 	return request, nil
 }
 
-func BuildRequestUsingPreviousResponse(requestMold model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, error) {
-	return model.Request{}, nil
+func BuildRequestUsingPreviousResponse(requestMold *model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, error) {
+	var request model.Request
+	for _, builder := range builders {
+		result, accept, err := builder(requestMold, previousResponse, profile)
+		if err != nil {
+			return model.Request{}, err
+		}
+		if accept {
+			request = result
+			break
+		}
+	}
+	return request, nil
 }
 
-func buildYamlRequest(requestMold model.RequestMold, _ model.Response, profile model.Profile) (model.Request, bool, error) {
+func buildYamlRequest(requestMold *model.RequestMold, _ model.Response, profile model.Profile) (model.Request, bool, error) {
 	if requestMold.Yaml == nil {
 		return model.Request{}, false, nil
 	}
@@ -61,12 +74,12 @@ func buildYamlRequest(requestMold model.RequestMold, _ model.Response, profile m
 	return request, true, nil
 }
 
-func buildStarlarkRequest(requestMold model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, bool, error) {
+func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse model.Response, profile model.Profile) (model.Request, bool, error) {
 	if requestMold.Starlark == nil {
 		return model.Request{}, false, nil
 	}
 
-	res, err := starlarkng.RunStarlarkScript(requestMold, previousResponse, profile)
+	res, err := starlarkng.RunStarlarkScript(*requestMold, previousResponse, profile)
 	if err != nil {
 		log.Error().Err(err).Msg("Running Starlark script resulted to error")
 		return model.Request{}, true, err

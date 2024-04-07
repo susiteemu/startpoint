@@ -12,4 +12,5 @@ type Response struct {
 	Proto      string
 	Size       int64
 	ReceivedAt time.Time
+	Time       time.Duration
 }

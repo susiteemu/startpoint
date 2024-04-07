@@ -29,7 +29,7 @@ func (m Model) View() string {
 	return m.profiles.View()
 }
 
-func Start(loadedProfiles []model.Profile) {
+func Start(loadedProfiles []*model.Profile) {
 	m := Model{
 		profiles: profiles.New(loadedProfiles),
 	}

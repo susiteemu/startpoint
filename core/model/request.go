@@ -34,7 +34,6 @@ type YamlRequest struct {
 	Raw     string
 }
 
-// FIXME has the same value as RequestMold Raw
 type StarlarkRequest struct {
 	Script string
 }
@@ -84,32 +83,6 @@ func (r *RequestMold) Method() string {
 	return method
 }
 
-func (r *RequestMold) DeleteFromFS() bool {
-	err := os.Remove(fmt.Sprintf("%s/%s", r.Root, r.Filename))
-	if err != nil {
-		log.Error().Err(err).Msgf("Failed to remove file %s", r.Filename)
-		return false
-	}
-	return true
-}
-
-func (r *RequestMold) Rename(newName string) bool {
-	oldName := r.Name()
-	r.Filename = strings.ReplaceAll(r.Filename, oldName, newName)
-	if r.Yaml != nil {
-		r.Yaml.Name = newName
-		pattern := regexp.MustCompile(`(?mU)^name:(.*)$`)
-		nameChanged := pattern.ReplaceAllString(r.Yaml.Raw, fmt.Sprintf("name: %s", newName))
-		r.Yaml.Raw = nameChanged
-	} else if r.Starlark != nil {
-		pattern := regexp.MustCompile(`(?mU)^.*meta:name:(.*)$`)
-		nameChanged := pattern.ReplaceAllString(r.Starlark.Script, fmt.Sprintf("meta:name: %s", newName))
-		r.Starlark.Script = nameChanged
-
-	}
-	return true
-}
-
 func (r *RequestMold) Raw() string {
 	if r.Yaml != nil {
 		return r.Yaml.Raw
@@ -117,6 +90,29 @@ func (r *RequestMold) Raw() string {
 		return r.Starlark.Script
 	}
 	return ""
+}
+
+func (r *RequestMold) PreviousReq() string {
+	var prevReq = ""
+	if r.Yaml != nil {
+		prevReq = r.Yaml.PrevReq
+	} else if r.Starlark != nil {
+		pattern := regexp.MustCompile(`(?mU)^.*meta:prev_req:(.*)$`)
+		match := pattern.FindStringSubmatch(r.Starlark.Script)
+		if len(match) == 2 {
+			prevReq = strings.TrimSpace(match[1])
+		}
+	}
+	return prevReq
+}
+
+func (r *RequestMold) DeleteFromFS() bool {
+	err := os.Remove(fmt.Sprintf("%s/%s", r.Root, r.Filename))
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to remove file %s", r.Filename)
+		return false
+	}
+	return true
 }
 
 func (r *RequestMold) Clone() RequestMold {

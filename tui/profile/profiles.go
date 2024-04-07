@@ -184,15 +184,15 @@ func renderCreate(m Model) string {
 		m.prompt.View())
 }
 
-func NewEmbedded(loadedProfiles []model.Profile, width, height int) Model {
+func NewEmbedded(loadedProfiles []*model.Profile, width, height int) Model {
 	return newModel(loadedProfiles, true, width, height)
 }
 
-func New(loadedProfiles []model.Profile) Model {
+func New(loadedProfiles []*model.Profile) Model {
 	return newModel(loadedProfiles, false, 0, 0)
 }
 
-func newModel(loadedProfiles []model.Profile, embedded bool, width, height int) Model {
+func newModel(loadedProfiles []*model.Profile, embedded bool, width, height int) Model {
 	var profiles []list.Item
 
 	for _, v := range loadedProfiles {

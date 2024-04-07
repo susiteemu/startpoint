@@ -10,8 +10,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func ReadProfiles(root string) ([]model.Profile, error) {
-	var profileSlice []model.Profile
+func ReadProfiles(root string) ([]*model.Profile, error) {
+	var profileSlice []*model.Profile
 	maxDepth := 0
 	err := filepath.WalkDir(root, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
@@ -47,7 +47,7 @@ func ReadProfiles(root string) ([]model.Profile, error) {
 				Variables: envFile,
 			}
 
-			profileSlice = append(profileSlice, profile)
+			profileSlice = append(profileSlice, &profile)
 
 		}
 

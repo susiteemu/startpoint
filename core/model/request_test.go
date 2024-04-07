@@ -28,12 +28,12 @@ body = { "id": 1474, "prev": prev, "bar": [
 	if starlarkRequest.Name() != wantedName {
 		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name(), wantedName)
 	}
-	/*
-		wantedPrevReq := "Some previous request"
-		if starlarkRequest. != wantedPrevReq {
-			t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name(), wantedName)
-		}
-	*/
+
+	wantedPrevReq := "Some previous request"
+	if starlarkRequest.PreviousReq() != wantedPrevReq {
+		t.Errorf("prev_req is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.PreviousReq(), wantedPrevReq)
+	}
+
 	wantedUrl := "http://foobar.com"
 	if starlarkRequest.Url() != wantedUrl {
 		t.Errorf("url is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Url(), wantedUrl)
@@ -85,49 +85,4 @@ body = { "id": 1474, "prev": prev, "bar": [
 		t.Errorf("method is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Method(), wantedMethod)
 	}
 
-}
-
-func TestYamlRequestNameRename(t *testing.T) {
-
-	yamlRequest := RequestMold{
-		Yaml: &YamlRequest{
-			Name:   "A GET request",
-			Url:    "https://httpbin.org/anything",
-			Method: "GET",
-			Raw: `name: A GET request
-url: 'https://httpbin.org/anything'
-method: GET
-headers:
-  X-Foo-Bar: SomeValue
-body: >
-  {
-    "id": 1,
-    "name": "Jane"
-  }`,
-		},
-	}
-
-	ok := yamlRequest.Rename("A changed GET request")
-	if !ok {
-		t.Error("result is not true")
-	}
-	wantedName := "A changed GET request"
-	if yamlRequest.Name() != wantedName {
-		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.Name(), wantedName)
-	}
-
-	wantedRaw := `name: A changed GET request
-url: 'https://httpbin.org/anything'
-method: GET
-headers:
-  X-Foo-Bar: SomeValue
-body: >
-  {
-    "id": 1,
-    "name": "Jane"
-  }`
-
-	if wantedRaw != yamlRequest.Yaml.Raw {
-		t.Errorf("raw is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.Yaml.Raw, wantedRaw)
-	}
 }

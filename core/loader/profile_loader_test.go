@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"fmt"
 	"goful/core/model"
 	"testing"
 
@@ -38,11 +39,16 @@ func TestReadProfiles(t *testing.T) {
 		},
 	}
 
-	for i := 0; i < len(profiles); i++ {
-		p := profiles[i]
-		w := wantedProfiles[i]
-		if !cmp.Equal(p, w) {
-			t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", p, w)
+	for _, w := range wantedProfiles {
+		found := false
+		for _, p := range profiles {
+			if cmp.Equal(*p, w) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error(fmt.Sprintf("wanted %v but not found in %v", w, profiles))
 		}
 	}
 

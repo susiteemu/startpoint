@@ -11,26 +11,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func ReadRequest(root, filename string) (model.RequestMold, error) {
+func ReadRequest(root, filename string) (*model.RequestMold, error) {
 	path := filepath.Join(root, filename)
 	extension := filepath.Ext(filename)
-	request := model.RequestMold{}
+	var request *model.RequestMold
 
 	switch {
 	case extension == ".yaml" || extension == ".yml":
 		file, err := os.ReadFile(path)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to read %s", path)
-			return model.RequestMold{}, err
+			return nil, err
 		}
 		yamlRequest := &model.YamlRequest{}
 		err = yaml.Unmarshal(file, yamlRequest)
 		if err != nil {
-			return model.RequestMold{}, err
+			return nil, err
 		}
 		yamlRequest.Raw = string(file)
 		if yamlRequest.Name != "" {
-			request = model.RequestMold{
+			request = &model.RequestMold{
 				Yaml:        yamlRequest,
 				ContentType: "yaml",
 				Root:        root,
@@ -42,12 +42,12 @@ func ReadRequest(root, filename string) (model.RequestMold, error) {
 		file, err := os.ReadFile(path)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to read %s", path)
-			return model.RequestMold{}, err
+			return nil, err
 		}
 		starlarkRequest := &model.StarlarkRequest{
 			Script: string(file),
 		}
-		request = model.RequestMold{
+		request = &model.RequestMold{
 			Starlark:    starlarkRequest,
 			ContentType: "star",
 			Root:        root,
@@ -59,8 +59,8 @@ func ReadRequest(root, filename string) (model.RequestMold, error) {
 	return request, nil
 }
 
-func ReadRequests(root string) ([]model.RequestMold, error) {
-	var requestSlice []model.RequestMold
+func ReadRequests(root string) ([]*model.RequestMold, error) {
+	var requestSlice []*model.RequestMold
 	maxDepth := 0
 	err := filepath.WalkDir(root, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
@@ -96,7 +96,7 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 					Root:        root,
 					Filename:    filename,
 				}
-				requestSlice = append(requestSlice, request)
+				requestSlice = append(requestSlice, &request)
 			}
 
 		case extension == ".star":
@@ -115,7 +115,7 @@ func ReadRequests(root string) ([]model.RequestMold, error) {
 				Root:        root,
 				Filename:    filename,
 			}
-			requestSlice = append(requestSlice, request)
+			requestSlice = append(requestSlice, &request)
 
 		}
 

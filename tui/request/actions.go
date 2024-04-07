@@ -3,8 +3,8 @@ package requestui
 import (
 	"errors"
 	"fmt"
-	"goful/core/client"
-	"goful/core/client/builder"
+	requestchain "goful/core/chaining"
+	"goful/core/client/runner"
 	"goful/core/editor"
 	"goful/core/loader"
 	"goful/core/model"
@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"goful/core/print"
 
@@ -21,24 +22,33 @@ import (
 	"github.com/spf13/viper"
 )
 
-func doRequest(r Request) tea.Cmd {
+func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Profile) tea.Cmd {
 	// TODO handle errors
 	return func() tea.Msg {
-		req, err := builder.BuildRequest(r.Mold, model.Profile{})
-		if err != nil {
-			return RunRequestFinishedMsg(fmt.Sprintf("failed to build request err: %v", err))
-		}
-		resp, err := client.DoRequest(req)
+
+		chainedRequests := requestchain.ResolveRequestChain(r, all)
+
+		log.Debug().Msgf("Resolved %d chained requests", len(chainedRequests))
+
+		responses, err := runner.RunRequestChain(chainedRequests, profile, interimResult)
 		if err != nil {
 			return RunRequestFinishedMsg(fmt.Sprintf("failed to do request err: %v", err))
 		}
-
-		printed, err := print.SprintPrettyFullResponse(resp)
-		if err != nil {
-			return RunRequestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))
+		var printedResponses string
+		for _, resp := range responses {
+			printed, err := print.SprintPrettyFullResponse(resp)
+			if err != nil {
+				return RunRequestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))
+			}
+			printedResponses += fmt.Sprintf("%s\n\n", printed)
 		}
-		return RunRequestFinishedMsg(printed)
+
+		return RunRequestFinishedMsg(printedResponses)
 	}
+}
+
+func interimResult(took time.Duration, statusCode int) {
+	log.Debug().Msgf("Request with statuscode %d took %s", statusCode, took.String())
 }
 
 func handlePostAction(m Model) {
@@ -123,11 +133,11 @@ func createFileAndReturnOpenToEditorCmd(root, filename, content string) (*exec.C
 	return editor.OpenFileToEditorCmd(path)
 }
 
-func openFileToEditorCmd(r Request) (*exec.Cmd, error) {
-	if len(r.Mold.Filename) <= 0 {
+func openFileToEditorCmd(root, filename string) (*exec.Cmd, error) {
+	if len(filename) <= 0 {
 		return nil, errors.New("request mold does not have a filename")
 	}
-	path := filepath.Join(r.Mold.Root, r.Mold.Filename)
+	path := filepath.Join(root, filename)
 	log.Info().Msgf("About to open request file %v\n", path)
 	return editor.OpenFileToEditorCmd(path)
 }
@@ -144,51 +154,52 @@ func getEditor() (string, []string, error) {
 	return "", []string{}, errors.New("Editor is not configured through configuration file or $EDITOR environment variable.")
 }
 
-func renameRequest(newName string, r Request) (Request, bool) {
+func renameRequest(newName string, r Request, mold model.RequestMold) (Request, *model.RequestMold, bool) {
 	original := Request{
 		Name:   r.Name,
 		Url:    r.Url,
 		Method: r.Method,
-		Mold:   r.Mold.Clone(),
 	}
+	originalMold := mold.Clone()
 
-	oldPath := filepath.Join(r.Mold.Root, r.Mold.Filename)
+	oldPath := filepath.Join(mold.Root, mold.Filename)
 	r.Name = newName
-	changeMoldName(newName, &r.Mold)
+	changeMoldName(newName, &mold)
 
 	log.Info().Msgf("Renaming from %s to %s", oldPath, newName)
-	newPath := filepath.Join(r.Mold.Root, r.Mold.Filename)
+	newPath := filepath.Join(mold.Root, mold.Filename)
 	err := writer.RenameFile(oldPath, newPath)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to rename file to %s", newPath)
-		return original, false
+		return original, &originalMold, false
 	}
 
-	_, err = writer.WriteFile(newPath, r.Mold.Raw())
+	_, err = writer.WriteFile(newPath, mold.Raw())
 	if err != nil {
 		// FIXME in this case, rename file back to what it was?
 		log.Error().Err(err).Msgf("Failed to write to file %s", newPath)
-		return original, false
+		return original, &originalMold, false
 	}
-	return r, true
+	return r, &mold, true
 }
 
-func copyRequest(name string, r Request) (Request, bool) {
+func copyRequest(name string, r Request, mold model.RequestMold) (Request, *model.RequestMold, bool) {
 	copy := Request{
 		Name:   name,
 		Url:    r.Url,
 		Method: r.Method,
-		Mold:   r.Mold.Clone(),
 	}
-	changeMoldName(name, &copy.Mold)
+	copyMold := mold.Clone()
 
-	path := filepath.Join(copy.Mold.Root, copy.Mold.Filename)
-	_, err := writer.WriteFile(path, copy.Mold.Raw())
+	changeMoldName(name, &copyMold)
+
+	path := filepath.Join(copyMold.Root, copyMold.Filename)
+	_, err := writer.WriteFile(path, copyMold.Raw())
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to write to file %s", path)
-		return copy, false
+		return r, &mold, false
 	}
-	return copy, true
+	return copy, &copyMold, true
 }
 
 func changeMoldName(name string, m *model.RequestMold) {
@@ -206,17 +217,16 @@ func changeMoldName(name string, m *model.RequestMold) {
 	}
 }
 
-func readRequest(root, filename string) (Request, bool) {
+func readRequest(root, filename string) (Request, *model.RequestMold, bool) {
 	mold, err := loader.ReadRequest(root, filename)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to read request")
-		return Request{}, false
+		return Request{}, nil, false
 	}
 	request := Request{
 		Name:   mold.Name(),
 		Method: mold.Method(),
 		Url:    mold.Url(),
-		Mold:   mold,
 	}
-	return request, true
+	return request, mold, true
 }

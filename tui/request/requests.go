@@ -144,13 +144,13 @@ func updateStatusbar(m *Model, msg string) {
 
 	var modeBg lipgloss.Color
 	var profileBg lipgloss.Color
-	profileText := ""
+	var profileText string
 	if m.mode == Edit {
 		modeBg = statusbarModeEditBg
 		profileBg = statusbarSecondColBg
 	} else {
-		var profileText string
 		if m.activeProfile != nil {
+			log.Debug().Msgf("Active profile is %v", m.activeProfile.Name)
 			profileText = m.activeProfile.Name
 		}
 		if profileText == "" {
@@ -373,7 +373,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.active = Preview
 			selected, err := findRequestMold(msg.Request, m)
 			if err != nil {
-				// TODO handle err
+				return m, createStatusMsg(fmt.Sprintf("Failed to open %s for preview", msg.Request.Title()))
 			}
 			var formatted string
 			switch selected.ContentType {
@@ -481,6 +481,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case profiles.ProfileSelectedMsg:
 		m.active = List
+		log.Debug().Msgf("Selected profile %v", msg.Profile.Name)
 		var activeProfile *model.Profile
 		for _, p := range m.profiles {
 			if p.Name == msg.Profile.Name {
@@ -488,6 +489,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
+		log.Debug().Msgf("Matched with profile %v", activeProfile)
 		if activeProfile == nil {
 			// TODO handle err
 			return m, createStatusMsg("Failed to set profile")

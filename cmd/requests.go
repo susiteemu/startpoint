@@ -4,25 +4,35 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"goful/core/loader"
 	requestUI "goful/tui/request"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-// manageCmd represents the manage command
 var manageCmd = &cobra.Command{
 	Use:   "requests",
-	Short: "A brief description of your command",
+	Short: "Starts up tui application to manage and run requests",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		log.Info().Msg("Starting to handle requests cmd")
-		// TODO handle err
-		loadedRequests, _ := loader.ReadRequests("tmp")
-		loadedProfiles, _ := loader.ReadProfiles("tmp")
-		log.Info().Msgf("Loaded %d requests", len(loadedRequests))
+		log.Info().Msgf("Starting to handle requests cmd with workspace root %s", viper.GetString("workspace"))
+		workspace := viper.GetString("workspace")
+		loadedRequests, err := loader.ReadRequests(workspace)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to read requests")
+			fmt.Printf("Failed to read requests %v", err)
+			return
+		}
+		loadedProfiles, err := loader.ReadProfiles(workspace)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to read profiles")
+			fmt.Printf("Failed to read profiles %v", err)
+			return
+		}
+		log.Info().Msgf("Loaded %d requests and %d profiles", len(loadedRequests), len(loadedProfiles))
 		log.Info().Msg("Starting up ui...")
 		requestUI.Start(loadedRequests, loadedProfiles)
 	},
@@ -30,14 +40,4 @@ var manageCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(manageCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// manageCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// manageCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

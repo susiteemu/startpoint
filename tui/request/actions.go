@@ -82,9 +82,9 @@ headers:
 body: >
 `, name)
 
-	cmd, err := createFileAndReturnOpenToEditorCmd("tmp", filename, content)
-	// TODO get root
-	return "tmp/", filename, cmd, err
+	workspace := viper.GetString("workspace")
+	cmd, err := createFileAndReturnOpenToEditorCmd(workspace, filename, content)
+	return workspace, filename, cmd, err
 }
 
 func createComplexRequestFileCmd(name string) (string, string, *exec.Cmd, error) {
@@ -111,9 +111,9 @@ headers = {}
 body = {}
 `, name)
 
-	cmd, err := createFileAndReturnOpenToEditorCmd("tmp", filename, content)
-	// TODO get root
-	return "tmp/", filename, cmd, err
+	workspace := viper.GetString("workspace")
+	cmd, err := createFileAndReturnOpenToEditorCmd(workspace, filename, content)
+	return workspace, filename, cmd, err
 }
 
 func createFileAndReturnOpenToEditorCmd(root, filename, content string) (*exec.Cmd, error) {

@@ -60,6 +60,9 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
+	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Workspace directory")
+	viper.BindPFlag("workspace", rootCmd.PersistentFlags().Lookup("workspace"))
+
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goful.yaml)")
 }
 
@@ -82,6 +85,7 @@ func initConfig() {
 
 	viper.SetDefault("theme.syntax", "native")
 	viper.SetDefault("printer.response.formatter", "terminal16m")
+	viper.SetDefault("workspace", ".")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {

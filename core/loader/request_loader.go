@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -61,13 +60,13 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 
 func ReadRequests(root string) ([]*model.RequestMold, error) {
 	var requestSlice []*model.RequestMold
-	maxDepth := 0
 	err := filepath.WalkDir(root, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if info.IsDir() && strings.Count(path, string(os.PathSeparator)) > maxDepth {
+		// this prevents walking into subdirectories
+		if info.IsDir() && info.Name() != root {
 			return fs.SkipDir
 		}
 

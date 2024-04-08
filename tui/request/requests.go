@@ -256,7 +256,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.help.ShowAll = !m.help.ShowAll
 				listHeight := calculateListHeight(m)
 				m.list.SetHeight(listHeight)
-
 				return m, nil
 			}
 		}
@@ -336,7 +335,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == Edit && m.active == List {
 			requestMold, err := findRequestMold(msg.Request, m)
 			if err != nil {
-				// TODO show error if request mold is not found
+				log.Error().Err(err).Msgf("Failed to find request mold with %v", msg.Request)
 				return m, createStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
 			}
 			deleted := requestMold.DeleteFromFS()
@@ -355,7 +354,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err == nil {
 			requestMold, err := findRequestMold(oldRequest, m)
 			if err != nil {
-				// TODO show error if request mold is not found
+				log.Error().Err(err).Msgf("Failed to find request mold with %v", msg.Request)
 				return m, createStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
 			}
 			editedRequest, editedRequestMold, ok := readRequest(requestMold.Root, requestMold.Filename)
@@ -373,6 +372,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.active = Preview
 			selected, err := findRequestMold(msg.Request, m)
 			if err != nil {
+				log.Error().Err(err).Msgf("Failed to find request mold with %v", msg.Request)
 				return m, createStatusMsg(fmt.Sprintf("Failed to open %s for preview", msg.Request.Title()))
 			}
 			var formatted string
@@ -417,7 +417,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			request := msg.Context.Additional.(Request)
 			requestMold, err := findRequestMold(request, m)
 			if err != nil {
-				// TODO handle err
+				log.Error().Err(err).Msgf("Failed to find request mold with %v", request)
 				return m, createStatusMsg("Failed to rename request")
 			}
 			moldIndex := slices.Index(m.requestMolds, requestMold)
@@ -434,7 +434,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			request := msg.Context.Additional.(Request)
 			requestMold, err := findRequestMold(request, m)
 			if err != nil {
-				// TODO handle err
+				log.Error().Err(err).Msgf("Failed to find request mold with %v", request)
 				return m, createStatusMsg("Failed to copy request")
 			}
 			copiedRequest, copiedRequestMold, ok := copyRequest(msg.Input, request, *requestMold)
@@ -491,7 +491,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		log.Debug().Msgf("Matched with profile %v", activeProfile)
 		if activeProfile == nil {
-			// TODO handle err
 			return m, createStatusMsg("Failed to set profile")
 		}
 		m.activeProfile = activeProfile

@@ -85,7 +85,14 @@ func initConfig() {
 
 	viper.SetDefault("theme.syntax", "native")
 	viper.SetDefault("printer.response.formatter", "terminal16m")
-	viper.SetDefault("workspace", ".")
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	cobra.CheckErr(err)
+	viper.SetDefault("workspace", cwd)
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {

@@ -17,7 +17,8 @@ func ReadProfiles(root string) ([]*model.Profile, error) {
 			return err
 		}
 
-		if info.IsDir() && info.Name() != root {
+		// this prevents walking into subdirectories
+		if info.IsDir() && path != root {
 			return fs.SkipDir
 		}
 

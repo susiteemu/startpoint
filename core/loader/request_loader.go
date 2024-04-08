@@ -66,7 +66,7 @@ func ReadRequests(root string) ([]*model.RequestMold, error) {
 		}
 
 		// this prevents walking into subdirectories
-		if info.IsDir() && info.Name() != root {
+		if info.IsDir() && path != root {
 			return fs.SkipDir
 		}
 

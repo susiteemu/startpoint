@@ -1,8 +1,8 @@
 package starlarkng
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"goful/core/model"
 	"goful/core/scripting/starlark/goconv"
 	"goful/core/scripting/starlark/starlarkconv"
@@ -26,15 +26,36 @@ func RunStarlarkScript(request model.RequestMold, previousResponse model.Respons
 		return nil, err
 	}
 
-	var previousResponseValues starlark.Value
-	previousResponseValues, err = starlarkconv.Convert(previousResponse)
+	// convert model.HeaderValues into []string to pass it to starlarkconv
+	headers := make(map[string][]string)
+	for k, v := range previousResponse.Headers {
+		headers[k] = v
+	}
+
+	prevRespHeaders, err := starlarkconv.Convert(headers)
 	if err != nil {
 		return nil, err
 	}
 
+	// convert body to map if possible
+	// TODO check content-type: is application/json?
+	var bodyAsMap map[string]interface{}
+	err = json.Unmarshal(previousResponse.Body, &bodyAsMap)
+	if err != nil {
+		// TODO handle err
+	}
+
+	previousResponseBody, err := starlarkconv.Convert(bodyAsMap)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug().Msgf("previousResponseBody %v", previousResponseBody)
+
 	predeclared := starlark.StringDict{
-		"profile":          profileValues,
-		"previousResponse": previousResponseValues,
+		"profile":             profileValues,
+		"prevResponseBody":    previousResponseBody,
+		"prevResponseHeaders": prevRespHeaders,
 	}
 
 	thread := &starlark.Thread{Name: "starlark runner thread"}
@@ -53,7 +74,7 @@ func RunStarlarkScript(request model.RequestMold, previousResponse model.Respons
 
 	globals, err := starlark.ExecFileOptions(&fileOptions, thread, request.Name(), starlarkRequest.Script, predeclared)
 	if err != nil {
-		fmt.Print(err)
+		log.Error().Err(err).Msg("Failed to exec starlark script")
 		return nil, err
 	}
 

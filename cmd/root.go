@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -15,9 +16,8 @@ import (
 
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "goful-cli",
+	Use:   "goful",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -25,8 +25,6 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("Root: Config file used: %v\n", viper.ConfigFileUsed())
 		fmt.Printf("Root: All keys: %v\n", viper.AllKeys())
@@ -43,8 +41,17 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	runLogFile, _ := os.OpenFile(
-		"app.log",
+	rootCmd.PersistentFlags().Bool("help", false, "Displays help")
+
+	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Workspace directory")
+	viper.BindPFlag("workspace", rootCmd.PersistentFlags().Lookup("workspace"))
+
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goful.yaml)")
+
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+	logFile := filepath.Join(home, "goful.log")
+	runLogFile, _ := os.OpenFile(logFile,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 		0664,
 	)
@@ -55,27 +62,14 @@ func init() {
 		log.Info().Msg("Initialized logging")
 		return nil
 	}
-	rootCmd.PersistentFlags().Bool("help", false, "Displays help")
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Workspace directory")
-	viper.BindPFlag("workspace", rootCmd.PersistentFlags().Lookup("workspace"))
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goful.yaml)")
 }
 
-// initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	if cfgFile != "" {
-		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
-
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(".goful")

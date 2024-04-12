@@ -32,7 +32,7 @@ func RunStarlarkScript(request model.RequestMold, previousResponse model.Respons
 		headers[k] = v
 	}
 
-	prevRespHeaders, err := starlarkconv.Convert(headers)
+	prevResponseHeaders, err := starlarkconv.Convert(headers)
 	if err != nil {
 		return nil, err
 	}
@@ -45,17 +45,20 @@ func RunStarlarkScript(request model.RequestMold, previousResponse model.Respons
 		// TODO handle err
 	}
 
-	previousResponseBody, err := starlarkconv.Convert(bodyAsMap)
+	prevResponseBody, err := starlarkconv.Convert(bodyAsMap)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug().Msgf("previousResponseBody %v", previousResponseBody)
+	log.Debug().Msgf("previousResponseBody %v", prevResponseBody)
+
+	previousResponseStarlark := starlark.Dict{}
+	previousResponseStarlark.SetKey(starlark.String("body"), prevResponseBody)
+	previousResponseStarlark.SetKey(starlark.String("headers"), prevResponseHeaders)
 
 	predeclared := starlark.StringDict{
-		"profile":             profileValues,
-		"prevResponseBody":    previousResponseBody,
-		"prevResponseHeaders": prevRespHeaders,
+		"profile":      profileValues,
+		"prevResponse": &previousResponseStarlark,
 	}
 
 	thread := &starlark.Thread{Name: "starlark runner thread"}

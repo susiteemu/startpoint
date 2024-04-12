@@ -1,17 +1,32 @@
 package client
 
 import (
-	"github.com/go-resty/resty/v2"
+	"encoding/json"
 	"goful/core/model"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 func DoRequest(request model.Request) (*model.Response, error) {
-	client := resty.New()
+	//client := resty.New()
 
 	requestHeaders := request.Headers.ToMap()
+	log.Debug().Msgf("Request %v -- %v -- %v", request.Url, request.Body, request.Method)
 	// TODO enable trace?
 	// TODO handle body vs formdata, also check if []byte can be string before casting
-	resp, err := client.R().SetHeaders(requestHeaders).SetBody(request.Body).Execute(request.Method, request.Url)
+	//
+
+	client := resty.New().R().SetHeaders(requestHeaders)
+	if requestHeaders["Content-Type"] == "application/x-www-form-urlencoded" {
+		log.Debug().Msg("Request is form!")
+		var bodyAsMap map[string]string
+		_ = json.Unmarshal([]byte(request.Body.(string)), &bodyAsMap)
+		client = client.SetFormData(bodyAsMap)
+	} else {
+		client = client.SetBody(request.Body)
+	}
+	resp, err := client.Execute(request.Method, request.Url)
 	if err != nil {
 		return &model.Response{}, err
 	}

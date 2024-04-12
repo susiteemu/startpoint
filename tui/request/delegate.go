@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/rs/zerolog/log"
 )
 
 var selectModeKeys = []key.Binding{
@@ -72,32 +73,36 @@ func newSelectDelegate() list.DefaultDelegate {
 
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
 		var request Request
+		requestSelected := false
 		if i, ok := m.SelectedItem().(Request); ok {
 			request = i
-		} else {
-			return nil
+			requestSelected = true
 		}
 
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch keypress := msg.String(); keypress {
 			case "r":
-				if !validator.IsValidUrl(request.Url) || !validator.IsValidMethod(request.Method) {
+				if requestSelected {
+					if !validator.IsValidUrl(request.Url) || !validator.IsValidMethod(request.Method) {
+						return tea.Cmd(func() tea.Msg {
+							return createStatusMsg("Invalid request.")
+						})
+					}
 					return tea.Cmd(func() tea.Msg {
-						return createStatusMsg("Invalid request.")
+						return RunRequestMsg{
+							Request: request,
+						}
 					})
 				}
-				return tea.Cmd(func() tea.Msg {
-					return RunRequestMsg{
-						Request: request,
-					}
-				})
 			case "p":
-				return tea.Cmd(func() tea.Msg {
-					return PreviewRequestMsg{
-						Request: request,
-					}
-				})
+				if requestSelected {
+					return tea.Cmd(func() tea.Msg {
+						return PreviewRequestMsg{
+							Request: request,
+						}
+					})
+				}
 			case "a":
 				return tea.Cmd(func() tea.Msg {
 					return ActivateProfile{}
@@ -125,14 +130,15 @@ func newEditModeDelegate() list.DefaultDelegate {
 
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
 		var request Request
+		requestSelected := false
 		if i, ok := m.SelectedItem().(Request); ok {
 			request = i
-		} else {
-			return nil
+			requestSelected = true
 		}
 
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
+			log.Debug().Msgf("Pressed %s", msg.String())
 			switch keypress := msg.String(); keypress {
 			case "a":
 				var keys []keyprompt.KeypromptEntry
@@ -150,35 +156,45 @@ func newEditModeDelegate() list.DefaultDelegate {
 					}
 				})
 			case "d":
-				return tea.Cmd(func() tea.Msg {
-					return DeleteRequestMsg{
-						Request: request,
-					}
-				})
+				if requestSelected {
+					return tea.Cmd(func() tea.Msg {
+						return DeleteRequestMsg{
+							Request: request,
+						}
+					})
+				}
 			case "e":
-				return tea.Cmd(func() tea.Msg {
-					return EditRequestMsg{
-						Request: request,
-					}
-				})
+				if requestSelected {
+					return tea.Cmd(func() tea.Msg {
+						return EditRequestMsg{
+							Request: request,
+						}
+					})
+				}
 			case "p":
-				return tea.Cmd(func() tea.Msg {
-					return PreviewRequestMsg{
-						Request: request,
-					}
-				})
+				if requestSelected {
+					return tea.Cmd(func() tea.Msg {
+						return PreviewRequestMsg{
+							Request: request,
+						}
+					})
+				}
 			case "r":
-				return tea.Cmd(func() tea.Msg {
-					return RenameRequestMsg{
-						Request: request,
-					}
-				})
+				if requestSelected {
+					return tea.Cmd(func() tea.Msg {
+						return RenameRequestMsg{
+							Request: request,
+						}
+					})
+				}
 			case "c":
-				return tea.Cmd(func() tea.Msg {
-					return CopyRequestMsg{
-						Request: request,
-					}
-				})
+				if requestSelected {
+					return tea.Cmd(func() tea.Msg {
+						return CopyRequestMsg{
+							Request: request,
+						}
+					})
+				}
 			}
 		}
 

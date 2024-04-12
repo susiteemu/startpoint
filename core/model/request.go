@@ -38,6 +38,29 @@ type StarlarkRequest struct {
 	Script string
 }
 
+func (r *Request) IsForm() bool {
+	contentType, ok := r.Headers["Content-Type"]
+	if !ok {
+		return false
+	}
+	if len(contentType) == 0 {
+		return false
+	}
+	return strings.ToLower(contentType[0]) == "application/x-www-form-urlencoded"
+}
+
+func (r *Request) BodyAsMap() (map[string]string, bool) {
+	asMapInterface, ok := r.Body.(map[string]interface{})
+	if !ok {
+		return map[string]string{}, false
+	}
+	asMapString := make(map[string]string)
+	for k, v := range asMapInterface {
+		asMapString[k] = v.(string)
+	}
+	return asMapString, true
+}
+
 func (r *RequestMold) Name() string {
 	if r.Yaml != nil {
 		return r.Yaml.Name

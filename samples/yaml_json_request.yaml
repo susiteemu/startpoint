@@ -1,0 +1,11 @@
+name: YAML json request
+prev_req:
+url: https://httpbin.org/anything
+method: POST
+headers:
+  Content-Type: 'application/json'
+body: >
+  {
+    "id": 1,
+    "name": "Jane"
+  }

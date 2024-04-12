@@ -1,12 +1,14 @@
 package client
 
 import (
-	"encoding/json"
+	"errors"
 	"goful/core/model"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
+
+var client *resty.Client = resty.New()
 
 func DoRequest(request model.Request) (*model.Response, error) {
 	//client := resty.New()
@@ -17,21 +19,23 @@ func DoRequest(request model.Request) (*model.Response, error) {
 	// TODO handle body vs formdata, also check if []byte can be string before casting
 	//
 
-	client := resty.New().R().SetHeaders(requestHeaders)
-	if requestHeaders["Content-Type"] == "application/x-www-form-urlencoded" {
-		log.Debug().Msg("Request is form!")
-		var bodyAsMap map[string]string
-		_ = json.Unmarshal([]byte(request.Body.(string)), &bodyAsMap)
-		client = client.SetFormData(bodyAsMap)
+	r := client.R().SetHeaders(requestHeaders)
+
+	if request.IsForm() {
+		bodyAsMap, ok := request.BodyAsMap()
+		if !ok {
+			return &model.Response{}, errors.New("cannot convert body to map")
+		}
+		r = r.SetFormData(bodyAsMap)
 	} else {
-		client = client.SetBody(request.Body)
+		r = r.SetBody(request.Body)
 	}
-	resp, err := client.Execute(request.Method, request.Url)
+	resp, err := r.Execute(request.Method, request.Url)
 	if err != nil {
 		return &model.Response{}, err
 	}
 
-	r := model.Response{
+	response := model.Response{
 		Headers:    new(model.Headers).FromMap(resp.Header()),
 		Body:       resp.Body(),
 		Status:     resp.Status(),
@@ -58,5 +62,5 @@ func DoRequest(request model.Request) (*model.Response, error) {
 		fmt.Println("  RequestAttempt:", ti.RequestAttempt)
 		fmt.Println("  RemoteAddr    :", ti.RemoteAddr.String())
 	*/
-	return &r, nil
+	return &response, nil
 }

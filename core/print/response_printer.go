@@ -30,6 +30,10 @@ func SprintPrettyResponse(resp *model.Response, printHeaders bool, printBody boo
 func sprintResponse(resp *model.Response, pretty bool, printHeaders bool, printBody bool) (string, error) {
 	respStr := ""
 
+	// TODO
+	traceInfo, _ := SprintTraceInfo(resp.TraceInfo, true)
+	respStr += traceInfo + "\n"
+
 	if printHeaders {
 		respStatusStr, err := SprintStatus(resp, pretty)
 		if err != nil {

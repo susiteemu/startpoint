@@ -19,7 +19,8 @@ func DoRequest(request model.Request) (*model.Response, error) {
 	// TODO handle body vs formdata, also check if []byte can be string before casting
 	//
 
-	r := client.R().SetHeaders(requestHeaders)
+	// TODO have enable trace come from config
+	r := client.R().SetHeaders(requestHeaders).EnableTrace()
 
 	if request.IsForm() {
 		bodyAsMap, ok := request.BodyAsMap()
@@ -35,6 +36,22 @@ func DoRequest(request model.Request) (*model.Response, error) {
 		return &model.Response{}, err
 	}
 
+	ti := resp.Request.TraceInfo()
+	traceInfo := model.TraceInfo{
+		DNSLookup:      ti.DNSLookup,
+		ConnTime:       ti.ConnTime,
+		TCPConnTime:    ti.TCPConnTime,
+		TLSHandshake:   ti.TLSHandshake,
+		ServerTime:     ti.ServerTime,
+		ResponseTime:   ti.ResponseTime,
+		TotalTime:      ti.TotalTime,
+		IsConnReused:   ti.IsConnReused,
+		IsConnWasIdle:  ti.IsConnWasIdle,
+		ConnIdleTime:   ti.ConnIdleTime,
+		RequestAttempt: ti.RequestAttempt,
+		RemoteAddr:     ti.RemoteAddr.String(),
+	}
+
 	response := model.Response{
 		Headers:    new(model.Headers).FromMap(resp.Header()),
 		Body:       resp.Body(),
@@ -44,23 +61,10 @@ func DoRequest(request model.Request) (*model.Response, error) {
 		Size:       resp.Size(),
 		ReceivedAt: resp.ReceivedAt(),
 		Time:       resp.Time(),
+		TraceInfo:  traceInfo,
 	}
 
-	// TODO add trace flag to configuration and add tracing information to return object
-	/*
-		ti := resp.Request.TraceInfo()
-		fmt.Println("  DNSLookup     :", ti.DNSLookup)
-		fmt.Println("  ConnTime      :", ti.ConnTime)
-		fmt.Println("  TCPConnTime   :", ti.TCPConnTime)
-		fmt.Println("  TLSHandshake  :", ti.TLSHandshake)
-		fmt.Println("  ServerTime    :", ti.ServerTime)
-		fmt.Println("  ResponseTime  :", ti.ResponseTime)
-		fmt.Println("  TotalTime     :", ti.TotalTime)
-		fmt.Println("  IsConnReused  :", ti.IsConnReused)
-		fmt.Println("  IsConnWasIdle :", ti.IsConnWasIdle)
-		fmt.Println("  ConnIdleTime  :", ti.ConnIdleTime)
-		fmt.Println("  RequestAttempt:", ti.RequestAttempt)
-		fmt.Println("  RemoteAddr    :", ti.RemoteAddr.String())
-	*/
+	log.Debug().Msgf("TraceInfo: %v", traceInfo)
+
 	return &response, nil
 }

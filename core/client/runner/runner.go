@@ -30,7 +30,7 @@ func RunRequestChain(reqs []*model.RequestMold, profile *model.Profile, interimR
 		var request model.Request
 		var err error
 		if prevResponse != nil {
-			request, err = builder.BuildRequestUsingPreviousResponse(r, *prevResponse, *profile)
+			request, err = builder.BuildRequestUsingPreviousResponse(r, prevResponse, *profile)
 		} else {
 			request, err = builder.BuildRequest(r, *profile)
 		}

@@ -30,3 +30,11 @@ type TraceInfo struct {
 	RequestAttempt int
 	RemoteAddr     string
 }
+
+func (r *Response) HeadersAsMapString() map[string][]string {
+	headers := make(map[string][]string)
+	for k, v := range r.Headers {
+		headers[k] = v
+	}
+	return headers
+}

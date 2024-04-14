@@ -638,10 +638,22 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 		requests = append(requests, r)
 	}
 
+	mode := Select
+	if len(requests) == 0 {
+		mode = Edit
+	}
+
 	var d list.DefaultDelegate
 	var modeColor lipgloss.Color
-	d = newSelectDelegate()
-	modeColor = statusbarModeSelectBg
+
+	switch mode {
+	case Select:
+		d = newSelectDelegate()
+		modeColor = statusbarModeSelectBg
+	case Edit:
+		d = newEditModeDelegate()
+		modeColor = statusbarModeEditBg
+	}
 
 	requestList := list.New(requests, d, 0, 0)
 	requestList.Title = "Requests"
@@ -650,7 +662,7 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	requestList.SetShowHelp(false)
 
 	statusbarItems := []statusbar.StatusbarItem{
-		{Text: modeStr(Select), BackgroundColor: modeColor, ForegroundColor: statusbarFirstColFg},
+		{Text: modeStr(mode), BackgroundColor: modeColor, ForegroundColor: statusbarFirstColFg},
 		{Text: "", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
 		{Text: "", BackgroundColor: statusbarThirdColBg, ForegroundColor: statusbarThirdColFg},
 		{Text: "? Help", BackgroundColor: statusbarFourthColBg, ForegroundColor: statusbarFourthColFg},
@@ -666,7 +678,7 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	m := Model{
 		list:         requestList,
 		active:       List,
-		mode:         Select,
+		mode:         mode,
 		stopwatch:    stopwatch.NewWithInterval(time.Millisecond * 100),
 		statusbar:    sb,
 		help:         help,

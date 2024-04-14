@@ -3,7 +3,7 @@ package requestui
 import (
 	"errors"
 	"fmt"
-	"goful/core/client/validator"
+	"goful/core/loader"
 	"goful/core/model"
 	"goful/core/print"
 	"os/exec"
@@ -26,44 +26,17 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ActiveView int
-
-const (
-	List ActiveView = iota
-	Prompt
-	Keyprompt
-	Duplicate
-	Preview
-	Stopwatch
-	Profiles
-)
-
-type Mode int
-
 type PostAction struct {
 	Type             string
 	Payload          interface{}
 	AddtionalContext interface{}
 }
 
-const (
-	Select Mode = iota
-	Edit
-)
-
-const (
-	CreateRequestLabel = "Choose a name for your request. Make it filename compatible and unique within this workspace. After choosing \"ok\" your $EDITOR will open and you will be able to write the contents of the request. Remember to quit your editor window to return back."
-	RenameRequestLabel = "Rename your request."
-	CopyRequestLabel   = "Choose name for your request."
-)
-
-const (
-	CreateSimpleRequest  = "CSmplReq"
-	CreateComplexRequest = "CCmplxReq"
-	EditRequest          = "EReq"
-	PrintRequest         = "PReq"
-	RenameRequest        = "RnReq"
-	CopyRequest          = "CpReq"
+// hackish solution for bubbletea not supporting passing our own model into list rendering functions
+var (
+	activeProfile            *model.Profile
+	allProfiles              []*model.Profile
+	processTemplateVariables bool
 )
 
 func modeStr(mode Mode) string {
@@ -75,56 +48,6 @@ func modeStr(mode Mode) string {
 	}
 	return ""
 }
-
-type Request struct {
-	Name   string
-	Url    string
-	Method string
-}
-
-func (i Request) Title() string {
-	return i.Name
-}
-
-func (i Request) Description() string {
-	validMethod := validator.IsValidMethod(i.Method)
-
-	var methodStyle = lipgloss.NewStyle()
-
-	var color = ""
-	if validMethod {
-		color = methodColors[i.Method]
-		if color == "" {
-			color = "#cdd6f4"
-		}
-		methodStyle = methodStyle.Background(lipgloss.Color(color)).Foreground(lipgloss.Color("#1e1e2e")).PaddingRight(1).PaddingLeft(1)
-	} else {
-		methodStyle = methodStyle.Foreground(lipgloss.Color("#f38ba8")).Border(lipgloss.Border{Bottom: "^"}, false, false, true, false).BorderForeground(lipgloss.Color("#f38ba8"))
-
-	}
-
-	var urlStyle = lipgloss.NewStyle()
-
-	validUrl := validator.IsValidUrl(i.Url)
-	if validUrl {
-		urlStyle = urlStyle.Foreground(lipgloss.Color("#b4befe"))
-	} else {
-		urlStyle = urlStyle.Foreground(lipgloss.Color("#f38ba8")).Border(lipgloss.Border{Bottom: "^"}, false, false, true, false).BorderForeground(lipgloss.Color("#f38ba8"))
-	}
-
-	method := i.Method
-	if i.Method == "" {
-		method = "<method>"
-	}
-
-	url := i.Url
-	if url == "" {
-		url = "<url>"
-	}
-
-	return lipgloss.JoinHorizontal(0, methodStyle.Render(method), " ", urlStyle.Render(url))
-}
-func (i Request) FilterValue() string { return fmt.Sprintf("%s %s %s", i.Name, i.Method, i.Url) }
 
 func findRequestMold(r Request, m Model) (*model.RequestMold, error) {
 	var requestMold *model.RequestMold
@@ -149,12 +72,12 @@ func updateStatusbar(m *Model, msg string) {
 		modeBg = statusbarModeEditBg
 		profileBg = statusbarSecondColBg
 	} else {
-		if m.activeProfile != nil {
-			log.Debug().Msgf("Active profile is %v", m.activeProfile.Name)
-			profileText = m.activeProfile.Name
+		if activeProfile != nil {
+			log.Debug().Msgf("Active profile is %v", activeProfile.Name)
+			profileText = activeProfile.Name
 		}
 		if profileText == "" {
-			profileText = "default"
+			profileText = "<no profile>"
 		}
 		modeBg = statusbarModeSelectBg
 		profileBg = statusbarThirdColBg
@@ -175,25 +98,6 @@ func updateStatusbar(m *Model, msg string) {
 	m.statusbar.SetItem(modeItem, 0)
 	m.statusbar.SetItem(msgItem, 1)
 	m.statusbar.SetItem(profileItem, 2)
-}
-
-type Model struct {
-	mode          Mode
-	active        ActiveView
-	list          list.Model
-	preview       preview.Model
-	prompt        prompt.Model
-	keyprompt     keyprompt.Model
-	stopwatch     stopwatch.Model
-	statusbar     statusbar.Model
-	profileui     profiles.Model
-	help          help.Model
-	width         int
-	height        int
-	postAction    PostAction
-	requestMolds  []*model.RequestMold
-	profiles      []*model.Profile
-	activeProfile *model.Profile
 }
 
 func (m Model) Init() tea.Cmd {
@@ -235,6 +139,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			if m.mode == Edit && m.active == List {
 				m.mode = Select
+				processTemplateVariables = true
 				m.list.SetDelegate(newSelectDelegate())
 				listHeight := calculateListHeight(m)
 				m.list.SetHeight(listHeight)
@@ -245,6 +150,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "i":
 			if m.mode == Select && m.active == List {
 				m.mode = Edit
+				processTemplateVariables = false
 				m.list.SetDelegate(newEditModeDelegate())
 				listHeight := calculateListHeight(m)
 				m.list.SetHeight(listHeight)
@@ -267,16 +173,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case RunRequestMsg:
+		request := msg.Request
 		m.active = Stopwatch
 		m.list.ResetFilter()
-		requestMold, err := findRequestMold(msg.Request, m)
+		requestMold, err := findRequestMold(request, m)
 		if err != nil {
 			// TODO show error if request mold is not found
-			return m, createStatusMsg(fmt.Sprintf("Failed to run request %s", msg.Request.Title()))
+			return m, createStatusMsg(fmt.Sprintf("Failed to run request %s", request.Title()))
 		}
 		return m, tea.Batch(
 			m.stopwatch.Init(),
-			doRequest(requestMold, m.requestMolds, m.activeProfile),
+			doRequest(requestMold, m.requestMolds, activeProfile),
 		)
 	case RunRequestFinishedMsg:
 		m.postAction = PostAction{
@@ -475,25 +382,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ActivateProfile:
 		if m.mode == Select && m.active == List {
 			m.active = Profiles
-			loadedProfiles := m.profiles
-			m.profileui = profiles.NewEmbedded(loadedProfiles, m.width, m.height)
+			m.profileui = profiles.NewEmbedded(allProfiles, m.width, m.height)
 		}
 
 	case profiles.ProfileSelectedMsg:
 		m.active = List
 		log.Debug().Msgf("Selected profile %v", msg.Profile.Name)
-		var activeProfile *model.Profile
-		for _, p := range m.profiles {
+		var activedProfile *model.Profile
+		for _, p := range allProfiles {
 			if p.Name == msg.Profile.Name {
-				activeProfile = p
+				activedProfile = p
 				break
 			}
 		}
-		log.Debug().Msgf("Matched with profile %v", activeProfile)
-		if activeProfile == nil {
+		log.Debug().Msgf("Matched with profile %v", activedProfile)
+		if activedProfile == nil {
 			return m, createStatusMsg("Failed to set profile")
 		}
-		m.activeProfile = activeProfile
+
+		activeProfile = activedProfile
+
 		updateStatusbar(&m, "")
 		return m, nil
 
@@ -516,6 +424,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case StatusMessage:
+		log.Debug().Msgf("Show status message %s", string(msg))
 		updateStatusbar(&m, string(msg))
 		return m, nil
 	}
@@ -625,7 +534,7 @@ func renderKeyprompt(m Model) string {
 }
 
 func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile) {
-	log.Info().Msgf("Starting up manage TUI with %d loaded requests", len(loadedRequests))
+	log.Info().Msgf("Starting up manage TUI with %d loaded requests and %d profiles", len(loadedRequests), len(loadedProfiles))
 
 	var requests []list.Item
 
@@ -636,6 +545,17 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 			Method: v.Method(),
 		}
 		requests = append(requests, r)
+	}
+
+	for _, p := range loadedProfiles {
+		profile := &model.Profile{
+			Name:      p.Name,
+			Variables: loader.GetProfileValues(p, loadedProfiles),
+		}
+		if profile.Name == "default" {
+			activeProfile = profile
+		}
+		allProfiles = append(allProfiles, profile)
 	}
 
 	mode := Select
@@ -650,9 +570,11 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	case Select:
 		d = newSelectDelegate()
 		modeColor = statusbarModeSelectBg
+		processTemplateVariables = true
 	case Edit:
 		d = newEditModeDelegate()
 		modeColor = statusbarModeEditBg
+		processTemplateVariables = false
 	}
 
 	requestList := list.New(requests, d, 0, 0)
@@ -683,7 +605,6 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 		statusbar:    sb,
 		help:         help,
 		requestMolds: loadedRequests,
-		profiles:     loadedProfiles,
 	}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())

@@ -53,3 +53,46 @@ func TestReadProfiles(t *testing.T) {
 	}
 
 }
+
+func TestGetProfileValues(t *testing.T) {
+	profiles := []*model.Profile{
+		{
+			Name: "default",
+			Variables: map[string]string{
+				"domain": "foobar.com",
+				"foo":    "bar",
+				"bar":    "foo",
+			},
+		},
+		{
+			Name: "production",
+			Variables: map[string]string{
+				"domain": "foobarprod.com",
+				"foo":    "bar2",
+				"bar2":   "foo2",
+			},
+		},
+	}
+
+	profileValues := GetProfileValues(profiles[1], profiles)
+
+	wantedProfileValues := map[string]string{
+		"domain": "foobarprod.com",
+		"foo":    "bar2",
+		"bar":    "foo",
+		"bar2":   "foo2",
+	}
+
+	if len(profileValues) != len(wantedProfileValues) {
+		t.Errorf("lengths do not match: got %d, wanted %d", len(profileValues), len(wantedProfileValues))
+		return
+	}
+
+	for k, got := range profileValues {
+		wanted := wantedProfileValues[k]
+		if got != wanted {
+			t.Errorf("got %s, wanted %s", got, wanted)
+		}
+	}
+
+}

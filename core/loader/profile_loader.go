@@ -59,3 +59,21 @@ func ReadProfiles(root string) ([]*model.Profile, error) {
 
 	return profileSlice, nil
 }
+
+func GetProfileValues(currentProfile *model.Profile, profiles []*model.Profile) map[string]string {
+	profileMap := make(map[string]string)
+	if currentProfile == nil || profiles == nil {
+		return profileMap
+	}
+	for _, profile := range profiles {
+		if profile.Name == "default" {
+			for k, v := range profile.Variables {
+				profileMap[k] = v
+			}
+		}
+	}
+	for k, v := range currentProfile.Variables {
+		profileMap[k] = v
+	}
+	return profileMap
+}

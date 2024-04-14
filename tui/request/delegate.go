@@ -1,13 +1,11 @@
 package requestui
 
 import (
-	"goful/core/client/validator"
 	keyprompt "goful/tui/keyprompt"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/rs/zerolog/log"
 )
 
 var selectModeKeys = []key.Binding{
@@ -84,11 +82,6 @@ func newSelectDelegate() list.DefaultDelegate {
 			switch keypress := msg.String(); keypress {
 			case "r":
 				if requestSelected {
-					if !validator.IsValidUrl(request.Url) || !validator.IsValidMethod(request.Method) {
-						return tea.Cmd(func() tea.Msg {
-							return createStatusMsg("Invalid request.")
-						})
-					}
 					return tea.Cmd(func() tea.Msg {
 						return RunRequestMsg{
 							Request: request,
@@ -138,7 +131,6 @@ func newEditModeDelegate() list.DefaultDelegate {
 
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			log.Debug().Msgf("Pressed %s", msg.String())
 			switch keypress := msg.String(); keypress {
 			case "a":
 				var keys []keyprompt.KeypromptEntry

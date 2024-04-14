@@ -3,7 +3,7 @@ package builder
 import (
 	"goful/core/model"
 	starlarkng "goful/core/scripting/starlark"
-	"goful/core/templating/yamlng"
+	"goful/core/templating/templateng"
 	"reflect"
 
 	"github.com/rs/zerolog/log"
@@ -56,9 +56,10 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 	if len(profile.Variables) > 0 {
 		headers := yamlRequest.Headers
 		for k, v := range profile.Variables {
-			yamlRequest.Url = yamlng.ProcessTemplateVariable(yamlRequest.Url, k, v)
+			processedUrl, _ := templateng.ProcessTemplateVariable(yamlRequest.Url, k, v)
+			yamlRequest.Url = processedUrl
 			for headerName, headerValues := range yamlRequest.Headers {
-				headers[headerName] = yamlng.ProcessTemplateVariables(headerValues, k, v)
+				headers[headerName] = templateng.ProcessTemplateVariables(headerValues, k, v)
 			}
 		}
 		yamlRequest.Headers = headers

@@ -17,7 +17,7 @@ import (
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "goful",
+	Use:   "startpoint",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -46,11 +46,11 @@ func init() {
 	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Workspace directory")
 	viper.BindPFlag("workspace", rootCmd.PersistentFlags().Lookup("workspace"))
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goful.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.startpoint.yaml)")
 
 	home, err := os.UserHomeDir()
 	cobra.CheckErr(err)
-	logFile := filepath.Join(home, "goful.log")
+	logFile := filepath.Join(home, "startpoint.log")
 	runLogFile, _ := os.OpenFile(logFile,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 		0664,
@@ -72,7 +72,7 @@ func initConfig() {
 		cobra.CheckErr(err)
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".goful")
+		viper.SetConfigName(".startpoint")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

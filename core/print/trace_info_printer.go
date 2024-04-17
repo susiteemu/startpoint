@@ -2,7 +2,7 @@ package print
 
 import (
 	"fmt"
-	"goful/core/model"
+	"startpoint/core/model"
 
 	"github.com/charmbracelet/lipgloss"
 )

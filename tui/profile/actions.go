@@ -3,10 +3,10 @@ package profileui
 import (
 	"errors"
 	"fmt"
-	"goful/core/editor"
-	"goful/core/writer"
 	"os/exec"
 	"path/filepath"
+	"startpoint/core/editor"
+	"startpoint/core/writer"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"

@@ -6,10 +6,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"goful/core/client"
-	"goful/core/client/validator"
-	"goful/core/model"
-	"goful/core/print"
+	"startpoint/core/client"
+	"startpoint/core/client/validator"
+	"startpoint/core/model"
+	"startpoint/core/print"
 	"strings"
 
 	"github.com/spf13/cobra"

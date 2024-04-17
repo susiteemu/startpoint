@@ -1,10 +1,10 @@
 package builder
 
 import (
-	"goful/core/model"
-	starlarkng "goful/core/scripting/starlark"
-	"goful/core/templating/templateng"
 	"reflect"
+	"startpoint/core/model"
+	starlarkng "startpoint/core/scripting/starlark"
+	"startpoint/core/templating/templateng"
 
 	"github.com/rs/zerolog/log"
 )

@@ -5,8 +5,8 @@ package cmd
 
 import (
 	"fmt"
-	"goful/core/loader"
-	requestUI "goful/tui/request"
+	"startpoint/core/loader"
+	requestUI "startpoint/tui/request"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"

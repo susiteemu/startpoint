@@ -3,8 +3,8 @@ package print
 import (
 	"errors"
 	"fmt"
-	"goful/core/model"
 	"sort"
+	"startpoint/core/model"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"

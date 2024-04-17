@@ -2,7 +2,7 @@ package client
 
 import (
 	"errors"
-	"goful/core/model"
+	"startpoint/core/model"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog"

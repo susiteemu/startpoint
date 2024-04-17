@@ -1,10 +1,10 @@
 package loader
 
 import (
-	"goful/core/model"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"startpoint/core/model"
 	"strings"
 
 	"github.com/joho/godotenv"

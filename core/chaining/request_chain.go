@@ -1,6 +1,6 @@
 package requestchain
 
-import "goful/core/model"
+import "startpoint/core/model"
 
 func ResolveRequestChain(r *model.RequestMold, all []*model.RequestMold) []*model.RequestMold {
 	chain := []*model.RequestMold{}

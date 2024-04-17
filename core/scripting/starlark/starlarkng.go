@@ -3,9 +3,9 @@ package starlarkng
 import (
 	"encoding/json"
 	"errors"
-	"goful/core/model"
-	"goful/core/scripting/starlark/goconv"
-	"goful/core/scripting/starlark/starlarkconv"
+	"startpoint/core/model"
+	"startpoint/core/scripting/starlark/goconv"
+	"startpoint/core/scripting/starlark/starlarkconv"
 
 	"github.com/rs/zerolog/log"
 	"go.starlark.net/starlark"

@@ -2,10 +2,10 @@ package profileui
 
 import (
 	"fmt"
-	"goful/core/model"
-	prompt "goful/tui/prompt"
-	statusbar "goful/tui/statusbar"
-	"goful/tui/styles"
+	"startpoint/core/model"
+	prompt "startpoint/tui/prompt"
+	statusbar "startpoint/tui/statusbar"
+	"startpoint/tui/styles"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"

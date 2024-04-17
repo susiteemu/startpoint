@@ -1,4 +1,4 @@
-module goful
+module startpoint
 
 go 1.22
 

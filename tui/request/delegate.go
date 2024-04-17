@@ -1,7 +1,7 @@
 package requestui
 
 import (
-	keyprompt "goful/tui/keyprompt"
+	keyprompt "startpoint/tui/keyprompt"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"

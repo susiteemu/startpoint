@@ -1,7 +1,7 @@
 package promptui
 
 import (
-	"goful/tui/styles"
+	"startpoint/tui/styles"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"

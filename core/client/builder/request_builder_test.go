@@ -2,8 +2,8 @@ package builder
 
 import (
 	"github.com/google/go-cmp/cmp"
-	"goful/core/model"
 	"math/big"
+	"startpoint/core/model"
 	"testing"
 )
 

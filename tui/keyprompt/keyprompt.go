@@ -2,8 +2,8 @@ package keypromptui
 
 import (
 	"fmt"
-	"goful/tui/styles"
 	"slices"
+	"startpoint/tui/styles"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"

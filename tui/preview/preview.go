@@ -2,7 +2,7 @@ package previewui
 
 import (
 	"fmt"
-	statusbar "goful/tui/statusbar"
+	statusbar "startpoint/tui/statusbar"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -66,7 +66,7 @@ func New(title, content string) Model {
 		{Text: "PREVIEW", BackgroundColor: statusbarFirstColBg, ForegroundColor: statusbarFirstColFg},
 		{Text: title, BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
 		{Text: fmt.Sprintf("%3.f%%", v.ScrollPercent()*100), BackgroundColor: statusbarThirdColBg, ForegroundColor: statusbarThirdColFg},
-		{Text: "goful", BackgroundColor: statusbarFourthColBg, ForegroundColor: statusbarFourthColFg},
+		{Text: "startpoint", BackgroundColor: statusbarFourthColBg, ForegroundColor: statusbarFourthColFg},
 	}
 	sb := statusbar.New(statusbarItems, 1, 0)
 

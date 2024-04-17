@@ -2,18 +2,18 @@ package requestui
 
 import (
 	"fmt"
-	"goful/core/model"
-	"goful/core/templating/templateng"
+	"startpoint/core/model"
+	"startpoint/core/templating/templateng"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/stopwatch"
 	"github.com/charmbracelet/lipgloss"
-	keyprompt "goful/tui/keyprompt"
-	preview "goful/tui/preview"
-	profiles "goful/tui/profile"
-	prompt "goful/tui/prompt"
-	statusbar "goful/tui/statusbar"
+	keyprompt "startpoint/tui/keyprompt"
+	preview "startpoint/tui/preview"
+	profiles "startpoint/tui/profile"
+	prompt "startpoint/tui/prompt"
+	statusbar "startpoint/tui/statusbar"
 )
 
 type ActiveView int

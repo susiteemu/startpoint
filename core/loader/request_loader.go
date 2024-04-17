@@ -1,10 +1,10 @@
 package loader
 
 import (
-	"goful/core/model"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"startpoint/core/model"
 
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"

@@ -3,7 +3,7 @@ package print
 import (
 	"bytes"
 	"errors"
-	"goful/core/model"
+	"startpoint/core/model"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2"

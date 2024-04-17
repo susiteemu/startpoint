@@ -2,9 +2,9 @@ package profilemgmtui
 
 import (
 	"fmt"
-	"goful/core/model"
-	profiles "goful/tui/profile"
 	"os"
+	"startpoint/core/model"
+	profiles "startpoint/tui/profile"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

@@ -2,9 +2,9 @@ package runner
 
 import (
 	"errors"
-	"goful/core/client"
-	"goful/core/client/builder"
-	"goful/core/model"
+	"startpoint/core/client"
+	"startpoint/core/client/builder"
+	"startpoint/core/model"
 	"time"
 
 	"github.com/rs/zerolog/log"

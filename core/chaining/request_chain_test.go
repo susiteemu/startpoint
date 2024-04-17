@@ -1,7 +1,7 @@
 package requestchain
 
 import (
-	"goful/core/model"
+	"startpoint/core/model"
 	"testing"
 )
 

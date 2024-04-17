@@ -2,7 +2,7 @@ package requestui
 
 import (
 	"fmt"
-	keyprompt "goful/tui/keyprompt"
+	keyprompt "startpoint/tui/keyprompt"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"

@@ -4,8 +4,8 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"goful/core/loader"
-	profileUI "goful/tui/profilemgmt"
+	"startpoint/core/loader"
+	profileUI "startpoint/tui/profilemgmt"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

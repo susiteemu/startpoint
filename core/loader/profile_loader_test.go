@@ -2,7 +2,7 @@ package loader
 
 import (
 	"fmt"
-	"goful/core/model"
+	"startpoint/core/model"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"

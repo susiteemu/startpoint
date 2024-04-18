@@ -11,30 +11,67 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type PrintOpts struct {
+	PrettyPrint    bool
+	PrintHeaders   bool
+	PrintBody      bool
+	PrintTraceInfo bool
+}
+
+func SprintResponse(resp *model.Response, printOpts PrintOpts) (string, error) {
+	return sprintResponse(resp, printOpts)
+}
+
 func SprintFullResponse(resp *model.Response) (string, error) {
-	return sprintResponse(resp, false, true, true)
+	printOpts := PrintOpts{
+		PrettyPrint:    false,
+		PrintHeaders:   true,
+		PrintBody:      true,
+		PrintTraceInfo: true,
+	}
+	return sprintResponse(resp, printOpts)
 }
 
 func SprintPrettyFullResponse(resp *model.Response) (string, error) {
-	return sprintResponse(resp, true, true, true)
+	printOpts := PrintOpts{
+		PrettyPrint:    true,
+		PrintHeaders:   true,
+		PrintBody:      true,
+		PrintTraceInfo: true,
+	}
+	return sprintResponse(resp, printOpts)
 }
 
 func SprintPlainResponse(resp *model.Response, printHeaders bool, printBody bool) (string, error) {
-	return sprintResponse(resp, false, printHeaders, printBody)
+	printOpts := PrintOpts{
+		PrettyPrint:    false,
+		PrintHeaders:   printHeaders,
+		PrintBody:      printBody,
+		PrintTraceInfo: false,
+	}
+	return sprintResponse(resp, printOpts)
 }
 
 func SprintPrettyResponse(resp *model.Response, printHeaders bool, printBody bool) (string, error) {
-	return sprintResponse(resp, true, printHeaders, printBody)
+	printOpts := PrintOpts{
+		PrettyPrint:    true,
+		PrintHeaders:   printHeaders,
+		PrintBody:      printBody,
+		PrintTraceInfo: false,
+	}
+	return sprintResponse(resp, printOpts)
 }
 
-func sprintResponse(resp *model.Response, pretty bool, printHeaders bool, printBody bool) (string, error) {
+func sprintResponse(resp *model.Response, printOpts PrintOpts) (string, error) {
+	pretty := printOpts.PrettyPrint
 	respStr := ""
 
-	// TODO
-	traceInfo, _ := SprintTraceInfo(resp.TraceInfo, true)
-	respStr += traceInfo + "\n"
+	if printOpts.PrintTraceInfo {
+		traceInfo, _ := SprintTraceInfo(resp.TraceInfo, pretty)
+		respStr += traceInfo + "\n"
+	}
 
-	if printHeaders {
+	if printOpts.PrintHeaders {
 		respStatusStr, err := SprintStatus(resp, pretty)
 		if err != nil {
 			return "", err
@@ -46,12 +83,12 @@ func sprintResponse(resp *model.Response, pretty bool, printHeaders bool, printB
 		respStr += respStatusStr + "\n" + respHeadersStr
 	}
 
-	if printBody {
+	if printOpts.PrintBody {
 		respBodyStr, err := SprintBody(resp)
 		if err != nil {
 			return "", err
 		}
-		if printHeaders {
+		if printOpts.PrintHeaders {
 			respStr += "\n"
 		}
 

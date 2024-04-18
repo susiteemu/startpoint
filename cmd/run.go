@@ -19,9 +19,10 @@ import (
 )
 
 type RunConfig struct {
-	Plain        bool
-	PrintHeaders bool
-	PrintBody    bool
+	Plain          bool
+	PrintHeaders   bool
+	PrintBody      bool
+	PrintTraceInfo bool
 }
 
 type RunArgs struct {
@@ -36,12 +37,8 @@ var runCmd = &cobra.Command{
 	Short: "Run a http request",
 	Long:  `Run a http request`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if err := cobra.RangeArgs(0, 2)(cmd, args); err != nil {
+		if err := cobra.RangeArgs(1, 2)(cmd, args); err != nil {
 			return err
-		}
-
-		if len(args) == 0 {
-			return nil
 		}
 
 		parsedArgs := ParseArgs(args)
@@ -101,12 +98,13 @@ var runCmd = &cobra.Command{
 		}
 
 		for _, response := range responses {
-			var responseStr string
-			if runConfig.Plain {
-				responseStr, err = print.SprintPlainResponse(response, runConfig.PrintHeaders, runConfig.PrintBody)
-			} else {
-				responseStr, err = print.SprintPrettyResponse(response, runConfig.PrintHeaders, runConfig.PrintBody)
+			printOpts := print.PrintOpts{
+				PrettyPrint:    !runConfig.Plain,
+				PrintHeaders:   runConfig.PrintHeaders,
+				PrintBody:      runConfig.PrintBody,
+				PrintTraceInfo: runConfig.PrintTraceInfo,
 			}
+			responseStr, err := print.SprintResponse(response, printOpts)
 			if err != nil {
 				fmt.Print(fmt.Errorf("error %v", err))
 				return
@@ -129,6 +127,7 @@ func ParseArgs(args []string) RunArgs {
 func init() {
 	rootCmd.AddCommand(runCmd)
 
+	const printTrace = "t"
 	const printHeadersP = "h"
 	const printBodyP = "b"
 
@@ -136,7 +135,7 @@ func init() {
 
 	runCmd.PersistentFlags().BoolVarP(&runConfig.Plain, "plain", "p", false, "Print plain response without styling")
 	runCmd.PersistentFlags().Bool("no-body", false, "Print no body")
-	runCmd.PersistentFlags().StringSlice("print", []string{}, fmt.Sprintf("Print WHAT\n- '%s'\tPrint response headers\n- '%s'\tPrint response body", printHeadersP, printBodyP))
+	runCmd.PersistentFlags().StringSlice("print", []string{}, fmt.Sprintf("Print WHAT\n- '%s'\tPrint response headers\n- '%s'\tPrint response body\n- '%s'\tPrint trace information", printHeadersP, printBodyP, printTrace))
 	runCmd.PreRun = func(cmd *cobra.Command, args []string) {
 		if cmd == runCmd {
 			printFlags, _ := cmd.Flags().GetStringSlice("print")
@@ -145,6 +144,8 @@ func init() {
 					runConfig.PrintHeaders = true
 				} else if flag == printBodyP {
 					runConfig.PrintBody = true
+				} else if flag == printTrace {
+					runConfig.PrintTraceInfo = true
 				}
 			}
 			noBody, _ := cmd.PersistentFlags().GetBool("no-body")

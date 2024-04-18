@@ -11,8 +11,7 @@ var traceInfoStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#cdd6f4")).F
 
 func SprintTraceInfo(traceInfo model.TraceInfo, pretty bool) (string, error) {
 
-	formatted := traceInfoStyle.Render(
-		fmt.Sprintf(`
+	ti := fmt.Sprintf(`
 DNSLookup: %s
 ConnTime: %s
 TCPConnTime: %s
@@ -26,10 +25,13 @@ ConnIdleTime: %s
 RequestAttempt: %d
 RemoteAddr: %s
 	`,
-			traceInfo.DNSLookup, traceInfo.ConnTime, traceInfo.TCPConnTime, traceInfo.TLSHandshake, traceInfo.ServerTime, traceInfo.ResponseTime, traceInfo.TotalTime, traceInfo.IsConnReused, traceInfo.IsConnWasIdle, traceInfo.ConnIdleTime, traceInfo.RequestAttempt, traceInfo.RemoteAddr,
-		),
+		traceInfo.DNSLookup, traceInfo.ConnTime, traceInfo.TCPConnTime, traceInfo.TLSHandshake, traceInfo.ServerTime, traceInfo.ResponseTime, traceInfo.TotalTime, traceInfo.IsConnReused, traceInfo.IsConnWasIdle, traceInfo.ConnIdleTime, traceInfo.RequestAttempt, traceInfo.RemoteAddr,
 	)
 
-	return formatted, nil
+	if pretty {
+		return traceInfoStyle.Render(ti), nil
+	}
+
+	return ti, nil
 
 }

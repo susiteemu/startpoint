@@ -6,13 +6,16 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"startpoint/core/client"
-	"startpoint/core/client/validator"
+	requestchain "startpoint/core/chaining"
+	"startpoint/core/client/runner"
+	"startpoint/core/loader"
 	"startpoint/core/model"
 	"startpoint/core/print"
-	"strings"
+	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type RunConfig struct {
@@ -22,24 +25,17 @@ type RunConfig struct {
 }
 
 type RunArgs struct {
-	Method string
-	Url    string
-}
-
-type RunFlags struct {
-	Body    string
-	Headers []string
+	Request string
+	Profile string
 }
 
 var runConfig RunConfig
-var runFlags RunFlags
 
 var runCmd = &cobra.Command{
-	Use:   "run [METHOD] [URL]",
+	Use:   "run [REQUEST NAME] [PROFILE NAME]",
 	Short: "Run a http request",
 	Long:  `Run a http request`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		// Optionally run one of the validators provided by cobra
 		if err := cobra.RangeArgs(0, 2)(cmd, args); err != nil {
 			return err
 		}
@@ -50,65 +46,84 @@ var runCmd = &cobra.Command{
 
 		parsedArgs := ParseArgs(args)
 
-		if !validator.IsValidMethod(parsedArgs.Method) {
-			return errors.New(fmt.Sprintf("METHOD must be one of following: %v", strings.Join(validator.ValidMethods, ", ")))
-		}
-		if !validator.IsValidUrl(parsedArgs.Url) {
-			return errors.New(fmt.Sprintf("URL is not valid"))
+		if len(parsedArgs.Request) == 0 {
+			return errors.New("Request name is required")
 		}
 
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var resp *model.Response
-		runArgs := ParseArgs(args)
-		if runArgs != (RunArgs{}) {
-			// TODO err
-			headers := toHeadersMap(runFlags.Headers)
-			resp, _ = client.DoRequest(model.Request{
-				Url:     runArgs.Url,
-				Method:  runArgs.Method,
-				Headers: headers,
-				Body:    runFlags.Body,
-			})
-		} else {
-			// TODO get from --name
-		}
-
-		var respStr string
 		var err error
 
-		if runConfig.Plain {
-			respStr, err = print.SprintPlainResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
-		} else {
-			respStr, err = print.SprintPrettyResponse(resp, runConfig.PrintHeaders, runConfig.PrintBody)
-		}
+		runArgs := ParseArgs(args)
+
+		requests, err := loader.ReadRequests(viper.GetString("workspace"))
 		if err != nil {
 			fmt.Print(fmt.Errorf("error %v", err))
+			return
 		}
-		fmt.Print(respStr)
+		var request *model.RequestMold
+		for _, m := range requests {
+			if m.Name() == runArgs.Request {
+				request = m
+				break
+			}
+		}
+		if request == nil {
+			fmt.Printf("Could not find a request with name '%s' under workspace '%s'", runArgs.Request, viper.GetString("workspace"))
+			return
+		}
+
+		profiles, err := loader.ReadProfiles(viper.GetString("workspace"))
+		if err != nil {
+			fmt.Print(fmt.Errorf("error %v", err))
+			return
+		}
+		profileName := runArgs.Profile
+		if len(profileName) == 0 {
+			profileName = "default"
+		}
+		var profile *model.Profile
+		for _, p := range profiles {
+			if p.Name == profileName {
+				profile = p
+				break
+			}
+		}
+
+		runRequests := requestchain.ResolveRequestChain(request, requests)
+		responses, err := runner.RunRequestChain(runRequests, profile, func(took time.Duration, statusCode int) {
+			log.Info().Msgf("Request responded with status %d and took %s", statusCode, took)
+		})
+		if err != nil {
+			fmt.Print(fmt.Errorf("error %v", err))
+			return
+		}
+
+		for _, response := range responses {
+			var responseStr string
+			if runConfig.Plain {
+				responseStr, err = print.SprintPlainResponse(response, runConfig.PrintHeaders, runConfig.PrintBody)
+			} else {
+				responseStr, err = print.SprintPrettyResponse(response, runConfig.PrintHeaders, runConfig.PrintBody)
+			}
+			if err != nil {
+				fmt.Print(fmt.Errorf("error %v", err))
+				return
+			}
+			fmt.Println(responseStr)
+		}
+
 	},
 }
 
 func ParseArgs(args []string) RunArgs {
 	if len(args) == 0 {
 		return RunArgs{}
-	}
-	if len(args) == 1 {
-		return RunArgs{validator.DefaultBodilessMethod, args[0]}
+	} else if len(args) == 1 {
+		return RunArgs{args[0], ""}
 	}
 	return RunArgs{args[0], args[1]}
-}
-
-func toHeadersMap(headers []string) map[string]model.HeaderValues {
-	var headerMap = make(map[string]model.HeaderValues)
-	for _, h := range headers {
-		headerParts := strings.Split(h, ":")
-		if len(headerParts) == 2 {
-			headerMap[headerParts[0]] = strings.Split(headerParts[1], ",")
-		}
-	}
-	return headerMap
 }
 
 func init() {
@@ -122,21 +137,21 @@ func init() {
 	runCmd.PersistentFlags().BoolVarP(&runConfig.Plain, "plain", "p", false, "Print plain response without styling")
 	runCmd.PersistentFlags().Bool("no-body", false, "Print no body")
 	runCmd.PersistentFlags().StringSlice("print", []string{}, fmt.Sprintf("Print WHAT\n- '%s'\tPrint response headers\n- '%s'\tPrint response body", printHeadersP, printBodyP))
-	runCmd.Flags().StringVarP(&runFlags.Body, "body", "b", "", "Request body")
-	runCmd.Flags().StringSliceVarP(&runFlags.Headers, "header", "h", []string{}, "Request headers formatted as HeaderName:HeaderValue")
-
-	runCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if cmd == runCmd {
-			printFlags, _ := cmd.Flags().GetStringSlice("print")
-			for _, flag := range printFlags {
-				if flag == printHeadersP {
-					runConfig.PrintHeaders = true
-				} else if flag == printBodyP {
-					runConfig.PrintBody = true
+	// TODO some problem with rootCmd's zerolog setting -- needed for print flags to work properly
+	/*
+		runCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+			if cmd == runCmd {
+				printFlags, _ := cmd.Flags().GetStringSlice("print")
+				for _, flag := range printFlags {
+					if flag == printHeadersP {
+						runConfig.PrintHeaders = true
+					} else if flag == printBodyP {
+						runConfig.PrintBody = true
+					}
 				}
+				noBody, _ := cmd.PersistentFlags().GetBool("no-body")
+				runConfig.PrintBody = !noBody
 			}
-			noBody, _ := cmd.PersistentFlags().GetBool("no-body")
-			runConfig.PrintBody = !noBody
 		}
-	}
+	*/
 }

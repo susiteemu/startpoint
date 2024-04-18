@@ -137,21 +137,19 @@ func init() {
 	runCmd.PersistentFlags().BoolVarP(&runConfig.Plain, "plain", "p", false, "Print plain response without styling")
 	runCmd.PersistentFlags().Bool("no-body", false, "Print no body")
 	runCmd.PersistentFlags().StringSlice("print", []string{}, fmt.Sprintf("Print WHAT\n- '%s'\tPrint response headers\n- '%s'\tPrint response body", printHeadersP, printBodyP))
-	// TODO some problem with rootCmd's zerolog setting -- needed for print flags to work properly
-	/*
-		runCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if cmd == runCmd {
-				printFlags, _ := cmd.Flags().GetStringSlice("print")
-				for _, flag := range printFlags {
-					if flag == printHeadersP {
-						runConfig.PrintHeaders = true
-					} else if flag == printBodyP {
-						runConfig.PrintBody = true
-					}
+	runCmd.PreRun = func(cmd *cobra.Command, args []string) {
+		if cmd == runCmd {
+			printFlags, _ := cmd.Flags().GetStringSlice("print")
+			for _, flag := range printFlags {
+				if flag == printHeadersP {
+					runConfig.PrintHeaders = true
+				} else if flag == printBodyP {
+					runConfig.PrintBody = true
 				}
-				noBody, _ := cmd.PersistentFlags().GetBool("no-body")
-				runConfig.PrintBody = !noBody
 			}
+			noBody, _ := cmd.PersistentFlags().GetBool("no-body")
+			runConfig.PrintBody = !noBody
 		}
-	*/
+	}
+
 }

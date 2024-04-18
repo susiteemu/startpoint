@@ -13,8 +13,8 @@ import (
 
 var manageProfilesCmd = &cobra.Command{
 	Use:   "profiles",
-	Short: "A brief description of your command",
-	Long:  ``,
+	Short: "Start up a tui application to manage profiles",
+	Long:  "Start up a tui application to manage profiles",
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace := viper.GetString("workspace")
 		loadedProfiles, _ := loader.ReadProfiles(workspace)

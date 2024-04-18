@@ -14,6 +14,7 @@ type Request struct {
 	Method  string
 	Headers Headers
 	Body    Body
+	Output  string
 }
 
 type RequestMold struct {
@@ -31,6 +32,7 @@ type YamlRequest struct {
 	Method  string  `yaml:"method"`
 	Headers Headers `yaml:"headers"`
 	Body    Body    `yaml:"body"`
+	Output  string  `yaml:"output"`
 	Raw     string
 }
 
@@ -83,6 +85,12 @@ func (r *RequestMold) Url() string {
 		match := pattern.FindStringSubmatch(r.Starlark.Script)
 		if len(match) == 2 {
 			url = strings.TrimSpace(match[1])
+		} else {
+			pattern = regexp.MustCompile(`(?mU)^\s*url\s*=(.*)$`)
+			match = pattern.FindStringSubmatch(r.Starlark.Script)
+			if len(match) == 2 {
+				url = strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
+			}
 		}
 	}
 	if url != "" {
@@ -101,6 +109,12 @@ func (r *RequestMold) Method() string {
 		match := pattern.FindStringSubmatch(r.Starlark.Script)
 		if len(match) == 2 {
 			method = strings.TrimSpace(match[1])
+		} else {
+			pattern = regexp.MustCompile(`(?mU)^\s*method\s*=(.*)$`)
+			match = pattern.FindStringSubmatch(r.Starlark.Script)
+			if len(match) == 2 {
+				method = strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
+			}
 		}
 	}
 	return method
@@ -153,6 +167,7 @@ func (r *RequestMold) Clone() RequestMold {
 			Method:  r.Yaml.Method,
 			Headers: r.Yaml.Headers,
 			Body:    r.Yaml.Body,
+			Output:  r.Yaml.Output,
 			Raw:     r.Yaml.Raw,
 		}
 		copy.Yaml = &yamlRequest

@@ -49,6 +49,10 @@ func DoRequest(request model.Request) (*model.Response, error) {
 		r = r.SetBody(request.Body)
 	}
 
+	if len(request.Output) > 0 {
+		r.SetOutput(request.Output)
+	}
+
 	resp, err := r.Execute(request.Method, request.Url)
 	if err != nil {
 		return nil, err

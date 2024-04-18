@@ -15,8 +15,8 @@ import (
 
 var manageCmd = &cobra.Command{
 	Use:   "requests",
-	Short: "Starts up tui application to manage and run requests",
-	Long:  ``,
+	Short: "Start up a tui application to manage and run requests",
+	Long:  "Start up a tui application to manage and run requests",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info().Msgf("Starting to handle requests cmd with workspace root %s", viper.GetString("workspace"))
 		workspace := viper.GetString("workspace")

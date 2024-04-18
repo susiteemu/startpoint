@@ -40,7 +40,7 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 			if err != nil {
 				return RunRequestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))
 			}
-			printedResponses += fmt.Sprintf("%s\n\n", printed)
+			printedResponses += fmt.Sprintf("%s\n", printed)
 		}
 
 		return RunRequestFinishedMsg(printedResponses)
@@ -54,7 +54,7 @@ func interimResult(took time.Duration, statusCode int) {
 func handlePostAction(m Model) {
 	switch m.postAction.Type {
 	case PrintRequest:
-		fmt.Printf("%s\n", m.postAction.Payload.(string))
+		fmt.Printf("%s", m.postAction.Payload.(string))
 	}
 }
 

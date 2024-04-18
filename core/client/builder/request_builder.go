@@ -70,6 +70,7 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 		Method:  yamlRequest.Method,
 		Headers: yamlRequest.Headers,
 		Body:    yamlRequest.Body,
+		Output:  yamlRequest.Output,
 	}
 
 	return request, true, nil

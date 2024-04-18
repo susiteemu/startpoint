@@ -34,8 +34,8 @@ var runConfig RunConfig
 
 var runCmd = &cobra.Command{
 	Use:   "run [REQUEST NAME] [PROFILE NAME]",
-	Short: "Run a http request",
-	Long:  `Run a http request`,
+	Short: "Run a http request from workspace",
+	Long:  `Run a http request from workspace`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.RangeArgs(1, 2)(cmd, args); err != nil {
 			return err

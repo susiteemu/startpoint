@@ -51,9 +51,8 @@ var editKeys = []key.Binding{
 
 func newBaseDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
-	d.SetHeight(3)
-	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(profileTitleColor).BorderLeftForeground(profileTitleColor)
-	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(profileDescColor).BorderLeftForeground(profileDescColor)
+	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(style.listItemTitleColor).BorderLeftForeground(style.listItemTitleColor)
+	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(style.listItemDescColor).BorderLeftForeground(style.listItemDescColor)
 	return d
 }
 

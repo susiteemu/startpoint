@@ -11,6 +11,7 @@ func TestStarlarkRequestDocString(t *testing.T) {
 			Script: `"""
 meta:name: Starlark request
 meta:prev_req: Some previous request
+meta:output: ./output.txt
 doc:url: http://foobar.com
 doc:method: POST
 """
@@ -44,9 +45,13 @@ body = { "id": 1474, "prev": prev, "bar": [
 		t.Errorf("method is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Method(), wantedMethod)
 	}
 
+	wantedOutput := "./output.txt"
+	if starlarkRequest.Output() != wantedOutput {
+		t.Errorf("output is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Output(), wantedOutput)
+	}
 }
 
-func TestStarlarkRequestDocStringMissingName(t *testing.T) {
+func TestStarlarkRequestDocStringMissingParts(t *testing.T) {
 
 	starlarkRequest := RequestMold{
 		Starlark: &StarlarkRequest{
@@ -84,6 +89,11 @@ body = { "id": 1474, "prev": prev, "bar": [
 	wantedMethod := "POST"
 	if starlarkRequest.Method() != wantedMethod {
 		t.Errorf("method is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Method(), wantedMethod)
+	}
+
+	wantedOutput := ""
+	if starlarkRequest.Output() != wantedOutput {
+		t.Errorf("output is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Output(), wantedOutput)
 	}
 
 }

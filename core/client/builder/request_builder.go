@@ -108,6 +108,7 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 		Method:  res["method"].(string),
 		Headers: new(model.Headers).FromMap(headers),
 		Body:    res["body"],
+		Output:  requestMold.Output(),
 	}
 
 	log.Debug().Msgf("Built request %v", req)

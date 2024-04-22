@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// TODO: colors from theme
 var promptStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f44")).BorderStyle(lipgloss.RoundedBorder()).Padding(1)
 var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f44")).BorderStyle(lipgloss.NormalBorder()).Padding(1).MarginTop(1)
 var errInputStyle = inputStyle.Copy().BorderForeground(lipgloss.Color("#f38ba8"))
@@ -102,6 +103,10 @@ func (m Model) View() string {
 }
 
 func New(context PromptContext, initialValue string, label string, validator func(s string) error, w int) Model {
+
+	theme := styles.GetTheme()
+	commonStyles := styles.GetCommonStyles(theme)
+
 	nameInput := textinput.New()
 	nameInput.Focus()
 	nameInput.CharLimit = 64
@@ -114,12 +119,12 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	}
 
 	help := help.New()
-	help.Styles.FullKey = styles.HelpKeyStyle
-	help.Styles.FullDesc = styles.HelpDescStyle
-	help.Styles.ShortKey = styles.HelpKeyStyle
-	help.Styles.ShortDesc = styles.HelpDescStyle
-	help.Styles.ShortSeparator = styles.HelpSeparatorStyle
-	help.Styles.FullSeparator = styles.HelpSeparatorStyle
+	help.Styles.FullKey = commonStyles.HelpKeyStyle
+	help.Styles.FullDesc = commonStyles.HelpDescStyle
+	help.Styles.ShortKey = commonStyles.HelpKeyStyle
+	help.Styles.ShortDesc = commonStyles.HelpDescStyle
+	help.Styles.ShortSeparator = commonStyles.HelpSeparatorStyle
+	help.Styles.FullSeparator = commonStyles.HelpSeparatorStyle
 	help.ShortSeparator = "  "
 	help.FullSeparator = "  "
 

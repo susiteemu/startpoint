@@ -69,30 +69,29 @@ func updateStatusbar(m *Model, msg string) {
 	var profileBg lipgloss.Color
 	var profileText string
 	if m.mode == Edit {
-		modeBg = statusbarModeEditBg
-		profileBg = statusbarSecondColBg
+		modeBg = style.statusbarModeEditBg
+		profileBg = style.statusbarPrimaryBg
 	} else {
 		if activeProfile != nil {
-			log.Debug().Msgf("Active profile is %v", activeProfile.Name)
 			profileText = activeProfile.Name
 		}
 		if profileText == "" {
 			profileText = "<no profile>"
 		}
-		modeBg = statusbarModeSelectBg
-		profileBg = statusbarThirdColBg
+		modeBg = style.statusbarModeSelectBg
+		profileBg = style.statusbarThirdColBg
 	}
 
 	modeItem := statusbar.StatusbarItem{
-		Text: modeStr(m.mode), BackgroundColor: modeBg, ForegroundColor: statusbarFirstColFg,
+		Text: modeStr(m.mode), BackgroundColor: modeBg, ForegroundColor: style.statusbarSecondaryFg,
 	}
 
 	msgItem := statusbar.StatusbarItem{
-		Text: msg, BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg,
+		Text: msg, BackgroundColor: style.statusbarPrimaryBg, ForegroundColor: style.statusbarPrimaryFg,
 	}
 
 	profileItem := statusbar.StatusbarItem{
-		Text: profileText, BackgroundColor: profileBg, ForegroundColor: statusbarThirdColFg,
+		Text: profileText, BackgroundColor: profileBg, ForegroundColor: style.statusbarSecondaryFg,
 	}
 
 	m.statusbar.SetItem(modeItem, 0)
@@ -468,9 +467,9 @@ func (m Model) View() string {
 		return lipgloss.Place(
 			m.width, m.height,
 			lipgloss.Center, lipgloss.Center,
-			stopwatchStyle.Render("Running request\n\n"+m.stopwatch.View()),
+			style.stopwatchStyle.Render("Running request\n\n"+m.stopwatch.View()),
 			lipgloss.WithWhitespaceChars("\u28FF"),
-			lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#313244", Dark: "#313244"}))
+			lipgloss.WithWhitespaceForeground(style.whitespaceFg))
 	case Profiles:
 		return lipgloss.Place(
 			m.width,
@@ -489,7 +488,7 @@ func renderList(m Model) string {
 		listHeight := calculateListHeight(m)
 		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
 		views = append(views, m.statusbar.View())
-		views = append(views, styles.HelpPaneStyle.Render(m.help.View(m.list)))
+		views = append(views, style.helpPaneStyle.Render(m.help.View(m.list)))
 	} else {
 		listHeight := calculateListHeight(m)
 		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
@@ -505,7 +504,7 @@ func renderList(m Model) string {
 func calculateListHeight(m Model) int {
 	listHeight := m.height - statusbar.Height
 	if m.help.ShowAll {
-		helpHeight := lipgloss.Height(styles.HelpPaneStyle.Render(m.help.View(m.list)))
+		helpHeight := lipgloss.Height(style.helpPaneStyle.Render(m.help.View(m.list)))
 		listHeight -= helpHeight
 	}
 	return listHeight
@@ -519,7 +518,7 @@ func renderPrompt(m Model) string {
 		lipgloss.Center,
 		m.prompt.View(),
 		lipgloss.WithWhitespaceChars("\u28FF"),
-		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#313244", Dark: "#313244"}))
+		lipgloss.WithWhitespaceForeground(style.whitespaceFg))
 }
 
 func renderKeyprompt(m Model) string {
@@ -530,11 +529,14 @@ func renderKeyprompt(m Model) string {
 		lipgloss.Center,
 		m.keyprompt.View(),
 		lipgloss.WithWhitespaceChars("\u28FF"),
-		lipgloss.WithWhitespaceForeground(lipgloss.AdaptiveColor{Light: "#313244", Dark: "#313244"}))
+		lipgloss.WithWhitespaceForeground(style.whitespaceFg))
 }
 
 func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile) {
 	log.Info().Msgf("Starting up manage TUI with %d loaded requests and %d profiles", len(loadedRequests), len(loadedProfiles))
+
+	theme := styles.GetTheme()
+	InitStyle(theme, styles.GetCommonStyles(theme))
 
 	var requests []list.Item
 
@@ -569,32 +571,32 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	switch mode {
 	case Select:
 		d = newSelectDelegate()
-		modeColor = statusbarModeSelectBg
+		modeColor = style.statusbarModeSelectBg
 		processTemplateVariables = true
 	case Edit:
 		d = newEditModeDelegate()
-		modeColor = statusbarModeEditBg
+		modeColor = style.statusbarModeEditBg
 		processTemplateVariables = false
 	}
 
 	requestList := list.New(requests, d, 0, 0)
 	requestList.Title = "Requests"
-	requestList.Styles.Title = titleStyle
+	requestList.Styles.Title = style.listTitleStyle
 
 	requestList.SetShowHelp(false)
 
 	statusbarItems := []statusbar.StatusbarItem{
-		{Text: modeStr(mode), BackgroundColor: modeColor, ForegroundColor: statusbarFirstColFg},
-		{Text: "", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
-		{Text: "", BackgroundColor: statusbarThirdColBg, ForegroundColor: statusbarThirdColFg},
-		{Text: "? Help", BackgroundColor: statusbarFourthColBg, ForegroundColor: statusbarFourthColFg},
+		{Text: modeStr(mode), BackgroundColor: modeColor, ForegroundColor: style.statusbarSecondaryFg},
+		{Text: "", BackgroundColor: style.statusbarPrimaryBg, ForegroundColor: style.statusbarPrimaryFg},
+		{Text: "", BackgroundColor: style.statusbarThirdColBg, ForegroundColor: style.statusbarSecondaryFg},
+		{Text: "? Help", BackgroundColor: style.statusbarFourthColBg, ForegroundColor: style.statusbarSecondaryFg},
 	}
 
 	help := help.New()
-	help.Styles.ShortKey = styles.HelpKeyStyle
-	help.Styles.ShortDesc = styles.HelpDescStyle
-	help.Styles.FullKey = styles.HelpKeyStyle
-	help.Styles.FullDesc = styles.HelpDescStyle
+	help.Styles.ShortKey = style.helpKeyStyle
+	help.Styles.ShortDesc = style.helpDescStyle
+	help.Styles.FullKey = style.helpKeyStyle
+	help.Styles.FullDesc = style.helpDescStyle
 
 	sb := statusbar.New(statusbarItems, 1, 0)
 	m := Model{

@@ -33,7 +33,7 @@ func (i Request) Title() string {
 func (i Request) Description() string {
 	var methodStyle = lipgloss.NewStyle()
 
-	var color = methodColors[i.Method]
+	var color = style.httpMethodColors[i.Method]
 	if color == "" {
 		color = "#cdd6f4"
 	}

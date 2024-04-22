@@ -11,10 +11,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var promptStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f44")).BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2)
-var descriptionStyle = lipgloss.NewStyle().PaddingBottom(1)
-var entryKeyStyle = styles.HelpKeyStyle.Copy()
-var entryTextStyle = styles.HelpKeyStyle.Copy().Faint(true)
+var (
+	promptStyle      lipgloss.Style
+	descriptionStyle lipgloss.Style
+	entryKeyStyle    lipgloss.Style
+	entryTextStyle   lipgloss.Style
+)
 
 type Model struct {
 	width   int
@@ -91,6 +93,14 @@ func (m Model) View() string {
 }
 
 func New(label string, entries []KeypromptEntry) Model {
+
+	theme := styles.GetTheme()
+	commonStyles := styles.GetCommonStyles(theme)
+
+	promptStyle = lipgloss.NewStyle().BorderForeground(theme.BorderFgColor).BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2)
+	descriptionStyle = lipgloss.NewStyle().PaddingBottom(1)
+	entryKeyStyle = commonStyles.HelpKeyStyle.Copy()
+	entryTextStyle = commonStyles.HelpKeyStyle.Copy().Faint(true)
 
 	var keys []string
 	for _, v := range entries {

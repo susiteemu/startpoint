@@ -52,7 +52,7 @@ func (k embeddedKeyMap) FullHelp() [][]key.Binding {
 
 func updateStatusbar(m *Model, msg string) {
 	msgItem := statusbar.StatusbarItem{
-		Text: msg, BackgroundColor: statusbarFirstColBg, ForegroundColor: statusbarFirstColFg,
+		Text: msg, BackgroundColor: style.statusbarFirstColBg, ForegroundColor: style.statusbarFirstColFg,
 	}
 	m.statusbar.SetItem(msgItem, 0)
 }
@@ -153,7 +153,7 @@ func renderList(m Model) string {
 		listHeight := calculateListHeight(m)
 		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
 		views = append(views, m.statusbar.View())
-		views = append(views, styles.HelpPaneStyle.Render(m.help.View(m.list)))
+		views = append(views, style.helpPaneStyle.Render(m.help.View(m.list)))
 	} else {
 		listHeight := calculateListHeight(m)
 		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
@@ -169,7 +169,7 @@ func renderList(m Model) string {
 func calculateListHeight(m Model) int {
 	listHeight := m.height - statusbar.Height
 	if m.help.ShowAll {
-		helpHeight := lipgloss.Height(styles.HelpPaneStyle.Render(m.help.View(m.list)))
+		helpHeight := lipgloss.Height(style.helpPaneStyle.Render(m.help.View(m.list)))
 		listHeight -= helpHeight
 	}
 	return listHeight
@@ -195,6 +195,10 @@ func New(loadedProfiles []*model.Profile) Model {
 func newModel(loadedProfiles []*model.Profile, embedded bool, width, height int) Model {
 	var profiles []list.Item
 
+	theme := styles.GetTheme()
+	commonStyles := styles.GetCommonStyles(theme)
+	InitStyle(theme, commonStyles)
+
 	for _, v := range loadedProfiles {
 		r := Profile{
 			Name:      v.Name,
@@ -211,21 +215,21 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, width, height int)
 	}
 	profileList := list.New(profiles, d, width, max(0, height-2))
 	profileList.Title = title
-	profileList.Styles.Title = titleStyle
+	profileList.Styles.Title = style.listTitleStyle
 	profileList.SetShowHelp(false)
 
 	var sb statusbar.Model
 	help := help.New()
-	help.Styles.ShortKey = helpKeyStyle
-	help.Styles.ShortDesc = helpDescStyle
-	help.Styles.FullKey = helpKeyStyle
-	help.Styles.FullDesc = helpDescStyle
+	help.Styles.ShortKey = style.helpKeyStyle
+	help.Styles.ShortDesc = style.helpDescStyle
+	help.Styles.FullKey = style.helpKeyStyle
+	help.Styles.FullDesc = style.helpDescStyle
 	help.ShortSeparator = "  "
 
 	if !embedded {
 		statusbarItems := []statusbar.StatusbarItem{
-			{Text: "", BackgroundColor: statusbarFirstColBg, ForegroundColor: statusbarFirstColFg},
-			{Text: "? Help", BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
+			{Text: "", BackgroundColor: style.statusbarFirstColBg, ForegroundColor: style.statusbarFirstColFg},
+			{Text: "? Help", BackgroundColor: style.statusbarSecondColBg, ForegroundColor: style.statusbarSecondColFg},
 		}
 
 		sb = statusbar.New(statusbarItems, 0, 0)

@@ -1,33 +1,43 @@
 package profileui
 
 import (
+	"startpoint/tui/styles"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
-var (
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFDF5")).
-			Background(lipgloss.NoColor{}).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#a6e3a1")).
-			Padding(0)
+type Styles struct {
+	statusbarFirstColBg  lipgloss.Color
+	statusbarSecondColBg lipgloss.Color
+	statusbarFirstColFg  lipgloss.Color
+	statusbarSecondColFg lipgloss.Color
 
-	statusMessageStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#f38ba8"))
+	listTitleStyle     lipgloss.Style
+	listItemTitleColor lipgloss.Color
+	listItemDescColor  lipgloss.Color
 
-	helpKeyStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#cdd6f4"))
-	helpDescStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#cdd6f4")).Faint(true)
-	helpSeparatorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#cdd6f4")).Faint(true)
+	helpPaneStyle lipgloss.Style
+	helpKeyStyle  lipgloss.Style
+	helpDescStyle lipgloss.Style
 
-	stopwatchStyle = lipgloss.NewStyle().Margin(1, 2).BorderBackground(lipgloss.Color("#cdd6f4")).Align(lipgloss.Center).Bold(true)
+	httpMethodColors map[string]lipgloss.Color
+}
 
-	profileTitleColor = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#cdd6f4"}
-	profileDescColor  = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#bac2de"}
+var style *Styles
 
-	statusbarFirstColBg  = lipgloss.Color("#11111b")
-	statusbarFirstColFg  = lipgloss.Color("#FFFDF5")
-	statusbarSecondColBg = lipgloss.Color("#89b4fa")
-	statusbarSecondColFg = lipgloss.Color("#1e1e2e")
+func InitStyle(theme *styles.Theme, commonStyles *styles.CommonStyle) {
 
-	listStyle = lipgloss.NewStyle().BorderBackground(lipgloss.Color("#cdd6f4"))
-)
+	style = &Styles{
+		statusbarFirstColBg:  theme.StatusbarPrimaryBgColor,
+		statusbarSecondColBg: theme.StatusbarFourthColBgColor,
+		statusbarFirstColFg:  theme.StatusbarPrimaryFgColor,
+		statusbarSecondColFg: theme.StatusbarSecondaryFgColor,
+
+		listTitleStyle:     lipgloss.NewStyle().Foreground(theme.TitleFgColor).Background(theme.TitleBgColor).Padding(0, 1).MarginTop(1),
+		listItemTitleColor: theme.TextFgColor,
+		listItemDescColor:  theme.SubtextFgColor,
+		helpPaneStyle:      commonStyles.HelpPaneStyle.Copy(),
+		helpKeyStyle:       commonStyles.HelpKeyStyle.Copy(),
+		helpDescStyle:      commonStyles.HelpDescStyle.Copy(),
+	}
+}

@@ -1,0 +1,41 @@
+theme:
+  syntax: catppuccin-mocha
+  bgColor: '#1e1e2e'
+  primaryTextFgColor: '#cdd6f4'
+  secondaryTextFgColor: '#bac2de'
+  titleFgColor: '#1e1e2e'
+  titleBgColor: '#a6e3a1'
+  borderFgColor: '#cdd6f4'
+  whitespaceFgColor: '#313244'
+  statusbar:
+    primaryBgColor: '#11111b'
+    primaryFgColor: '#cdd6f4'
+    secondaryFgColor: '#1e1e2e'
+    modePrimaryBgColor: '#f9e2af'
+    modeSecondaryBgColor: '#a6e3a1'
+    thirdColBgColor: '#94e2d5'
+    fourthColBgColor: '#89b4fa'
+  httpMethods:
+    textFgColor: '#1e1e2e'
+    getBgColor: '#89b4fa'
+    postBgColor: '#a6e3a1'
+    putBgColor: '#f9e2af'
+    deleteBgColor: '#f38ba8'
+    patchBgColor: '#94e2d5'
+    optionsBgColor: ''
+printer:
+  response:
+    formatter: terminal16m
+editor: /opt/homebrew/bin/nvim
+httpClient:
+  debug: true
+  enableTraceInfo: true
+  insecure: false
+  proxyUrl: https://some-proxy.com
+  timeoutSeconds: 60
+  clientCertificates:
+    - certFile: /path/to/client.pem
+      keyFile: /path/to/client.key
+  rootCertificates:
+    - /path/to/rootcert.pem
+    - /path/to/another/rootcert.pem

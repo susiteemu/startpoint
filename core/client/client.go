@@ -1,8 +1,11 @@
 package client
 
 import (
+	"crypto/tls"
 	"errors"
+	"startpoint/core/configuration"
 	"startpoint/core/model"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog"
@@ -30,23 +33,69 @@ func (l *restyZeroLogger) Debugf(format string, v ...interface{}) {
 	l.logger.Debug().Msgf(format, v...)
 }
 
-var client *resty.Client = resty.New().SetDebug(true).SetLogger(newLogger(&log.Logger))
-
 func DoRequest(request model.Request) (*model.Response, error) {
 	requestHeaders := request.Headers.ToMap()
 	log.Debug().Msgf("Request %v -- %v -- %v", request.Url, request.Body, request.Method)
 
-	// TODO have enable trace come from config
-	r := client.R().SetHeaders(requestHeaders).EnableTrace()
+	// NOTE: creating new client for each request to simplify configuring it
+	// (no need to reset to default values after request)
+	var client *resty.Client = resty.New().SetLogger(newLogger(&log.Logger))
+	// settings coming from the configuration to the client
+	debug := configuration.GetBool("httpClient.debug")
+	client.SetDebug(debug)
+
+	timeoutSeconds, set := configuration.GetInt("httpClient.timeoutSeconds")
+	if set && timeoutSeconds >= 0 {
+		client.SetTimeout(time.Duration(timeoutSeconds * int(time.Second)))
+	}
+
+	proxy, set := configuration.GetString("httpClient.proxyUrl")
+	if set && len(proxy) > 0 {
+		client = client.SetProxy(proxy)
+	}
+
+	insecure := configuration.GetBool("httpClient.insecure")
+	if insecure {
+		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	} else {
+		rootCertificates, _ := configuration.GetStringSlice("httpClient.rootCertificates")
+		if len(rootCertificates) > 0 {
+			for _, cert := range rootCertificates {
+				client.SetRootCertificate(cert)
+			}
+		}
+		clientCertificates, set := configuration.GetSliceMapString("httpClient.clientCertificates")
+		if set && len(clientCertificates) > 0 {
+			var certs []tls.Certificate
+			for _, pair := range clientCertificates {
+				certFile := pair["certfile"]
+				keyFile := pair["keyfile"]
+				cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+				if err != nil {
+					// TODO: error handling
+					log.Fatal().Err(err).Msg("Error with client certificate")
+				}
+				certs = append(certs, cert)
+			}
+			client.SetCertificates(certs...)
+		}
+	}
+
+	r := client.R().SetHeaders(requestHeaders)
+
+	enableTrace := configuration.GetBool("httpClient.enableTraceInfo")
+	if enableTrace {
+		r.EnableTrace()
+	}
 
 	if request.IsForm() {
 		bodyAsMap, ok := request.BodyAsMap()
 		if !ok {
 			return nil, errors.New("cannot convert body to map")
 		}
-		r = r.SetFormData(bodyAsMap)
+		r.SetFormData(bodyAsMap)
 	} else {
-		r = r.SetBody(request.Body)
+		r.SetBody(request.Body)
 	}
 
 	if len(request.Output) > 0 {
@@ -59,19 +108,22 @@ func DoRequest(request model.Request) (*model.Response, error) {
 	}
 
 	ti := resp.Request.TraceInfo()
-	traceInfo := model.TraceInfo{
-		DNSLookup:      ti.DNSLookup,
-		ConnTime:       ti.ConnTime,
-		TCPConnTime:    ti.TCPConnTime,
-		TLSHandshake:   ti.TLSHandshake,
-		ServerTime:     ti.ServerTime,
-		ResponseTime:   ti.ResponseTime,
-		TotalTime:      ti.TotalTime,
-		IsConnReused:   ti.IsConnReused,
-		IsConnWasIdle:  ti.IsConnWasIdle,
-		ConnIdleTime:   ti.ConnIdleTime,
-		RequestAttempt: ti.RequestAttempt,
-		RemoteAddr:     ti.RemoteAddr.String(),
+	traceInfo := model.TraceInfo{}
+	if enableTrace {
+		traceInfo = model.TraceInfo{
+			DNSLookup:      ti.DNSLookup,
+			ConnTime:       ti.ConnTime,
+			TCPConnTime:    ti.TCPConnTime,
+			TLSHandshake:   ti.TLSHandshake,
+			ServerTime:     ti.ServerTime,
+			ResponseTime:   ti.ResponseTime,
+			TotalTime:      ti.TotalTime,
+			IsConnReused:   ti.IsConnReused,
+			IsConnWasIdle:  ti.IsConnWasIdle,
+			ConnIdleTime:   ti.ConnIdleTime,
+			RequestAttempt: ti.RequestAttempt,
+			RemoteAddr:     ti.RemoteAddr.String(),
+		}
 	}
 
 	response := model.Response{

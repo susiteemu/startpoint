@@ -60,8 +60,8 @@ var editModeKeys = []key.Binding{
 
 func newBaseDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
-	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(requestTitleColor).BorderLeftForeground(requestTitleColor)
-	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(requestDescColor).BorderLeftForeground(requestDescColor)
+	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(style.listItemTitleColor).BorderLeftForeground(style.listItemTitleColor)
+	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(style.listItemDescColor).BorderLeftForeground(style.listItemDescColor)
 	return d
 }
 

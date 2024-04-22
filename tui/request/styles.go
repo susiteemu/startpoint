@@ -1,40 +1,62 @@
 package requestui
 
 import (
+	"startpoint/tui/styles"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
-var (
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#11111b")).
-			Background(lipgloss.Color("#a6e3a1")).
-			Padding(0, 1).MarginTop(1)
+type Styles struct {
+	stopwatchStyle        lipgloss.Style
+	statusbarModeSelectBg lipgloss.Color
+	statusbarModeEditBg   lipgloss.Color
+	statusbarPrimaryBg    lipgloss.Color
+	statusbarThirdColBg   lipgloss.Color
+	statusbarFourthColBg  lipgloss.Color
+	statusbarPrimaryFg    lipgloss.Color
+	statusbarSecondaryFg  lipgloss.Color
 
-	statusMessageStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#f38ba8"))
+	listTitleStyle     lipgloss.Style
+	listItemTitleColor lipgloss.Color
+	listItemDescColor  lipgloss.Color
 
-	stopwatchStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f4")).Border(lipgloss.RoundedBorder()).Align(lipgloss.Center).Bold(true).Padding(2, 5)
+	helpPaneStyle lipgloss.Style
+	helpKeyStyle  lipgloss.Style
+	helpDescStyle lipgloss.Style
 
-	requestTitleColor = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#cdd6f4"}
-	requestDescColor  = lipgloss.AdaptiveColor{Light: "#cdd6f4", Dark: "#bac2de"}
+	whitespaceFg lipgloss.Color
 
-	statusbarModeSelectBg = lipgloss.Color("#f9e2af")
-	statusbarModeEditBg   = lipgloss.Color("#a6e3a1")
-	statusbarFirstColFg   = lipgloss.Color("#1e1e2e")
-	statusbarSecondColBg  = lipgloss.Color("#11111b")
-	statusbarSecondColFg  = lipgloss.Color("#FFFDF5")
-	statusbarThirdColBg   = lipgloss.Color("#94e2d5")
-	statusbarThirdColFg   = lipgloss.Color("#1e1e2e")
-	statusbarFourthColBg  = lipgloss.Color("#89b4fa")
-	statusbarFourthColFg  = lipgloss.Color("#1e1e2e")
+	httpMethodColors map[string]lipgloss.Color
+}
 
-	listStyle    = lipgloss.NewStyle().BorderBackground(lipgloss.Color("#cdd6f4"))
-	methodColors = map[string]string{
-		"GET":    "#89b4fa",
-		"POST":   "#a6e3a1",
-		"PUT":    "#f9e2af",
-		"DELETE": "#f38ba8",
-		"PATCH":  "#94e2d5",
-		// TODO etc
+var style *Styles
+
+func InitStyle(theme *styles.Theme, commonStyles *styles.CommonStyle) {
+	style = &Styles{
+		stopwatchStyle:        lipgloss.NewStyle().BorderForeground(theme.BorderFgColor).Border(lipgloss.RoundedBorder()).Align(lipgloss.Center).Bold(true).Padding(2, 5),
+		statusbarModeSelectBg: theme.StatusbarModePrimaryBgColor,
+		statusbarModeEditBg:   theme.StatusbarModeSecondaryBgColor,
+		statusbarPrimaryBg:    theme.StatusbarPrimaryBgColor,
+		statusbarThirdColBg:   theme.StatusbarThirdColBgColor,
+		statusbarFourthColBg:  theme.StatusbarFourthColBgColor,
+		statusbarPrimaryFg:    theme.StatusbarPrimaryFgColor,
+		statusbarSecondaryFg:  theme.StatusbarSecondaryFgColor,
+
+		listTitleStyle:     lipgloss.NewStyle().Foreground(theme.TitleFgColor).Background(theme.TitleBgColor).Padding(0, 1).MarginTop(1),
+		listItemTitleColor: theme.TextFgColor,
+		listItemDescColor:  theme.SubtextFgColor,
+		httpMethodColors: map[string]lipgloss.Color{
+			"GET":    theme.HttpMethodGetBgColor,
+			"POST":   theme.HttpMethodPostBgColor,
+			"PUT":    theme.HttpMethodPutBgColor,
+			"DELETE": theme.HttpMethodDeleteBgColor,
+			"PATCH":  theme.HttpMethodPatchBgColor,
+			// TODO etc
+		},
+		helpPaneStyle: commonStyles.HelpPaneStyle.Copy(),
+		helpKeyStyle:  commonStyles.HelpKeyStyle.Copy(),
+		helpDescStyle: commonStyles.HelpDescStyle.Copy(),
+
+		whitespaceFg: theme.WhitespaceFgColor,
 	}
-)
+}

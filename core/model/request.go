@@ -9,6 +9,26 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	starlarkNamePatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?mU)^.*meta:name:(.*)$`),
+	}
+	starlarkUrlPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?mU)^.*doc:url:(.*)$`),
+		regexp.MustCompile(`(?mU)^\s*url\s*=(.*)$`),
+	}
+	starlarkMethodPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?mU)^.*doc:method:(.*)$`),
+		regexp.MustCompile(`(?mU)^\s*method\s*=(.*)$`),
+	}
+	starlarkPrevReqPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?mU)^.*meta:prev_req:(.*)$`),
+	}
+	starlarkOutputPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?mU)^.*meta:output:(.*)$`),
+	}
+)
+
 type Request struct {
 	Url     string
 	Method  string
@@ -67,57 +87,42 @@ func (r *RequestMold) Name() string {
 	if r.Yaml != nil {
 		return r.Yaml.Name
 	} else if r.Starlark != nil {
-		pattern := regexp.MustCompile(`(?mU)^.*meta:name:(.*)$`)
-		match := pattern.FindStringSubmatch(r.Starlark.Script)
-		if len(match) == 2 {
-			return strings.TrimSpace(match[1])
+		for _, pattern := range starlarkNamePatterns {
+			match := pattern.FindStringSubmatch(r.Starlark.Script)
+			if len(match) == 2 {
+				return strings.TrimSpace(match[1])
+			}
 		}
 	}
 	return ""
 }
 
 func (r *RequestMold) Url() string {
-	var url = ""
 	if r.Yaml != nil {
-		url = r.Yaml.Url
+		return r.Yaml.Url
 	} else if r.Starlark != nil {
-		pattern := regexp.MustCompile(`(?mU)^.*doc:url:(.*)$`)
-		match := pattern.FindStringSubmatch(r.Starlark.Script)
-		if len(match) == 2 {
-			url = strings.TrimSpace(match[1])
-		} else {
-			pattern = regexp.MustCompile(`(?mU)^\s*url\s*=(.*)$`)
-			match = pattern.FindStringSubmatch(r.Starlark.Script)
+		for _, pattern := range starlarkUrlPatterns {
+			match := pattern.FindStringSubmatch(r.Starlark.Script)
 			if len(match) == 2 {
-				url = strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
+				return strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
 			}
 		}
 	}
-	if url != "" {
-		return url
-	}
 	return ""
-
 }
 
 func (r *RequestMold) Method() string {
-	var method = ""
 	if r.Yaml != nil {
-		method = r.Yaml.Method
+		return r.Yaml.Method
 	} else if r.Starlark != nil {
-		pattern := regexp.MustCompile(`(?mU)^.*doc:method:(.*)$`)
-		match := pattern.FindStringSubmatch(r.Starlark.Script)
-		if len(match) == 2 {
-			method = strings.TrimSpace(match[1])
-		} else {
-			pattern = regexp.MustCompile(`(?mU)^\s*method\s*=(.*)$`)
-			match = pattern.FindStringSubmatch(r.Starlark.Script)
+		for _, pattern := range starlarkMethodPatterns {
+			match := pattern.FindStringSubmatch(r.Starlark.Script)
 			if len(match) == 2 {
-				method = strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
+				return strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
 			}
 		}
 	}
-	return method
+	return ""
 }
 
 func (r *RequestMold) Raw() string {
@@ -130,17 +135,31 @@ func (r *RequestMold) Raw() string {
 }
 
 func (r *RequestMold) PreviousReq() string {
-	var prevReq = ""
 	if r.Yaml != nil {
-		prevReq = r.Yaml.PrevReq
+		return r.Yaml.PrevReq
 	} else if r.Starlark != nil {
-		pattern := regexp.MustCompile(`(?mU)^.*meta:prev_req:(.*)$`)
-		match := pattern.FindStringSubmatch(r.Starlark.Script)
-		if len(match) == 2 {
-			prevReq = strings.TrimSpace(match[1])
+		for _, pattern := range starlarkPrevReqPatterns {
+			match := pattern.FindStringSubmatch(r.Starlark.Script)
+			if len(match) == 2 {
+				return strings.TrimSpace(match[1])
+			}
 		}
 	}
-	return prevReq
+	return ""
+}
+
+func (r *RequestMold) Output() string {
+	if r.Yaml != nil {
+		return r.Yaml.Output
+	} else if r.Starlark != nil {
+		for _, pattern := range starlarkOutputPatterns {
+			match := pattern.FindStringSubmatch(r.Starlark.Script)
+			if len(match) == 2 {
+				return strings.TrimSpace(match[1])
+			}
+		}
+	}
+	return ""
 }
 
 func (r *RequestMold) DeleteFromFS() bool {

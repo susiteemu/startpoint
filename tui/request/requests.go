@@ -86,16 +86,12 @@ func updateStatusbar(m *Model, msg string) {
 		Text: modeStr(m.mode), BackgroundColor: modeBg, ForegroundColor: style.statusbarSecondaryFg,
 	}
 
-	msgItem := statusbar.StatusbarItem{
-		Text: msg, BackgroundColor: style.statusbarPrimaryBg, ForegroundColor: style.statusbarPrimaryFg,
-	}
-
 	profileItem := statusbar.StatusbarItem{
 		Text: profileText, BackgroundColor: profileBg, ForegroundColor: style.statusbarSecondaryFg,
 	}
 
 	m.statusbar.SetItem(modeItem, 0)
-	m.statusbar.SetItem(msgItem, 1)
+	m.statusbar.ChangeText(msg, 1)
 	m.statusbar.SetItem(profileItem, 2)
 }
 
@@ -582,6 +578,12 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	requestList := list.New(requests, d, 0, 0)
 	requestList.Title = "Requests"
 	requestList.Styles.Title = style.listTitleStyle
+	requestList.Styles.StatusBar = lipgloss.NewStyle().Foreground(style.listStatusbarFg).Padding(0, 1, 1, 1)
+	requestList.Styles.StatusBarFilterCount = requestList.Styles.StatusBar.Copy().UnsetPadding().Faint(true)
+	requestList.Styles.StatusEmpty = requestList.Styles.StatusBar.Copy().UnsetPadding()
+	requestList.Styles.NoItems = requestList.Styles.StatusBar.Copy()
+	requestList.Styles.FilterPrompt = requestList.Styles.FilterPrompt.Foreground(style.listFilterPromptFg).Padding(1, 0, 0, 0)
+	requestList.Styles.FilterCursor = requestList.Styles.FilterCursor.Foreground(style.listFilterCursorFg)
 
 	requestList.SetShowHelp(false)
 

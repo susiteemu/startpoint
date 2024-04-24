@@ -3,6 +3,7 @@ package requestui
 import (
 	"fmt"
 	"startpoint/core/model"
+	"startpoint/core/print"
 	"startpoint/core/templating/templateng"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -35,12 +36,16 @@ func (i Request) Description() string {
 
 	var color = style.httpMethodColors[i.Method]
 	if color == "" {
-		color = "#cdd6f4"
+		color = style.httpMethodDefaultColor
 	}
-	methodStyle = methodStyle.Background(lipgloss.Color(color)).Foreground(lipgloss.Color("#1e1e2e")).PaddingRight(1).PaddingLeft(1)
+	methodStyle = methodStyle.Background(lipgloss.Color(color)).Foreground(style.httpMethodTextColor).PaddingRight(1).PaddingLeft(1)
 
 	var urlStyle = lipgloss.NewStyle()
 	url := i.Url
+	if url == "" {
+		url = "<url>"
+	}
+	urlStyle = urlStyle.Foreground(style.urlFg).Background(style.urlBg)
 	if activeProfile != nil && processTemplateVariables {
 		for k, v := range activeProfile.Variables {
 			processedUrl, match := templateng.ProcessTemplateVariable(url, k, v)
@@ -48,19 +53,17 @@ func (i Request) Description() string {
 				url = processedUrl
 			}
 		}
+		url = print.HighlightWithRegex(url, `{[^{}]*}`, style.urlFg, style.urlBg, style.urlUnfilledTemplatedSectionFg, style.urlUnfilledTemplatedSectionBg)
+	} else {
+		url = print.HighlightWithRegex(url, `{[^{}]*}`, style.urlFg, style.urlBg, style.urlTemplatedSectionFg, style.urlTemplatedSectionBg)
 	}
 
-	urlStyle = urlStyle.Foreground(lipgloss.Color("#b4befe"))
 	method := i.Method
 	if i.Method == "" {
 		method = "<method>"
 	}
 
-	if url == "" {
-		url = "<url>"
-	}
-
-	return lipgloss.JoinHorizontal(0, methodStyle.Render(method), " ", urlStyle.Render(url))
+	return lipgloss.JoinHorizontal(0, methodStyle.Render(method), " ", url)
 }
 func (i Request) FilterValue() string { return fmt.Sprintf("%s %s %s", i.Name, i.Method, i.Url) }
 

@@ -19,6 +19,9 @@ type Styles struct {
 	listTitleStyle     lipgloss.Style
 	listItemTitleColor lipgloss.Color
 	listItemDescColor  lipgloss.Color
+	listStatusbarFg    lipgloss.Color
+	listFilterPromptFg lipgloss.Color
+	listFilterCursorFg lipgloss.Color
 
 	helpPaneStyle lipgloss.Style
 	helpKeyStyle  lipgloss.Style
@@ -26,7 +29,16 @@ type Styles struct {
 
 	whitespaceFg lipgloss.Color
 
-	httpMethodColors map[string]lipgloss.Color
+	httpMethodTextColor    lipgloss.Color
+	httpMethodDefaultColor lipgloss.Color
+	httpMethodColors       map[string]lipgloss.Color
+
+	urlFg                         lipgloss.Color
+	urlBg                         lipgloss.Color
+	urlTemplatedSectionFg         lipgloss.Color
+	urlTemplatedSectionBg         lipgloss.Color
+	urlUnfilledTemplatedSectionFg lipgloss.Color
+	urlUnfilledTemplatedSectionBg lipgloss.Color
 }
 
 var style *Styles
@@ -45,6 +57,12 @@ func InitStyle(theme *styles.Theme, commonStyles *styles.CommonStyle) {
 		listTitleStyle:     lipgloss.NewStyle().Foreground(theme.TitleFgColor).Background(theme.TitleBgColor).Padding(0, 1).MarginTop(1),
 		listItemTitleColor: theme.TextFgColor,
 		listItemDescColor:  theme.SubtextFgColor,
+		listStatusbarFg:    theme.TextFgColor,
+		listFilterPromptFg: theme.TextFgColor,
+		listFilterCursorFg: theme.TextFgColor,
+
+		httpMethodTextColor:    theme.HttpMethodTextFgColor,
+		httpMethodDefaultColor: theme.HttpMethodDefaultBgColor,
 		httpMethodColors: map[string]lipgloss.Color{
 			"GET":    theme.HttpMethodGetBgColor,
 			"POST":   theme.HttpMethodPostBgColor,
@@ -58,5 +76,12 @@ func InitStyle(theme *styles.Theme, commonStyles *styles.CommonStyle) {
 		helpDescStyle: commonStyles.HelpDescStyle.Copy(),
 
 		whitespaceFg: theme.WhitespaceFgColor,
+
+		urlFg:                         theme.UrlFgColor,
+		urlBg:                         theme.UrlBgColor,
+		urlTemplatedSectionFg:         theme.UrlTemplatedSectionFgColor,
+		urlTemplatedSectionBg:         theme.UrlTemplatedSectionBgColor,
+		urlUnfilledTemplatedSectionFg: theme.UrlUnfilledTemplatedSectionFgColor,
+		urlUnfilledTemplatedSectionBg: theme.UrlUnfilledTemplatedSectionBgColor,
 	}
 }

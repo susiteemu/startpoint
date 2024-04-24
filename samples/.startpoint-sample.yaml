@@ -17,12 +17,19 @@ theme:
     fourthColBgColor: '#89b4fa'
   httpMethods:
     textFgColor: '#1e1e2e'
+    defaultBgColor: '#cdd6f4'
     getBgColor: '#89b4fa'
     postBgColor: '#a6e3a1'
     putBgColor: '#f9e2af'
     deleteBgColor: '#f38ba8'
     patchBgColor: '#94e2d5'
     optionsBgColor: ''
+  urlFgColor: '#89b4fa'
+  urlBgColor: ''
+  urlTemplatedSectionFgColor: '#f9e2af'
+  urlTemplatedSectionBgColor: ''
+  urlUnfilledTemplatedSectionFgColor: '#f38ba8'
+  urlUnfilledTemplatedSectionBgColor: ''
 printer:
   response:
     formatter: terminal16m

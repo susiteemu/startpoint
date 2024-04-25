@@ -43,10 +43,10 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().Bool("help", false, "Displays help")
 
-	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Workspace directory")
+	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Workspace directory (default is current dir)")
 	viper.BindPFlag("workspace", rootCmd.PersistentFlags().Lookup("workspace"))
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.startpoint.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is a merge of $HOME/.startpoint.yaml and <workspace>/.startpoint.yaml)")
 
 	home, err := os.UserHomeDir()
 	cobra.CheckErr(err)
@@ -73,24 +73,32 @@ func initConfig() {
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(".startpoint")
+
 	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	viper.SetDefault("theme.syntax", "native")
-	viper.SetDefault("printer.response.formatter", "terminal16m")
-
+	viper.AutomaticEnv()
 	cwd, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
 	cobra.CheckErr(err)
 	viper.SetDefault("workspace", cwd)
+	// TODO: where should default values come from?
+	viper.SetDefault("theme.syntax", "native")
+	viper.SetDefault("printer.response.formatter", "terminal16m")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("failed to read config %v\n", err)
+	}
+
+	// if no specific config file is given, we try to merge config files found in $HOME and workspace
+	if cfgFile == "" {
+		workspaceViper := viper.New()
+		workspaceViper.AddConfigPath(viper.GetString("workspace"))
+		workspaceViper.SetConfigType("yaml")
+		workspaceViper.SetConfigName(".startpoint")
+
+		// If a config file is found, read it in.
+		if err := workspaceViper.ReadInConfig(); err == nil {
+			viper.MergeConfigMap(workspaceViper.AllSettings())
+		}
 	}
 
 }

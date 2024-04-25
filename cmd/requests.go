@@ -19,6 +19,7 @@ var manageCmd = &cobra.Command{
 	Long:  "Start up a tui application to manage and run requests",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info().Msgf("Starting to handle requests cmd with workspace root %s", viper.GetString("workspace"))
+		log.Debug().Msgf("All configuration values %v", viper.AllSettings())
 		workspace := viper.GetString("workspace")
 		loadedRequests, err := loader.ReadRequests(workspace)
 		if err != nil {

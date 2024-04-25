@@ -191,7 +191,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.ResetFilter()
 		requestMold, err := findRequestMold(request, m)
 		if err != nil {
-			// TODO show error if request mold is not found
+			log.Error().Msgf("Could not find request mold with request %v", request)
 			return m, createStatusMsg(fmt.Sprintf("Failed to run request %s", request.Title()))
 		}
 		return m, tea.Batch(
@@ -224,7 +224,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			newRequest, newRequestMold, ok := readRequest(msg.root, msg.filename)
 			if ok {
 				setCmd := m.list.InsertItem(m.list.Index()+1, newRequest)
-				// note: order is not relevant here
+				// NOTE: order is not relevant here
 				m.requestMolds = append(m.requestMolds, newRequestMold)
 				statusCmd := createStatusMsg(fmt.Sprintf("Created request %s", newRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
@@ -235,7 +235,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == Edit && m.active == List {
 			requestMold, err := findRequestMold(msg.Request, m)
 			if err != nil {
-				// TODO handle err
+				log.Error().Msgf("Could not find request mold with request %v", msg.Request)
 				return m, createStatusMsg(fmt.Sprintf("Failed to edit request %s", msg.Request.Title()))
 			}
 			cmd, err := openFileToEditorCmd(requestMold.Root, requestMold.Filename)
@@ -255,7 +255,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == Edit && m.active == List {
 			requestMold, err := findRequestMold(msg.Request, m)
 			if err != nil {
-				log.Error().Err(err).Msgf("Failed to find request mold with %v", msg.Request)
+				log.Error().Err(err).Msgf("Coul not find request mold with request %v", msg.Request)
 				return m, createStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
 			}
 			deleted := requestMold.DeleteFromFS()
@@ -274,7 +274,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err == nil {
 			requestMold, err := findRequestMold(oldRequest, m)
 			if err != nil {
-				log.Error().Err(err).Msgf("Failed to find request mold with %v", msg.Request)
+				log.Error().Err(err).Msgf("Could not find request mold with request %v", msg.Request)
 				return m, createStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
 			}
 			editedRequest, editedRequestMold, ok := readRequest(requestMold.Root, requestMold.Filename)
@@ -292,7 +292,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.active = Preview
 			selected, err := findRequestMold(msg.Request, m)
 			if err != nil {
-				log.Error().Err(err).Msgf("Failed to find request mold with %v", msg.Request)
+				log.Error().Err(err).Msgf("Could not find request mold with request %v", msg.Request)
 				return m, createStatusMsg(fmt.Sprintf("Failed to open %s for preview", msg.Request.Title()))
 			}
 			var formatted string
@@ -306,7 +306,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if formatted == "" || err != nil {
 				formatted = selected.Raw()
 			}
-			// note: cannot give correct height before preview is created
+			// NOTE: cannot give correct height before preview is created
 			// and we can calculate vertical margin height
 			m.preview = preview.New(selected.Filename, formatted)
 			height := m.height - m.preview.VerticalMarginHeight()
@@ -437,7 +437,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case StatusMessage:
-		log.Debug().Msgf("Show status message %s", string(msg))
 		updateStatusbar(&m, string(msg))
 		return m, nil
 	}

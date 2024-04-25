@@ -8,6 +8,7 @@ import (
 	"regexp"
 	requestchain "startpoint/core/chaining"
 	"startpoint/core/client/runner"
+	"startpoint/core/configuration"
 	"startpoint/core/editor"
 	"startpoint/core/loader"
 	"startpoint/core/model"
@@ -23,7 +24,7 @@ import (
 )
 
 func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Profile) tea.Cmd {
-	// TODO handle errors
+	// TODO: handle errors
 	return func() tea.Msg {
 
 		chainedRequests := requestchain.ResolveRequestChain(r, all)
@@ -34,17 +35,24 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 		if err != nil {
 			return RunRequestFinishedMsg(fmt.Sprintf("failed to do request err: %v", err))
 		}
-		var printedResponses string
+		var printedResponses []string
+		printOpts := print.PrintOpts{
+			PrettyPrint:    true,
+			PrintBody:      true,
+			PrintHeaders:   true,
+			PrintTraceInfo: configuration.GetBool("httpClient.enableTraceInfo"),
+		}
 		for _, resp := range responses {
-			printed, err := print.SprintPrettyFullResponse(resp)
+			printed, err := print.SprintResponse(resp, printOpts)
 			if err != nil {
 				return RunRequestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))
 			}
-			printedResponses += fmt.Sprintf("%s\n", printed)
+			printedResponses = append(printedResponses, printed)
 		}
 
-		return RunRequestFinishedMsg(printedResponses)
+		return RunRequestFinishedMsg(strings.Join(printedResponses, "\n"))
 	}
+
 }
 
 func interimResult(took time.Duration, statusCode int) {

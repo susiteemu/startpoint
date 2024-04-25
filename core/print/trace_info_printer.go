@@ -7,12 +7,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// TODO: read from configuration
 var traceInfoStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#cdd6f4")).Faint(true)
 
 func SprintTraceInfo(traceInfo model.TraceInfo, pretty bool) (string, error) {
 
-	ti := fmt.Sprintf(`
-DNSLookup: %s
+	ti := fmt.Sprintf(`DNSLookup: %s
 ConnTime: %s
 TCPConnTime: %s
 TLSHandshake: %s

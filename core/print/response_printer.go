@@ -64,11 +64,11 @@ func SprintPrettyResponse(resp *model.Response, printHeaders bool, printBody boo
 
 func sprintResponse(resp *model.Response, printOpts PrintOpts) (string, error) {
 	pretty := printOpts.PrettyPrint
-	respStr := ""
+	var responseBuilder []string
 
 	if printOpts.PrintTraceInfo {
 		traceInfo, _ := SprintTraceInfo(resp.TraceInfo, pretty)
-		respStr += traceInfo + "\n"
+		responseBuilder = append(responseBuilder, traceInfo)
 	}
 
 	if printOpts.PrintHeaders {
@@ -76,11 +76,14 @@ func sprintResponse(resp *model.Response, printOpts PrintOpts) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		responseBuilder = append(responseBuilder, respStatusStr)
 		respHeadersStr, err := SprintHeaders(resp, pretty)
 		if err != nil {
 			return "", err
 		}
-		respStr += respStatusStr + "\n" + respHeadersStr
+		if len(respHeadersStr) > 0 {
+			responseBuilder = append(responseBuilder, respHeadersStr)
+		}
 	}
 
 	if printOpts.PrintBody {
@@ -88,21 +91,20 @@ func sprintResponse(resp *model.Response, printOpts PrintOpts) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if printOpts.PrintHeaders {
-			respStr += "\n"
-		}
 
-		if pretty {
+		if pretty && len(respBodyStr) > 0 {
 			respBodyStr, err = prettyPrintBody(respBodyStr, resp)
 			if err != nil {
 				return "", err
 			}
 		}
 
-		respStr += respBodyStr
+		if len(respBodyStr) > 0 {
+			responseBuilder = append(responseBuilder, respBodyStr)
+		}
 	}
 
-	return respStr, nil
+	return strings.Join(responseBuilder, "\n"), nil
 }
 
 func getContentType(headers map[string]model.HeaderValues) (string, error) {

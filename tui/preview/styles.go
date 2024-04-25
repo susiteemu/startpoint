@@ -4,6 +4,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// TODO: get colors from theme/configuration
 var (
 	contentStyle         = lipgloss.NewStyle().MarginLeft(1).MarginRight(1)
 	statusbarFirstColBg  = lipgloss.Color("#f9e2af")

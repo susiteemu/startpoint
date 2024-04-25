@@ -6,6 +6,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// TODO: finish up getting colors from configuration
+
 type Styles struct {
 	statusbarFirstColBg  lipgloss.Color
 	statusbarSecondColBg lipgloss.Color

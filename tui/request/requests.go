@@ -112,7 +112,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updateStatusbar(&m, "")
 	case tea.KeyMsg:
 		// if we are filtering, it gets all the input
-		if m.active == List && m.list.FilterState() == list.Filtering {
+		if m.active == List && m.list.SettingFilter() {
+			if msg.String() == tea.KeyEsc.String() {
+				// hide help after cancelling filtering
+				m.help.ShowAll = false
+				listHeight := calculateListHeight(m)
+				m.list.SetHeight(listHeight)
+			}
 			break
 		}
 
@@ -132,16 +138,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.active = List
 				return m, nil
 			}
-			if m.mode == Edit && m.active == List {
-				m.mode = Select
-				processTemplateVariables = true
-				m.list.SetDelegate(newSelectDelegate())
-				listHeight := calculateListHeight(m)
-				m.list.SetHeight(listHeight)
-				updateStatusbar(&m, "")
+			if m.active == List && !m.list.IsFiltered() {
+				if m.mode == Edit && m.active == List {
+					m.mode = Select
+					processTemplateVariables = true
+					m.list.SetDelegate(newSelectDelegate())
+					listHeight := calculateListHeight(m)
+					m.list.SetHeight(listHeight)
+					updateStatusbar(&m, "")
+					return m, nil
+				}
 				return m, nil
 			}
-			return m, nil
 		case "i":
 			if m.mode == Select && m.active == List {
 				m.mode = Edit
@@ -158,6 +166,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				listHeight := calculateListHeight(m)
 				m.list.SetHeight(listHeight)
 				return m, nil
+			}
+		case "/":
+			if m.active == List {
+				// show help when filtering:
+				// filter gets all key input so pressing ? would not work
+				// NOTE: important thing is not to return anything here
+				// this way the message will propagate to list bubble
+				m.help.ShowAll = true
+				listHeight := calculateListHeight(m)
+				m.list.SetHeight(listHeight)
 			}
 		}
 

@@ -3,6 +3,7 @@ package client
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"startpoint/core/configuration"
 	"startpoint/core/model"
 	"time"
@@ -126,9 +127,16 @@ func DoRequest(request model.Request) (*model.Response, error) {
 		}
 	}
 
+	var body []byte
+	if resp.IsSuccess() && len(request.Output) > 0 {
+		body = []byte(fmt.Sprintf("Saved to file %s", request.Output))
+	} else {
+		body = resp.Body()
+	}
+
 	response := model.Response{
 		Headers:    new(model.Headers).FromMap(resp.Header()),
-		Body:       resp.Body(),
+		Body:       body,
 		Status:     resp.Status(),
 		StatusCode: resp.StatusCode(),
 		Proto:      resp.Proto(),

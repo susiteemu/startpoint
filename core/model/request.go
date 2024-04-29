@@ -1,8 +1,8 @@
 package model
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -26,6 +26,7 @@ var (
 	}
 	starlarkOutputPatterns = []*regexp.Regexp{
 		regexp.MustCompile(`(?mU)^.*meta:output:(.*)$`),
+		regexp.MustCompile(`(?mU)^\s*output\s*=(.*)$`),
 	}
 )
 
@@ -87,12 +88,7 @@ func (r *RequestMold) Name() string {
 	if r.Yaml != nil {
 		return r.Yaml.Name
 	} else if r.Starlark != nil {
-		for _, pattern := range starlarkNamePatterns {
-			match := pattern.FindStringSubmatch(r.Starlark.Script)
-			if len(match) == 2 {
-				return strings.TrimSpace(match[1])
-			}
-		}
+		return findWithPatterns(r.Starlark.Script, starlarkNamePatterns)
 	}
 	return ""
 }
@@ -101,12 +97,7 @@ func (r *RequestMold) Url() string {
 	if r.Yaml != nil {
 		return r.Yaml.Url
 	} else if r.Starlark != nil {
-		for _, pattern := range starlarkUrlPatterns {
-			match := pattern.FindStringSubmatch(r.Starlark.Script)
-			if len(match) == 2 {
-				return strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
-			}
-		}
+		return findWithPatterns(r.Starlark.Script, starlarkUrlPatterns)
 	}
 	return ""
 }
@@ -115,12 +106,7 @@ func (r *RequestMold) Method() string {
 	if r.Yaml != nil {
 		return r.Yaml.Method
 	} else if r.Starlark != nil {
-		for _, pattern := range starlarkMethodPatterns {
-			match := pattern.FindStringSubmatch(r.Starlark.Script)
-			if len(match) == 2 {
-				return strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
-			}
-		}
+		return findWithPatterns(r.Starlark.Script, starlarkMethodPatterns)
 	}
 	return ""
 }
@@ -138,12 +124,7 @@ func (r *RequestMold) PreviousReq() string {
 	if r.Yaml != nil {
 		return r.Yaml.PrevReq
 	} else if r.Starlark != nil {
-		for _, pattern := range starlarkPrevReqPatterns {
-			match := pattern.FindStringSubmatch(r.Starlark.Script)
-			if len(match) == 2 {
-				return strings.TrimSpace(match[1])
-			}
-		}
+		return findWithPatterns(r.Starlark.Script, starlarkPrevReqPatterns)
 	}
 	return ""
 }
@@ -152,18 +133,23 @@ func (r *RequestMold) Output() string {
 	if r.Yaml != nil {
 		return r.Yaml.Output
 	} else if r.Starlark != nil {
-		for _, pattern := range starlarkOutputPatterns {
-			match := pattern.FindStringSubmatch(r.Starlark.Script)
-			if len(match) == 2 {
-				return strings.TrimSpace(match[1])
-			}
+		return findWithPatterns(r.Starlark.Script, starlarkOutputPatterns)
+	}
+	return ""
+}
+
+func findWithPatterns(str string, patterns []*regexp.Regexp) string {
+	for _, pattern := range patterns {
+		match := pattern.FindStringSubmatch(str)
+		if len(match) == 2 {
+			return strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
 		}
 	}
 	return ""
 }
 
 func (r *RequestMold) DeleteFromFS() bool {
-	err := os.Remove(fmt.Sprintf("%s/%s", r.Root, r.Filename))
+	err := os.Remove(filepath.Join(r.Root, r.Filename))
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to remove file %s", r.Filename)
 		return false

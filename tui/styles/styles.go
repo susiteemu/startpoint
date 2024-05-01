@@ -37,12 +37,14 @@ type Theme struct {
 	WhitespaceFgColor                  lipgloss.Color
 }
 
+var config *configuration.Configuration = configuration.New()
+
 var theme *Theme
 
 func GetTheme() *Theme {
 	log.Debug().Msgf("Get theme")
 	if theme == nil {
-		getColor := configuration.GetStringOrDefault
+		getColor := config.GetStringOrDefault
 		theme = &Theme{
 			TextFgColor:                        lipgloss.Color(getColor("theme.primaryTextFgColor")),
 			SubtextFgColor:                     lipgloss.Color(getColor("theme.secondaryTextFgColor")),

@@ -26,7 +26,6 @@ var (
 	}
 	starlarkOutputPatterns = []*regexp.Regexp{
 		regexp.MustCompile(`(?mU)^.*meta:output:(.*)$`),
-		regexp.MustCompile(`(?mU)^\s*output\s*=(.*)$`),
 	}
 )
 
@@ -36,6 +35,7 @@ type Request struct {
 	Headers Headers
 	Body    Body
 	Output  string
+	Options map[string]interface{}
 }
 
 type RequestMold struct {
@@ -48,12 +48,13 @@ type RequestMold struct {
 
 type YamlRequest struct {
 	Name    string
-	PrevReq string  `yaml:"prev_req"`
-	Url     string  `yaml:"url"`
-	Method  string  `yaml:"method"`
-	Headers Headers `yaml:"headers"`
-	Body    Body    `yaml:"body"`
-	Output  string  `yaml:"output"`
+	PrevReq string                 `yaml:"prev_req"`
+	Url     string                 `yaml:"url"`
+	Method  string                 `yaml:"method"`
+	Headers Headers                `yaml:"headers"`
+	Body    Body                   `yaml:"body"`
+	Output  string                 `yaml:"output"`
+	Options map[string]interface{} `yaml:"options"`
 	Raw     string
 }
 

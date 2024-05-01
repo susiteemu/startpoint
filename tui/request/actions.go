@@ -36,13 +36,19 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 			return RunRequestFinishedMsg(fmt.Sprintf("failed to do request err: %v", err))
 		}
 		var printedResponses []string
-		printOpts := print.PrintOpts{
-			PrettyPrint:    true,
-			PrintBody:      true,
-			PrintHeaders:   true,
-			PrintTraceInfo: configuration.GetBool("httpClient.enableTraceInfo"),
-		}
 		for _, resp := range responses {
+			var config *configuration.Configuration = configuration.NewWithRequestOptions(resp.Options)
+			printResponse := config.GetBoolWithDefault("print", true)
+			if !printResponse {
+				log.Info().Msgf("Skipping printing response")
+				continue
+			}
+			printOpts := print.PrintOpts{
+				PrettyPrint:    true,
+				PrintBody:      true,
+				PrintHeaders:   true,
+				PrintTraceInfo: config.GetBool("httpClient.enableTraceInfo"),
+			}
 			printed, err := print.SprintResponse(resp, printOpts)
 			if err != nil {
 				return RunRequestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))

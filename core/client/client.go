@@ -36,45 +36,55 @@ func (l *restyZeroLogger) Debugf(format string, v ...interface{}) {
 
 func DoRequest(request model.Request) (*model.Response, error) {
 	requestHeaders := request.Headers.ToMap()
-	log.Debug().Msgf("Request %v -- %v -- %v", request.Url, request.Body, request.Method)
+	log.Debug().Msgf("Request %v -- %v -- %v -- %v -- %v", request.Url, request.Body, request.Method, request.Headers, request.Options)
 
 	// NOTE: creating new client for each request to simplify configuring it
 	// (no need to reset to default values after request)
 	var client *resty.Client = resty.New().SetLogger(newLogger(&log.Logger))
-	// settings coming from the configuration to the client
-	debug := configuration.GetBool("httpClient.debug")
+
+	config := configuration.NewWithRequestOptions(request.Options)
+
+	debug := config.GetBool("httpClient.debug")
 	client.SetDebug(debug)
 
-	timeoutSeconds, set := configuration.GetInt("httpClient.timeoutSeconds")
+	timeoutSeconds, set := config.GetInt("httpClient.timeoutSeconds")
 	if set && timeoutSeconds >= 0 {
 		client.SetTimeout(time.Duration(timeoutSeconds * int(time.Second)))
 	}
 
-	proxy, set := configuration.GetString("httpClient.proxyUrl")
+	proxy, set := config.GetString("httpClient.proxyUrl")
 	if set && len(proxy) > 0 {
 		client = client.SetProxy(proxy)
 	}
 
-	insecure := configuration.GetBool("httpClient.insecure")
+	insecure := config.GetBoolWithDefault("httpClient.insecure", false)
 	if insecure {
 		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	} else {
-		rootCertificates, _ := configuration.GetStringSlice("httpClient.rootCertificates")
+		rootCertificates, _ := config.GetStringSlice("httpClient.rootCertificates")
 		if len(rootCertificates) > 0 {
 			for _, cert := range rootCertificates {
 				client.SetRootCertificate(cert)
 			}
 		}
-		clientCertificates, set := configuration.GetSliceMapString("httpClient.clientCertificates")
+		clientCertificates, set := config.GetSliceMapString("httpClient.clientCertificates")
 		if set && len(clientCertificates) > 0 {
 			var certs []tls.Certificate
 			for _, pair := range clientCertificates {
-				certFile := pair["certfile"]
-				keyFile := pair["keyfile"]
+				// NOTE: viper makes all keys lowercase which is a bit annoying because
+				// configuration coming from request does not have lowercase keys: we now must handle both cases
+				certFile, found := pair["certfile"]
+				if !found {
+					certFile = pair["certFile"]
+				}
+				keyFile, found := pair["keyfile"]
+				if !found {
+					keyFile = pair["keyFile"]
+				}
 				cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 				if err != nil {
-					// TODO: error handling
-					log.Fatal().Err(err).Msg("Error with client certificate")
+					log.Error().Err(err).Msg("Error with client certificate")
+					return nil, err
 				}
 				certs = append(certs, cert)
 			}
@@ -84,7 +94,7 @@ func DoRequest(request model.Request) (*model.Response, error) {
 
 	r := client.R().SetHeaders(requestHeaders)
 
-	enableTrace := configuration.GetBool("httpClient.enableTraceInfo")
+	enableTrace := config.GetBool("httpClient.enableTraceInfo")
 	if enableTrace {
 		r.EnableTrace()
 	}
@@ -144,6 +154,7 @@ func DoRequest(request model.Request) (*model.Response, error) {
 		ReceivedAt: resp.ReceivedAt(),
 		Time:       resp.Time(),
 		TraceInfo:  traceInfo,
+		Options:    request.Options,
 	}
 
 	log.Debug().Msgf("TraceInfo: %v", traceInfo)

@@ -2,6 +2,7 @@ package builder
 
 import (
 	"reflect"
+	"startpoint/core/configuration"
 	"startpoint/core/model"
 	starlarkng "startpoint/core/scripting/starlark"
 	"startpoint/core/templating/templateng"
@@ -65,11 +66,17 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 		yamlRequest.Headers = headers
 	}
 
+	options := make(map[string]interface{})
+	if len(yamlRequest.Options) > 0 {
+		configuration.Flatten("", yamlRequest.Options, options)
+	}
+
 	request := model.Request{
 		Url:     yamlRequest.Url,
 		Method:  yamlRequest.Method,
 		Headers: yamlRequest.Headers,
 		Body:    yamlRequest.Body,
+		Options: options,
 		Output:  yamlRequest.Output,
 	}
 
@@ -87,28 +94,48 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 		return model.Request{}, true, err
 	}
 
+	headersResult, has := res["headers"]
 	headers := make(map[string][]string)
-	for k, headerVal := range res["headers"].(map[string]interface{}) {
-		t := reflect.TypeOf(headerVal)
-		if t.String() == "string" {
-			headers[k] = []string{headerVal.(string)}
-		} else if t.String() == "[]interface {}" {
-			var l []string
-			for _, singleHeaderVal := range headerVal.([]interface{}) {
-				l = append(l, singleHeaderVal.(string))
+	if has {
+		for k, headerVal := range headersResult.(map[string]interface{}) {
+			t := reflect.TypeOf(headerVal)
+			if t.String() == "string" {
+				headers[k] = []string{headerVal.(string)}
+			} else if t.String() == "[]interface {}" {
+				var l []string
+				for _, singleHeaderVal := range headerVal.([]interface{}) {
+					l = append(l, singleHeaderVal.(string))
+				}
+				headers[k] = l
 			}
-			headers[k] = l
 		}
 	}
 
 	log.Debug().Msgf("Converted headers %v", headers)
 
+	optionsResult, has := res["options"]
+	options := make(map[string]interface{})
+	if has {
+		configuration.Flatten("", optionsResult.(map[string]interface{}), options)
+	}
+
+	outputResult, has := res["output"]
+	output := ""
+	if has {
+		output = outputResult.(string)
+	}
+	if len(output) == 0 {
+		output = requestMold.Output()
+	}
+
+	// FIXME: add checks
 	req := model.Request{
 		Url:     res["url"].(string),
 		Method:  res["method"].(string),
 		Headers: new(model.Headers).FromMap(headers),
 		Body:    res["body"],
-		Output:  requestMold.Output(),
+		Options: options,
+		Output:  output,
 	}
 
 	log.Debug().Msgf("Built request %v", req)

@@ -14,6 +14,7 @@ type Response struct {
 	ReceivedAt time.Time
 	Time       time.Duration
 	TraceInfo  TraceInfo
+	Options    map[string]interface{}
 }
 
 type TraceInfo struct {

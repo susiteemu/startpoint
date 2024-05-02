@@ -17,7 +17,9 @@ func TestBuildRequestYaml(t *testing.T) {
 			Headers: model.Headers{
 				"X-Foo-Bar": {"SomeValue"},
 			},
-			Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+			Body:    "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+			Output:  "",
+			Options: make(map[string]interface{}),
 		},
 	}
 
@@ -27,7 +29,9 @@ func TestBuildRequestYaml(t *testing.T) {
 		Headers: model.Headers{
 			"X-Foo-Bar": {"SomeValue"},
 		},
-		Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+		Body:    "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+		Output:  "",
+		Options: make(map[string]interface{}),
 	}
 
 	request, err := BuildRequest(&requestMold, model.Profile{})
@@ -51,7 +55,8 @@ func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 				"X-Foo-Bar":  {"SomeValue"},
 				"X-Tmpl-Var": {"{header-value-test}"},
 			},
-			Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+			Body:    "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+			Options: make(map[string]interface{}),
 		},
 	}
 
@@ -62,7 +67,8 @@ func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 			"X-Foo-Bar":  {"SomeValue"},
 			"X-Tmpl-Var": {"Value from template var"},
 		},
-		Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+		Body:    "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}",
+		Options: make(map[string]interface{}),
 	}
 
 	profile := model.Profile{
@@ -117,6 +123,7 @@ body = {
 			"amount": 1.2001,
 			"name":   "Jane",
 		},
+		Options: make(map[string]interface{}),
 	}
 
 	request, err := BuildRequest(&requestMold, model.Profile{})

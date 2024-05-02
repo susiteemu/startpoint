@@ -1,14 +1,12 @@
 package print
 
 import (
-	"bytes"
 	"errors"
 	"startpoint/core/model"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/lexers"
-	"github.com/rs/zerolog/log"
 )
 
 type PrintOpts struct {
@@ -87,16 +85,9 @@ func sprintResponse(resp *model.Response, printOpts PrintOpts) (string, error) {
 	}
 
 	if printOpts.PrintBody {
-		respBodyStr, err := SprintBody(resp)
+		respBodyStr, err := SprintBody(resp, pretty)
 		if err != nil {
 			return "", err
-		}
-
-		if pretty && len(respBodyStr) > 0 {
-			respBodyStr, err = prettyPrintBody(respBodyStr, resp)
-			if err != nil {
-				return "", err
-			}
 		}
 
 		if len(respBodyStr) > 0 {
@@ -118,41 +109,6 @@ func getContentType(headers map[string]model.HeaderValues) (string, error) {
 		}
 	}
 	return "", errors.New("could not find Content-Type")
-}
-
-func prettyPrintBody(respBodyStr string, resp *model.Response) (string, error) {
-	buf := new(bytes.Buffer)
-	lexer := resolveBodyLexer(resp)
-	style := resolveStyle()
-	formatter := resolveFormatter()
-	iterator, err := lexer.Tokenise(nil, respBodyStr)
-	if err != nil {
-		return "", err
-	}
-	err = formatter.Format(buf, style, iterator)
-	if err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
-}
-
-func resolveBodyLexer(resp *model.Response) chroma.Lexer {
-	var lexer chroma.Lexer
-	contentType, err := getContentType(resp.Headers)
-	log.Debug().Msgf("Content-type %s", contentType)
-	if err != nil {
-		lexer = lexers.Fallback
-	} else {
-		lexer = lexers.MatchMimeType(contentType)
-	}
-
-	if lexer == nil {
-		lexer = lexers.Fallback
-	}
-
-	lexer = chroma.Coalesce(lexer)
-	return lexer
 }
 
 func resolveResponseLexer(resp *model.Response, printHeaders bool, printBody bool) chroma.Lexer {

@@ -4,8 +4,7 @@ if [ $# -le 1 ]; then
   echo "No arguments supplied"
 fi
 
-EXAMPLE="name: A GET request {NR}
-url: 'https://httpbin.org/anything'
+EXAMPLE="url: 'https://httpbin.org/anything'
 method: GET
 headers:
   X-Foo-Bar: SomeValue

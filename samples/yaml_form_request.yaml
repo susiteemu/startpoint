@@ -1,4 +1,3 @@
-name: YAML form request
 prev_req:
 url: https://httpbin.org/anything
 method: POST

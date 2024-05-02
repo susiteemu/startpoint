@@ -1,5 +1,4 @@
 """
-meta:name: Starlark JSON request
 meta:prev_req: ""
 doc:url: https://httpbin.org/anything
 doc:method: POST

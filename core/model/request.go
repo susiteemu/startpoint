@@ -43,11 +43,11 @@ type RequestMold struct {
 	Starlark    *StarlarkRequest
 	ContentType string
 	Root        string
+	Name        string
 	Filename    string
 }
 
 type YamlRequest struct {
-	Name    string
 	PrevReq string                 `yaml:"prev_req"`
 	Url     string                 `yaml:"url"`
 	Method  string                 `yaml:"method"`
@@ -85,6 +85,7 @@ func (r *Request) BodyAsMap() (map[string]string, bool) {
 	return asMapString, true
 }
 
+/*
 func (r *RequestMold) Name() string {
 	if r.Yaml != nil {
 		return r.Yaml.Name
@@ -92,7 +93,7 @@ func (r *RequestMold) Name() string {
 		return findWithPatterns(r.Starlark.Script, starlarkNamePatterns)
 	}
 	return ""
-}
+}*/
 
 func (r *RequestMold) Url() string {
 	if r.Yaml != nil {
@@ -163,11 +164,11 @@ func (r *RequestMold) Clone() RequestMold {
 		ContentType: r.ContentType,
 		Root:        r.Root,
 		Filename:    r.Filename,
+		Name:        r.Name,
 	}
 
 	if r.Yaml != nil {
 		yamlRequest := YamlRequest{
-			Name:    r.Yaml.Name,
 			PrevReq: r.Yaml.PrevReq,
 			Url:     r.Yaml.Url,
 			Method:  r.Yaml.Method,

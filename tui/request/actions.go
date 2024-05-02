@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	requestchain "startpoint/core/chaining"
 	"startpoint/core/client/runner"
 	"startpoint/core/configuration"
@@ -79,8 +78,7 @@ func createSimpleRequestFileCmd(name string) (string, string, *exec.Cmd, error) 
 
 	filename := fmt.Sprintf("%s.yaml", name)
 	// TODO read from a template file
-	content := fmt.Sprintf(`name: %s
-# Possible request to call _before_ this one
+	content := `# Possible request to call _before_ this one
 prev_req:
 # Request url, may contain template variables in a form of {var}
 url:
@@ -94,7 +92,7 @@ headers:
 #    "name": "Jane">
 # }
 body: >
-`, name)
+`
 
 	workspace := viper.GetString("workspace")
 	cmd, err := createFileAndReturnOpenToEditorCmd(workspace, filename, content)
@@ -108,8 +106,7 @@ func createComplexRequestFileCmd(name string) (string, string, *exec.Cmd, error)
 
 	filename := fmt.Sprintf("%s.star", name)
 	// TODO read from template
-	content := fmt.Sprintf(`"""
-meta:name: %s
+	content := `"""
 meta:prev_req: <call other request before this>
 doc:url: <your url for display>
 doc:method: GET
@@ -123,7 +120,7 @@ method = "GET"
 headers = {}
 # Request body, e.g. { "id": 1, "people": [ {"name": "Joe"}, {"name": "Jane"}, ] }
 body = {}
-`, name)
+`
 
 	workspace := viper.GetString("workspace")
 	cmd, err := createFileAndReturnOpenToEditorCmd(workspace, filename, content)
@@ -219,15 +216,10 @@ func copyRequest(name string, r Request, mold model.RequestMold) (Request, *mode
 func changeMoldName(name string, m *model.RequestMold) {
 	if m.Yaml != nil {
 		m.Filename = fmt.Sprintf("%s.yaml", name)
-		m.Yaml.Name = name
-		pattern := regexp.MustCompile(`(?mU)^name:(.*)$`)
-		nameChanged := pattern.ReplaceAllString(m.Yaml.Raw, fmt.Sprintf("name: %s", name))
-		m.Yaml.Raw = nameChanged
+		m.Name = name
 	} else if m.Starlark != nil {
 		m.Filename = fmt.Sprintf("%s.star", name)
-		pattern := regexp.MustCompile(`(?mU)^.*meta:name:(.*)$`)
-		nameChanged := pattern.ReplaceAllString(m.Starlark.Script, fmt.Sprintf("meta:name: %s", name))
-		m.Starlark.Script = nameChanged
+		m.Name = name
 	}
 }
 
@@ -238,7 +230,7 @@ func readRequest(root, filename string) (Request, *model.RequestMold, bool) {
 		return Request{}, nil, false
 	}
 	request := Request{
-		Name:   mold.Name(),
+		Name:   mold.Name,
 		Method: mold.Method(),
 		Url:    mold.Url(),
 	}

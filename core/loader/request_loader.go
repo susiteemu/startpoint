@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"startpoint/core/model"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -28,12 +29,14 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 			return nil, err
 		}
 		yamlRequest.Raw = string(file)
-		if yamlRequest.Name != "" {
+		// TODO: how to filter out yaml files that are not requests?
+		if yamlRequest.Url != "" || yamlRequest.Method != "" {
 			request = &model.RequestMold{
 				Yaml:        yamlRequest,
 				ContentType: "yaml",
 				Root:        root,
 				Filename:    filename,
+				Name:        strings.TrimSuffix(filename, extension),
 			}
 		}
 
@@ -51,6 +54,7 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 			ContentType: "star",
 			Root:        root,
 			Filename:    filename,
+			Name:        strings.TrimSuffix(filename, extension),
 		}
 
 	}
@@ -72,50 +76,13 @@ func ReadRequests(root string) ([]*model.RequestMold, error) {
 
 		filename := info.Name()
 		log.Debug().Msgf("Walk crossed a file %s", filename)
-		var extension = filepath.Ext(filename)
-		// TODO use ReadRequest function
-		switch {
-		case extension == ".yaml" || extension == ".yml":
 
-			file, err := os.ReadFile(path)
-			if err != nil {
-				log.Error().Err(err).Msgf("Failed to read %s", path)
-				return nil
-			}
-			yamlRequest := &model.YamlRequest{}
-			err = yaml.Unmarshal(file, yamlRequest)
-			if err != nil {
-				return nil
-			}
-			yamlRequest.Raw = string(file)
-			if yamlRequest.Name != "" {
-				request := model.RequestMold{
-					Yaml:        yamlRequest,
-					ContentType: "yaml",
-					Root:        root,
-					Filename:    filename,
-				}
-				requestSlice = append(requestSlice, &request)
-			}
-
-		case extension == ".star":
-
-			file, err := os.ReadFile(path)
-			if err != nil {
-				log.Error().Err(err).Msgf("Failed to read %s", path)
-				return nil
-			}
-			starlarkRequest := &model.StarlarkRequest{
-				Script: string(file),
-			}
-			request := model.RequestMold{
-				Starlark:    starlarkRequest,
-				ContentType: "star",
-				Root:        root,
-				Filename:    filename,
-			}
-			requestSlice = append(requestSlice, &request)
-
+		requestMold, err := ReadRequest(root, filename)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to read file %s", filename)
+		}
+		if requestMold != nil {
+			requestSlice = append(requestSlice, requestMold)
 		}
 
 		return nil

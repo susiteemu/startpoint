@@ -1,4 +1,3 @@
-name: yaml_request
 prev_req:
 url: foobar.com
 method: POST

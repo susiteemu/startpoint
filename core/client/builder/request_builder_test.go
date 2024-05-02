@@ -10,8 +10,8 @@ import (
 func TestBuildRequestYaml(t *testing.T) {
 
 	requestMold := model.RequestMold{
+		Name: "yaml_request",
 		Yaml: &model.YamlRequest{
-			Name:   "yaml_request",
 			Url:    "http://foobar.com",
 			Method: "POST",
 			Headers: model.Headers{
@@ -43,8 +43,8 @@ func TestBuildRequestYaml(t *testing.T) {
 
 func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 	requestMold := model.RequestMold{
+		Name: "yaml_request",
 		Yaml: &model.YamlRequest{
-			Name:   "yaml_request",
 			Url:    "http://{domain}/api",
 			Method: "POST",
 			Headers: model.Headers{
@@ -86,10 +86,10 @@ func TestBuildRequestYamlWithTemplateVariables(t *testing.T) {
 
 func TestBuildStarlarkRequest(t *testing.T) {
 	requestMold := model.RequestMold{
+		Name: "Starlark request",
 		Starlark: &model.StarlarkRequest{
 			Script: `
 """
-meta:name: Starlark request
 meta:prev_req: Some previous request
 doc:url: http://foobar.com
 doc:method: POST

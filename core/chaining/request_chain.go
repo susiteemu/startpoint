@@ -16,7 +16,7 @@ func resolvePreviousReq(prevReqName string, all []*model.RequestMold) []*model.R
 
 	var prevReq *model.RequestMold
 	for _, v := range all {
-		if v.Name() == prevReqName {
+		if v.Name == prevReqName {
 			prevReq = v
 			break
 		}

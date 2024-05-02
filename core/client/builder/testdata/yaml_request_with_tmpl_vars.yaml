@@ -1,4 +1,3 @@
-name: yaml_request_with_tmpl_vars
 url: 'http://{domain}/api'
 method: POST
 headers:
@@ -9,4 +8,3 @@ body: >
     "id": 1,
     "name": "Jane"
   }
-

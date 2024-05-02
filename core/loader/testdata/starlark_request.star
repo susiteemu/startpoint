@@ -1,5 +1,4 @@
 """
-meta:name: Starlark request
 meta:prev_req: Some previous request
 doc:url: http://foobar.com
 doc:method: POST

@@ -61,7 +61,7 @@ var runCmd = &cobra.Command{
 		}
 		var request *model.RequestMold
 		for _, m := range requests {
-			if m.Name() == runArgs.Request {
+			if m.Name == runArgs.Request {
 				request = m
 				break
 			}

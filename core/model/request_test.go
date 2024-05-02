@@ -7,9 +7,9 @@ import (
 func TestStarlarkRequestDocString(t *testing.T) {
 
 	starlarkRequest := RequestMold{
+		Name: "Starlark request",
 		Starlark: &StarlarkRequest{
 			Script: `"""
-meta:name: Starlark request
 meta:prev_req: Some previous request
 meta:output: ./output.txt
 doc:url: http://foobar.com
@@ -26,8 +26,8 @@ body = { "id": 1474, "prev": prev, "bar": [
 	}
 
 	wantedName := "Starlark request"
-	if starlarkRequest.Name() != wantedName {
-		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name(), wantedName)
+	if starlarkRequest.Name != wantedName {
+		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name, wantedName)
 	}
 
 	wantedPrevReq := "Some previous request"
@@ -56,7 +56,6 @@ func TestStarlarkRequestDocStringMissingParts(t *testing.T) {
 	starlarkRequest := RequestMold{
 		Starlark: &StarlarkRequest{
 			Script: `"""
-meta:name:
 meta:prev_req: Some previous request
 doc:url: http://foobar.com
 doc:method: POST
@@ -72,13 +71,13 @@ body = { "id": 1474, "prev": prev, "bar": [
 	}
 
 	wantedName := ""
-	if starlarkRequest.Name() != wantedName {
-		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name(), wantedName)
+	if starlarkRequest.Name != wantedName {
+		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name, wantedName)
 	}
 
 	wantedPrevReq := "Some previous request"
 	if starlarkRequest.PreviousReq() != wantedPrevReq {
-		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name(), wantedName)
+		t.Errorf("prev req is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.PreviousReq(), wantedPrevReq)
 	}
 
 	wantedUrl := "http://foobar.com"
@@ -103,7 +102,6 @@ func TestStarlarkRequestParseValuesFromActualCode(t *testing.T) {
 	starlarkRequest := RequestMold{
 		Starlark: &StarlarkRequest{
 			Script: `"""
-meta:name: Some name
 meta:prev_req: Some previous request
 """
 url = "http://foobar.com"

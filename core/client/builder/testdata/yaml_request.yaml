@@ -1,4 +1,3 @@
-name: yaml_request
 url: 'http://foobar.com'
 method: POST
 headers:
@@ -8,4 +7,3 @@ body: >
     "id": 1,
     "name": "Jane"
   }
-

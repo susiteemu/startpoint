@@ -23,7 +23,6 @@ func TestReadRequests(t *testing.T) {
 	var wantedRequests []model.RequestMold
 
 	script := `"""
-meta:name: Starlark request
 meta:prev_req: Some previous request
 doc:url: http://foobar.com
 doc:method: POST
@@ -43,13 +42,13 @@ body = { "id": 1474, "prev": prev, "bar": [
 		},
 		ContentType: "star",
 		Filename:    "starlark_request.star",
+		Name:        "startlark_request",
 	}
 
 	wantedRequests = append(wantedRequests, starlarkRequest)
 
 	yamlRequest := model.RequestMold{
 		Yaml: &model.YamlRequest{
-			Name:    "yaml_request",
 			PrevReq: "",
 			Url:     "foobar.com",
 			Method:  "POST",
@@ -57,8 +56,7 @@ body = { "id": 1474, "prev": prev, "bar": [
 				"X-Foo-Bar": {"SomeValue"},
 			},
 			Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}\n",
-			Raw: `name: yaml_request
-prev_req:
+			Raw: `prev_req:
 url: foobar.com
 method: POST
 headers:
@@ -72,6 +70,7 @@ body: >
 		},
 		ContentType: "yaml",
 		Filename:    "yaml_request.yaml",
+		Name:        "yaml_request",
 	}
 
 	wantedRequests = append(wantedRequests, yamlRequest)

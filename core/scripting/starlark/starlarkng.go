@@ -71,7 +71,7 @@ func RunStarlarkScript(request model.RequestMold, previousResponse *model.Respon
 
 	starlarkRequest := request.Starlark
 
-	globals, err := starlark.ExecFileOptions(&fileOptions, thread, request.Name(), starlarkRequest.Script, predeclared)
+	globals, err := starlark.ExecFileOptions(&fileOptions, thread, request.Name, starlarkRequest.Script, predeclared)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to exec starlark script")
 		return nil, err

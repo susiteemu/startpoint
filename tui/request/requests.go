@@ -52,7 +52,7 @@ func modeStr(mode Mode) string {
 func findRequestMold(r Request, m Model) (*model.RequestMold, error) {
 	var requestMold *model.RequestMold
 	for _, m := range m.requestMolds {
-		if m.Name() == r.Name {
+		if m.Name == r.Name {
 			requestMold = m
 			break
 		}
@@ -555,7 +555,7 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 
 	for _, v := range loadedRequests {
 		r := Request{
-			Name:   v.Name(),
+			Name:   v.Name,
 			Url:    v.Url(),
 			Method: v.Method(),
 		}

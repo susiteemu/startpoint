@@ -63,14 +63,30 @@ type StarlarkRequest struct {
 }
 
 func (r *Request) IsForm() bool {
-	contentType, ok := r.Headers["Content-Type"]
+	contentType, ok := r.ContentType()
 	if !ok {
 		return false
 	}
-	if len(contentType) == 0 {
+	return strings.ToLower(contentType) == "application/x-www-form-urlencoded"
+}
+
+func (r *Request) IsMultipartForm() bool {
+	contentType, ok := r.ContentType()
+	if !ok {
 		return false
 	}
-	return strings.ToLower(contentType[0]) == "application/x-www-form-urlencoded"
+	return strings.ToLower(strings.TrimSpace(contentType)) == "multipart/form-data"
+}
+
+func (r *Request) ContentType() (string, bool) {
+	contentType, ok := r.Headers["Content-Type"]
+	if !ok {
+		return "", false
+	}
+	if len(contentType) == 0 {
+		return "", false
+	}
+	return strings.Split(contentType[0], ";")[0], true
 }
 
 func (r *Request) BodyAsMap() (map[string]string, bool) {

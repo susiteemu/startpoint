@@ -1,0 +1,9 @@
+prev_req:
+url: https://foobar.com/upload
+method: POST
+headers:
+  Content-Type: 'multipart/form-data'
+body:
+  field1: val1
+  field2: val2
+  some-file: '@/path/to/file.pdf'

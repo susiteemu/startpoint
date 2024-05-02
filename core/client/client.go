@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"startpoint/core/configuration"
 	"startpoint/core/model"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -105,6 +106,26 @@ func DoRequest(request model.Request) (*model.Response, error) {
 			return nil, errors.New("cannot convert body to map")
 		}
 		r.SetFormData(bodyAsMap)
+	} else if request.IsMultipartForm() {
+		bodyAsMap, ok := request.BodyAsMap()
+		if !ok {
+			return nil, errors.New("cannot convert body to map")
+		}
+		formData := make(map[string]string)
+		files := make(map[string]string)
+		for k, v := range bodyAsMap {
+			if strings.HasPrefix(v, "@") {
+				files[k] = strings.TrimPrefix(v, "@")
+			} else {
+				formData[k] = v
+			}
+		}
+		if len(formData) > 0 {
+			r.SetFormData(formData)
+		}
+		if len(files) > 0 {
+			r.SetFiles(files)
+		}
 	} else {
 		r.SetBody(request.Body)
 	}

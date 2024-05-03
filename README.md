@@ -400,7 +400,7 @@ body:
   field3: val3
 ```
 
-Request with basic auth:
+Request with basic auth (NOTE: not implemented yet):
 ```
 # Yaml
 url: https://httpbin.org/basic-auth/someuser/somepassword
@@ -411,7 +411,7 @@ auth:
     password: somepassword
 ```
 
-Request with bearer token:
+Request with bearer token (NOTE: not implemented yet):
 ```
 # Yaml
 url: https://example.com/auth-with-bearer-token

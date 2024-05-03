@@ -18,16 +18,10 @@ var cfgFile string
 
 var rootCmd = &cobra.Command{
 	Use:   "startpoint",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Startpoint is a tui app for managing and running HTTP requests",
+	Long: `Startpoint is a tui app with which you can manage and run HTTP requests from your terminal. It offers a way for flexible chaining and scripting requests as well as defining them in a simple format.
+	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Root: Config file used: %v\n", viper.ConfigFileUsed())
-		fmt.Printf("Root: All keys: %v\n", viper.AllKeys())
 	},
 }
 
@@ -39,6 +33,8 @@ func Execute() {
 }
 
 func init() {
+	// disable for now, before custom completion is implemented
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().Bool("help", false, "Displays help")
 

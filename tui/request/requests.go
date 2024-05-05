@@ -12,6 +12,7 @@ import (
 
 	"os"
 	keyprompt "startpoint/tui/keyprompt"
+	messages "startpoint/tui/messages"
 	preview "startpoint/tui/preview"
 	profiles "startpoint/tui/profile"
 	prompt "startpoint/tui/prompt"
@@ -192,7 +193,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		requestMold, err := findRequestMold(request, m)
 		if err != nil {
 			log.Error().Msgf("Could not find request mold with request %v", request)
-			return m, createStatusMsg(fmt.Sprintf("Failed to run request %s", request.Title()))
+			return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to run request %s", request.Title()))
 		}
 		return m, tea.Batch(
 			m.stopwatch.Init(),
@@ -226,21 +227,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				setCmd := m.list.InsertItem(m.list.Index()+1, newRequest)
 				// NOTE: order is not relevant here
 				m.requestMolds = append(m.requestMolds, newRequestMold)
-				statusCmd := createStatusMsg(fmt.Sprintf("Created request %s", newRequest.Title()))
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Created request %s", newRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			}
 		}
-		return m, createStatusMsg("Failed to create request")
+		return m, messages.CreateStatusMsg("Failed to create request")
 	case EditRequestMsg:
 		if m.mode == Edit && m.active == List {
 			requestMold, err := findRequestMold(msg.Request, m)
 			if err != nil {
 				log.Error().Msgf("Could not find request mold with request %v", msg.Request)
-				return m, createStatusMsg(fmt.Sprintf("Failed to edit request %s", msg.Request.Title()))
+				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to edit request %s", msg.Request.Title()))
 			}
 			cmd, err := openFileToEditorCmd(requestMold.Root, requestMold.Filename)
 			if err != nil {
-				statusCmd := createStatusMsg("Failed preparing editor")
+				statusCmd := messages.CreateStatusMsg("Failed preparing editor")
 				return m, statusCmd
 			}
 			cb := func(err error) tea.Msg {
@@ -256,7 +257,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			requestMold, err := findRequestMold(msg.Request, m)
 			if err != nil {
 				log.Error().Err(err).Msgf("Coul not find request mold with request %v", msg.Request)
-				return m, createStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
+				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
 			}
 			deleted := requestMold.DeleteFromFS()
 			if deleted {
@@ -264,9 +265,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.list.RemoveItem(index)
 				removeIndex := slices.Index(m.requestMolds, requestMold)
 				m.requestMolds = slices.Delete(m.requestMolds, removeIndex, removeIndex+1)
-				return m, createStatusMsg(fmt.Sprintf("Deleted %s", msg.Request.Title()))
+				return m, messages.CreateStatusMsg(fmt.Sprintf("Deleted %s", msg.Request.Title()))
 			} else {
-				return m, createStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
+				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
 			}
 		}
 	case EditRequestFinishedMsg:
@@ -275,25 +276,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			requestMold, err := findRequestMold(oldRequest, m)
 			if err != nil {
 				log.Error().Err(err).Msgf("Could not find request mold with request %v", msg.Request)
-				return m, createStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
+				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
 			}
 			editedRequest, editedRequestMold, ok := readRequest(requestMold.Root, requestMold.Filename)
 			if ok {
 				setCmd := m.list.SetItem(m.list.Index(), editedRequest)
 				index := slices.Index(m.requestMolds, requestMold)
 				m.requestMolds = slices.Replace(m.requestMolds, index, index+1, editedRequestMold)
-				statusCmd := createStatusMsg(fmt.Sprintf("Edited request %s", oldRequest.Title()))
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Edited request %s", oldRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			}
 		}
-		return m, createStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
+		return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
 	case PreviewRequestMsg:
 		if m.active == List {
 			m.active = Preview
 			selected, err := findRequestMold(msg.Request, m)
 			if err != nil {
 				log.Error().Err(err).Msgf("Could not find request mold with request %v", msg.Request)
-				return m, createStatusMsg(fmt.Sprintf("Failed to open %s for preview", msg.Request.Title()))
+				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to open %s for preview", msg.Request.Title()))
 			}
 			var formatted string
 			switch selected.ContentType {
@@ -338,34 +339,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			requestMold, err := findRequestMold(request, m)
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to find request mold with %v", request)
-				return m, createStatusMsg("Failed to rename request")
+				return m, messages.CreateStatusMsg("Failed to rename request")
 			}
 			moldIndex := slices.Index(m.requestMolds, requestMold)
 			renamedRequest, renamedRequestMold, ok := renameRequest(msg.Input, request, *requestMold)
 			if ok {
 				m.requestMolds = slices.Replace(m.requestMolds, moldIndex, moldIndex+1, renamedRequestMold)
 				setCmd := m.list.SetItem(m.list.Index(), renamedRequest)
-				statusCmd := createStatusMsg(fmt.Sprintf("Renamed request to %s", renamedRequest.Title()))
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Renamed request to %s", renamedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			} else {
-				return m, createStatusMsg("Failed to rename request")
+				return m, messages.CreateStatusMsg("Failed to rename request")
 			}
 		} else if msg.Context.Key == CopyRequest {
 			request := msg.Context.Additional.(Request)
 			requestMold, err := findRequestMold(request, m)
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to find request mold with %v", request)
-				return m, createStatusMsg("Failed to copy request")
+				return m, messages.CreateStatusMsg("Failed to copy request")
 			}
 			copiedRequest, copiedRequestMold, ok := copyRequest(msg.Input, request, *requestMold)
 			if ok {
 				// note order is not relevant here
 				m.requestMolds = append(m.requestMolds, copiedRequestMold)
 				setCmd := m.list.InsertItem(m.list.Index()+1, copiedRequest)
-				statusCmd := createStatusMsg(fmt.Sprintf("Copied request to %s", copiedRequest.Title()))
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Copied request to %s", copiedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			} else {
-				return m, createStatusMsg("Failed to copy request")
+				return m, messages.CreateStatusMsg("Failed to copy request")
 			}
 
 		} else if msg.Context.Key == CreateSimpleRequest || msg.Context.Key == CreateComplexRequest {
@@ -381,7 +382,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				root, filepath, cmd, err = createComplexRequestFileCmd(msg.Input)
 			}
 			if err != nil {
-				return m, createStatusMsg("Failed preparing editor")
+				return m, messages.CreateStatusMsg("Failed preparing editor")
 			}
 			cb := func(err error) tea.Msg {
 				return CreateRequestFinishedMsg{
@@ -410,7 +411,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		log.Debug().Msgf("Matched with profile %v", activedProfile)
 		if activedProfile == nil {
-			return m, createStatusMsg("Failed to set profile")
+			return m, messages.CreateStatusMsg("Failed to set profile")
 		}
 
 		activeProfile = activedProfile
@@ -436,7 +437,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-	case StatusMessage:
+	case messages.StatusMessage:
 		updateStatusbar(&m, string(msg))
 		return m, nil
 	}

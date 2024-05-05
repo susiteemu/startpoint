@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"bytes"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -8,7 +9,34 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog/log"
 )
+
+func ReadProfile(root, filename string) (*model.Profile, error) {
+	path := filepath.Join(root, filename)
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	envFile, err := godotenv.Parse(bytes.NewReader(file))
+	if err != nil {
+		return nil, err
+	}
+	profileName := "default"
+	splits := strings.Split(filename, ".")
+	if len(splits) > 2 {
+		profileName = strings.Join(splits[2:], ".")
+	}
+
+	profile := model.Profile{
+		Name:      profileName,
+		Variables: envFile,
+		Raw:       string(file),
+		Root:      root,
+		Filename:  filename,
+	}
+	return &profile, nil
+}
 
 func ReadProfiles(root string) ([]*model.Profile, error) {
 	var profileSlice []*model.Profile
@@ -25,30 +53,13 @@ func ReadProfiles(root string) ([]*model.Profile, error) {
 		filename := info.Name()
 
 		if strings.HasPrefix(filename, ".env") {
-
-			file, err := os.Open(path)
+			profile, err := ReadProfile(root, filename)
 			if err != nil {
-				return err
+				log.Error().Err(err).Msgf("Failed to read profile with root %s and filename %s", root, filename)
 			}
-
-			envFile, err := godotenv.Parse(file)
-			defer file.Close()
-			if err != nil {
-				return err
+			if profile != nil {
+				profileSlice = append(profileSlice, profile)
 			}
-			profileName := "default"
-			splits := strings.Split(filename, ".")
-			if len(splits) > 2 {
-				profileName = splits[len(splits)-1]
-			}
-
-			profile := model.Profile{
-				Name:      profileName,
-				Variables: envFile,
-			}
-
-			profileSlice = append(profileSlice, &profile)
-
 		}
 
 		return nil

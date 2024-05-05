@@ -2,7 +2,9 @@ package profileui
 
 import (
 	"fmt"
+	"os/exec"
 	"startpoint/core/model"
+	messages "startpoint/tui/messages"
 	prompt "startpoint/tui/prompt"
 	statusbar "startpoint/tui/statusbar"
 	"startpoint/tui/styles"
@@ -12,13 +14,28 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/rs/zerolog/log"
 )
 
 type ActiveView int
 
 const (
+	CreateProfile = "CreateProfile"
+	EditProfile   = "EditProfile"
+	RenameProfile = "RenameProfile"
+	DeleteProfile = "DeleteProfile"
+	CopyProfile   = "CopyProfile"
+)
+
+const (
+	CreateProfileLabel = "Choose a name for your profile. Make it filename compatible and unique within this workspace. After choosing \"ok\" your $EDITOR will open and you will be able to write the contents of the profile. Remember to quit your editor window to return back."
+	RenameProfileLabel = "Rename your profile"
+	CopyProfileLabel   = "Choose a name to your profile"
+)
+
+const (
 	List ActiveView = iota
-	Create
+	Prompt
 	Update
 )
 
@@ -30,8 +47,9 @@ const (
 )
 
 type Profile struct {
-	Name      string
-	Variables int
+	Name         string
+	Variables    int
+	ProfileModel *model.Profile
 }
 
 /*
@@ -94,33 +112,122 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
+		case tea.KeyEsc.String():
+			return m, nil
 		case "ctrl+c":
 			return m, tea.Quit
-		case "a":
-			if m.mode == Normal && m.active != Create {
-				m.active = Create
-				return m, nil
-			}
 		case "?":
 			if m.active == List {
 				m.help.ShowAll = !m.help.ShowAll
 				listHeight := calculateListHeight(m)
 				m.list.SetHeight(listHeight)
-
 				return m, nil
 			}
 		}
 	case ProfileSelectedMsg:
 		return m, tea.Quit
+	case CreateProfileMsg:
+		if m.mode == Normal && m.active == List {
+			log.Debug().Msg("Creating profile")
+			promptKey := CreateProfile
+			promptLabel := CreateProfileLabel
+			m.active = Prompt
+			m.prompt = prompt.New(prompt.PromptContext{
+				Key: promptKey,
+			}, "", promptLabel, checkProfileWithNameDoesNotExist(m), m.width)
+			return m, nil
+		}
+	case CreateProfileFinishedMsg:
+		if msg.err == nil {
+			newProfile, ok := readProfile(msg.root, msg.filename)
+			if ok {
+				setCmd := m.list.InsertItem(m.list.Index()+1, newProfile)
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Created profile %s", newProfile.Title()))
+				return m, tea.Batch(setCmd, statusCmd)
+			}
+		}
+		return m, messages.CreateStatusMsg("Failed to create profile")
+	case RenameProfileMsg:
+		if m.mode == Normal && m.active == List {
+			m.active = Prompt
+			m.prompt = prompt.New(prompt.PromptContext{
+				Key:        RenameProfile,
+				Additional: msg.Profile,
+			}, msg.Profile.Name, RenameProfileLabel, checkProfileWithNameDoesNotExist(m), m.width)
+			return m, nil
+		}
+	case CopyProfileMsg:
+		if m.mode == Normal && m.active == List {
+			m.active = Prompt
+			m.prompt = prompt.New(prompt.PromptContext{
+				Key:        CopyProfile,
+				Additional: msg.Profile,
+			}, msg.Profile.Name, CopyProfileLabel, checkProfileWithNameDoesNotExist(m), m.width)
+			return m, nil
+		}
+	case DeleteProfileMsg:
+		if m.mode == Normal && m.active == List {
+			deleted := msg.Profile.ProfileModel.DeleteFromFS()
+			if deleted {
+				index := m.list.Index()
+				m.list.RemoveItem(index)
+				return m, messages.CreateStatusMsg(fmt.Sprintf("Deleted %s", msg.Profile.Name))
+			} else {
+				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Profile.Name))
+			}
+		}
 	case prompt.PromptAnsweredMsg:
-		return m, tea.Quit
-	}
+		m.active = List
+		if msg.Context.Key == RenameProfile {
+			profile := msg.Context.Additional.(Profile)
+			renamedProfile, ok := renameProfile(msg.Input, profile)
+			if ok {
+				setCmd := m.list.SetItem(m.list.Index(), renamedProfile)
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Renamed profile to %s", renamedProfile.Title()))
+				return m, tea.Batch(setCmd, statusCmd)
+			} else {
+				return m, messages.CreateStatusMsg("Failed to rename profile")
+			}
+		} else if msg.Context.Key == CopyProfile {
+			profile := msg.Context.Additional.(Profile)
+			copiedProfile, ok := copyProfile(msg.Input, profile)
+			if ok {
+				setCmd := m.list.InsertItem(m.list.Index()+1, copiedProfile)
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Copied profile to %s", copiedProfile.Title()))
+				return m, tea.Batch(setCmd, statusCmd)
+			} else {
+				return m, messages.CreateStatusMsg("Failed to copy profile")
+			}
 
+		} else if msg.Context.Key == CreateProfile {
+			var (
+				root     string
+				filepath string
+				cmd      *exec.Cmd
+				err      error
+			)
+			root, filepath, cmd, err = createProfileFileCmd(msg.Input)
+			if err != nil {
+				return m, messages.CreateStatusMsg("Failed preparing editor")
+			}
+			cb := func(err error) tea.Msg {
+				return CreateProfileFinishedMsg{
+					root:     root,
+					filename: filepath,
+					err:      err,
+				}
+			}
+			return m, tea.ExecProcess(cmd, cb)
+		}
+	case messages.StatusMessage:
+		updateStatusbar(&m, string(msg))
+		return m, nil
+	}
 	var cmd tea.Cmd
 	switch m.active {
 	case List:
 		m.list, cmd = m.list.Update(msg)
-	case Create:
+	case Prompt:
 		m.prompt, cmd = m.prompt.Update(msg)
 	}
 	return m, cmd
@@ -130,8 +237,8 @@ func (m Model) View() string {
 	switch m.active {
 	case List:
 		return renderList(m)
-	case Create:
-		return renderCreate(m)
+	case Prompt:
+		return renderPrompt(m)
 	default:
 		return renderList(m)
 	}
@@ -175,7 +282,7 @@ func calculateListHeight(m Model) int {
 	return listHeight
 }
 
-func renderCreate(m Model) string {
+func renderPrompt(m Model) string {
 	return lipgloss.Place(
 		m.width,
 		m.height,
@@ -201,8 +308,9 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, width, height int)
 
 	for _, v := range loadedProfiles {
 		r := Profile{
-			Name:      v.Name,
-			Variables: len(v.Variables), // TODO
+			Name:         v.Name,
+			Variables:    len(v.Variables),
+			ProfileModel: v,
 		}
 		profiles = append(profiles, r)
 	}

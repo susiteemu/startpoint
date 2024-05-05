@@ -1,6 +1,8 @@
 package profileui
 
 import (
+	"startpoint/tui/messages"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,8 +30,8 @@ var editKeys = []key.Binding{
 		key.WithHelp("a", "add"),
 	),
 	key.NewBinding(
-		key.WithKeys("x"),
-		key.WithHelp("x", "delete"),
+		key.WithKeys("d"),
+		key.WithHelp("d", "delete"),
 	),
 	key.NewBinding(
 		key.WithKeys("c"),
@@ -103,12 +105,16 @@ func newNormalDelegate() list.DefaultDelegate {
 				return tea.Cmd(func() tea.Msg {
 					return CreateProfileMsg{}
 				})
-			case "x":
-				return tea.Cmd(func() tea.Msg {
-					return DeleteProfileMsg{
-						Profile: profile,
-					}
-				})
+			case "d":
+				if profile.Name == "default" {
+					return messages.CreateStatusMsg("You can't delete default profile")
+				} else {
+					return tea.Cmd(func() tea.Msg {
+						return DeleteProfileMsg{
+							Profile: profile,
+						}
+					})
+				}
 			case "c":
 				return tea.Cmd(func() tea.Msg {
 					return CopyProfileMsg{
@@ -116,11 +122,15 @@ func newNormalDelegate() list.DefaultDelegate {
 					}
 				})
 			case "r":
-				return tea.Cmd(func() tea.Msg {
-					return RenameProfileMsg{
-						Profile: profile,
-					}
-				})
+				if profile.Name == "default" {
+					return messages.CreateStatusMsg("You can't rename default profile")
+				} else {
+					return tea.Cmd(func() tea.Msg {
+						return RenameProfileMsg{
+							Profile: profile,
+						}
+					})
+				}
 			case tea.KeyEnter.String(), "e":
 				return tea.Cmd(func() tea.Msg {
 					return EditProfileMsg{

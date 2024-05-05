@@ -8,6 +8,12 @@ type ProfileSelectCancelledMsg struct{}
 
 type CreateProfileMsg struct{}
 
+type CreateProfileFinishedMsg struct {
+	root     string
+	filename string
+	err      error
+}
+
 type DeleteProfileMsg struct {
 	Profile Profile
 }

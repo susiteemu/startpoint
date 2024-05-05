@@ -101,16 +101,6 @@ func (r *Request) BodyAsMap() (map[string]string, bool) {
 	return asMapString, true
 }
 
-/*
-func (r *RequestMold) Name() string {
-	if r.Yaml != nil {
-		return r.Yaml.Name
-	} else if r.Starlark != nil {
-		return findWithPatterns(r.Starlark.Script, starlarkNamePatterns)
-	}
-	return ""
-}*/
-
 func (r *RequestMold) Url() string {
 	if r.Yaml != nil {
 		return r.Yaml.Url

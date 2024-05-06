@@ -42,8 +42,8 @@ var editKeys = []key.Binding{
 		key.WithHelp("r", "rename"),
 	),
 	key.NewBinding(
-		key.WithKeys(tea.KeyEnter.String(), "e"),
-		key.WithHelp(tea.KeyEnter.String()+"/e", "edit"),
+		key.WithKeys("e"),
+		key.WithHelp("e", "edit"),
 	),
 	key.NewBinding(
 		key.WithKeys("p"),
@@ -55,6 +55,12 @@ func newBaseDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
 	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(style.listItemTitleColor).BorderLeftForeground(style.listItemTitleColor)
 	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(style.listItemDescColor).BorderLeftForeground(style.listItemDescColor)
+
+	d.Styles.NormalTitle = d.Styles.NormalTitle.Foreground(style.listItemTitleColor)
+	d.Styles.NormalDesc = d.Styles.NormalTitle.Foreground(style.listItemDescColor)
+
+	d.Styles.DimmedTitle = d.Styles.DimmedTitle.Foreground(style.listItemTitleColor)
+	d.Styles.DimmedDesc = d.Styles.DimmedTitle.Foreground(style.listItemDescColor)
 	return d
 }
 
@@ -92,10 +98,12 @@ func newNormalDelegate() list.DefaultDelegate {
 	d := newBaseDelegate()
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
 		var profile Profile
+		var profileSelected bool
 		if i, ok := m.SelectedItem().(Profile); ok {
 			profile = i
+			profileSelected = true
 		} else {
-			return nil
+			profileSelected = false
 		}
 
 		switch msg := msg.(type) {
@@ -106,37 +114,53 @@ func newNormalDelegate() list.DefaultDelegate {
 					return CreateProfileMsg{}
 				})
 			case "d":
-				if profile.Name == "default" {
-					return messages.CreateStatusMsg("You can't delete default profile")
-				} else {
-					return tea.Cmd(func() tea.Msg {
-						return DeleteProfileMsg{
-							Profile: profile,
-						}
-					})
+				if profileSelected {
+					if profile.Name == "default" {
+						return messages.CreateStatusMsg("You can't delete default profile")
+					} else {
+						return tea.Cmd(func() tea.Msg {
+							return DeleteProfileMsg{
+								Profile: profile,
+							}
+						})
+					}
 				}
 			case "c":
-				return tea.Cmd(func() tea.Msg {
-					return CopyProfileMsg{
-						Profile: profile,
-					}
-				})
-			case "r":
-				if profile.Name == "default" {
-					return messages.CreateStatusMsg("You can't rename default profile")
-				} else {
+				if profileSelected {
 					return tea.Cmd(func() tea.Msg {
-						return RenameProfileMsg{
+						return CopyProfileMsg{
 							Profile: profile,
 						}
 					})
 				}
-			case tea.KeyEnter.String(), "e":
-				return tea.Cmd(func() tea.Msg {
-					return EditProfileMsg{
-						Profile: profile,
+			case "r":
+				if profileSelected {
+					if profile.Name == "default" {
+						return messages.CreateStatusMsg("You can't rename default profile")
+					} else {
+						return tea.Cmd(func() tea.Msg {
+							return RenameProfileMsg{
+								Profile: profile,
+							}
+						})
 					}
-				})
+				}
+			case "e":
+				if profileSelected {
+					return tea.Cmd(func() tea.Msg {
+						return EditProfileMsg{
+							Profile: profile,
+						}
+					})
+				}
+			case "p":
+				if profileSelected {
+					return tea.Cmd(func() tea.Msg {
+						return PreviewProfileMsg{
+							Profile: profile,
+						}
+					})
+				}
 			}
 		}
 		return nil

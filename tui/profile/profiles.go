@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os/exec"
 	"startpoint/core/model"
+	"startpoint/core/print"
 	messages "startpoint/tui/messages"
+	preview "startpoint/tui/preview"
 	prompt "startpoint/tui/prompt"
 	statusbar "startpoint/tui/statusbar"
 	"startpoint/tui/styles"
@@ -36,7 +38,7 @@ const (
 const (
 	List ActiveView = iota
 	Prompt
-	Update
+	Preview
 )
 
 type Mode int
@@ -84,6 +86,7 @@ type Model struct {
 	prompt    prompt.Model
 	help      help.Model
 	statusbar statusbar.Model
+	preview   preview.Model
 	active    ActiveView
 	mode      Mode
 	width     int
@@ -116,6 +119,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, nil
 		case "ctrl+c":
 			return m, tea.Quit
+		case "q":
+			if m.active == Preview {
+				m.active = List
+				return m, nil
+			}
+			if m.active == List {
+				return m, tea.Quit
+			}
 		case "?":
 			if m.active == List {
 				m.help.ShowAll = !m.help.ShowAll
@@ -176,6 +187,23 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Profile.Name))
 			}
 		}
+	case PreviewProfileMsg:
+		if m.active == List {
+			m.active = Preview
+			selected := msg.Profile.ProfileModel
+			formatted, err := print.SprintDotenv(selected.Raw)
+
+			if formatted == "" || err != nil {
+				formatted = selected.Raw
+			}
+			// NOTE: cannot give correct height before preview is created
+			// and we can calculate vertical margin height
+			m.preview = preview.New(selected.Filename, formatted)
+			height := m.height - m.preview.VerticalMarginHeight()
+			m.preview.SetSize(m.width, height)
+
+			return m, nil
+		}
 	case prompt.PromptAnsweredMsg:
 		m.active = List
 		if msg.Context.Key == RenameProfile {
@@ -229,6 +257,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.list, cmd = m.list.Update(msg)
 	case Prompt:
 		m.prompt, cmd = m.prompt.Update(msg)
+	case Preview:
+		m.preview, cmd = m.preview.Update(msg)
 	}
 	return m, cmd
 }
@@ -239,6 +269,8 @@ func (m Model) View() string {
 		return renderList(m)
 	case Prompt:
 		return renderPrompt(m)
+	case Preview:
+		return m.preview.View()
 	default:
 		return renderList(m)
 	}

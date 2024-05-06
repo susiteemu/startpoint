@@ -29,3 +29,7 @@ type RenameProfileMsg struct {
 type EditProfileMsg struct {
 	Profile Profile
 }
+
+type PreviewProfileMsg struct {
+	Profile Profile
+}

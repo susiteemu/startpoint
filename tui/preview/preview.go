@@ -3,6 +3,9 @@ package previewui
 import (
 	"fmt"
 	statusbar "startpoint/tui/statusbar"
+	"startpoint/tui/styles"
+	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -59,8 +62,25 @@ func (m *Model) SetSize(width int, height int) {
 }
 
 func New(title, content string) Model {
+
+	theme := styles.GetTheme()
+
+	content = strings.ReplaceAll(content, "\r\n", "\n")
+	lines := strings.Split(content, "\n")
+	digits := len(strconv.Itoa(len(lines)))
+	lineNrFmt := "%" + fmt.Sprintf("%d", digits) + "d"
+	linesWithLineNrs := []string{}
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		lineNr := i + 1
+		lineNrSection := lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true).Render(fmt.Sprintf(lineNrFmt, lineNr))
+		line = fmt.Sprintf("%s  %s", lineNrSection, line)
+		linesWithLineNrs = append(linesWithLineNrs, line)
+	}
+
 	v := viewport.New(0, 0)
-	v.SetContent(content)
+	v.SetContent(strings.Join(linesWithLineNrs, "\n"))
+	v.Style = v.Style.Padding(0, 0)
 
 	statusbarItems := []statusbar.StatusbarItem{
 		{Text: "PREVIEW", BackgroundColor: statusbarFirstColBg, ForegroundColor: statusbarFirstColFg},

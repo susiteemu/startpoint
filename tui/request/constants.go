@@ -26,6 +26,7 @@ const (
 	CreateComplexRequest = "CCmplxReq"
 	EditRequest          = "EReq"
 	PrintRequest         = "PReq"
+	PrintFailedRequest   = "PEReq"
 	RenameRequest        = "RnReq"
 	CopyRequest          = "CpReq"
 )

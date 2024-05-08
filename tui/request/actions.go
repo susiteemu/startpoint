@@ -3,6 +3,7 @@ package requestui
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	requestchain "startpoint/core/chaining"
@@ -32,7 +33,7 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 
 		responses, err := runner.RunRequestChain(chainedRequests, profile, interimResult)
 		if err != nil {
-			return RunRequestFinishedMsg(fmt.Sprintf("failed to do request err: %v", err))
+			return RunRequestFinishedWithFailureMsg(fmt.Sprintf("Error occurred:\n%v", err))
 		}
 		var printedResponses []string
 		for _, resp := range responses {
@@ -50,7 +51,7 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 			}
 			printed, err := print.SprintResponse(resp, printOpts)
 			if err != nil {
-				return RunRequestFinishedMsg(fmt.Sprintf("failed to sprint response err: %v", err))
+				return RunRequestFinishedWithFailureMsg(fmt.Sprintf("Error occurred: %v", err))
 			}
 			printedResponses = append(printedResponses, printed)
 		}
@@ -66,8 +67,11 @@ func interimResult(took time.Duration, statusCode int) {
 
 func handlePostAction(m Model) {
 	switch m.postAction.Type {
+	case PrintFailedRequest:
+		fmt.Fprintf(os.Stderr, m.postAction.Payload.(string)+"\n")
+		os.Exit(1)
 	case PrintRequest:
-		fmt.Printf("%s", m.postAction.Payload.(string))
+		fmt.Printf(m.postAction.Payload.(string) + "\n")
 	}
 }
 

@@ -36,6 +36,7 @@ type PreviewRequestMsg struct {
 }
 
 type RunRequestFinishedMsg string
+type RunRequestFinishedWithFailureMsg string
 
 type RenameRequestMsg struct {
 	Request Request

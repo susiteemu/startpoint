@@ -206,6 +206,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Quit
 
+	case RunRequestFinishedWithFailureMsg:
+		m.postAction = PostAction{
+			Type:    PrintFailedRequest,
+			Payload: string(msg),
+		}
+		return m, tea.Quit
 	case CreateRequestMsg:
 		if m.mode == Edit && m.active == List {
 			promptKey := CreateSimpleRequest

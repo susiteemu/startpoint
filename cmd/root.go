@@ -4,16 +4,21 @@ Copyright © 2023 Teemu Turunen <teturun@gmail.com>
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+	"startpoint/core/writer"
 	"strings"
+
+	"embed"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+//go:embed config/.startpoint-default.yaml
+var config embed.FS
 
 var cfgFile string
 
@@ -69,17 +74,28 @@ func initConfig() {
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(".startpoint")
-
 	}
 	cwd, err := os.Getwd()
 	cobra.CheckErr(err)
 	viper.SetDefault("workspace", cwd)
-	// TODO: where should default values come from?
-	viper.SetDefault("printer.response.formatter", "terminal16m")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("failed to read config %v\n", err)
+		if cfgFile == "" {
+			// If no specific config file is given, read embedded default config file and write it to $HOME and read it
+			file, err := config.ReadFile("config/.startpoint-default.yaml")
+			cobra.CheckErr(err)
+			home, err := os.UserHomeDir()
+			cobra.CheckErr(err)
+			_, err = writer.WriteFile(filepath.Join(home, ".startpoint.yaml"), string(file))
+			cobra.CheckErr(err)
+
+			if err := viper.ReadInConfig(); err != nil {
+				cobra.CheckErr(err)
+			}
+		} else {
+			cobra.CheckErr(err)
+		}
 	}
 
 	// if no specific config file is given, we try to merge config files found in $HOME and workspace

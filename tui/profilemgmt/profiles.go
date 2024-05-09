@@ -5,8 +5,10 @@ import (
 	"os"
 	"startpoint/core/model"
 	profiles "startpoint/tui/profile"
+	"startpoint/tui/styles"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/muesli/termenv"
 )
 
 type Model struct {
@@ -35,7 +37,12 @@ func Start(loadedProfiles []*model.Profile) {
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
+	theme := styles.GetTheme()
+
+	originalBackground := termenv.DefaultOutput().BackgroundColor()
+	termenv.DefaultOutput().SetBackgroundColor(termenv.RGBColor(theme.BgColor))
 	_, err := p.Run()
+	termenv.DefaultOutput().SetBackgroundColor(originalBackground)
 	if err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)

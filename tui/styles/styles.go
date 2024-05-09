@@ -8,7 +8,7 @@ import (
 )
 
 type Theme struct {
-	BgColor                            lipgloss.Color
+	BgColor                            string
 	TextFgColor                        lipgloss.Color
 	SubtextFgColor                     lipgloss.Color
 	TitleFgColor                       lipgloss.Color
@@ -54,6 +54,7 @@ func GetTheme() *Theme {
 	if theme == nil {
 		getColor := config.GetStringOrDefault
 		theme = &Theme{
+			BgColor:                            getColor("theme.bgColor"),
 			TextFgColor:                        lipgloss.Color(getColor("theme.primaryTextFgColor")),
 			SubtextFgColor:                     lipgloss.Color(getColor("theme.secondaryTextFgColor")),
 			TitleFgColor:                       lipgloss.Color(getColor("theme.titleFgColor")),

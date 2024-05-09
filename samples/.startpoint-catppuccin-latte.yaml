@@ -41,16 +41,3 @@ theme:
 printer:
   response:
     formatter: terminal16m
-editor: /opt/homebrew/bin/nvim
-httpClient:
-  debug: true
-  enableTraceInfo: true
-  insecure: false
-  proxyUrl: https://some-proxy.com
-  timeoutSeconds: 60
-  clientCertificates:
-    - certFile: /path/to/client.pem
-      keyFile: /path/to/client.key
-  rootCertificates:
-    - /path/to/rootcert.pem
-    - /path/to/another/rootcert.pem

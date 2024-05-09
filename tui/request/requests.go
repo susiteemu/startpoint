@@ -24,6 +24,7 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/rs/zerolog/log"
 )
 
@@ -637,7 +638,11 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
+	originalBackground := termenv.DefaultOutput().BackgroundColor()
+	termenv.DefaultOutput().SetBackgroundColor(termenv.RGBColor(theme.BgColor))
+
 	r, err := p.Run()
+	termenv.DefaultOutput().SetBackgroundColor(originalBackground)
 	if err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)

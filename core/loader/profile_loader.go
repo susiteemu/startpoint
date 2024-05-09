@@ -31,7 +31,7 @@ func ReadProfile(root, filename string) (*model.Profile, error) {
 	profile := model.Profile{
 		Name:      profileName,
 		Variables: envFile,
-		Raw:       string(file),
+		Raw:       strings.TrimSuffix(string(file), "\n"),
 		Root:      root,
 		Filename:  filename,
 	}

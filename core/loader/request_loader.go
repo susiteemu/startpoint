@@ -28,7 +28,7 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 		if err != nil {
 			return nil, err
 		}
-		yamlRequest.Raw = string(file)
+		yamlRequest.Raw = strings.TrimSuffix(string(file), "\n")
 		// TODO: how to filter out yaml files that are not requests?
 		if yamlRequest.Url != "" || yamlRequest.Method != "" {
 			request = &model.RequestMold{
@@ -47,7 +47,7 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 			return nil, err
 		}
 		starlarkRequest := &model.StarlarkRequest{
-			Script: string(file),
+			Script: strings.TrimSuffix(string(file), "\n"),
 		}
 		request = &model.RequestMold{
 			Starlark:    starlarkRequest,

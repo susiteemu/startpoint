@@ -30,6 +30,11 @@ type EditProfileMsg struct {
 	Profile Profile
 }
 
+type EditProfileFinishedMsg struct {
+	Profile Profile
+	err     error
+}
+
 type PreviewProfileMsg struct {
 	Profile Profile
 }

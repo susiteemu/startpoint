@@ -187,6 +187,32 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Profile.Name))
 			}
 		}
+	case EditProfileMsg:
+		if m.mode == Normal && m.active == List {
+			cmd, err := openFileToEditorCmd(msg.Profile.ProfileModel.Root, msg.Profile.ProfileModel.Filename)
+			if err != nil {
+				statusCmd := messages.CreateStatusMsg("Failed preparing editor")
+				return m, statusCmd
+			}
+			cb := func(err error) tea.Msg {
+				return EditProfileFinishedMsg{
+					Profile: msg.Profile,
+					err:     err,
+				}
+			}
+			return m, tea.ExecProcess(cmd, cb)
+		}
+	case EditProfileFinishedMsg:
+		oldProfile := msg.Profile
+		if msg.err == nil {
+			editedProfile, ok := readProfile(oldProfile.ProfileModel.Root, oldProfile.ProfileModel.Filename)
+			if ok {
+				setCmd := m.list.SetItem(m.list.Index(), editedProfile)
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Edited profile %s", oldProfile.Title()))
+				return m, tea.Batch(setCmd, statusCmd)
+			}
+		}
+		return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to edit profile %s", oldProfile.Title()))
 	case PreviewProfileMsg:
 		if m.active == List {
 			m.active = Preview
@@ -196,6 +222,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if formatted == "" || err != nil {
 				formatted = selected.Raw
 			}
+
+			log.Debug().Msgf("RAW: %s", selected.Raw)
+
 			// NOTE: cannot give correct height before preview is created
 			// and we can calculate vertical margin height
 			m.preview = preview.New(selected.Filename, formatted)

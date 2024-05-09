@@ -157,18 +157,6 @@ func openFileToEditorCmd(root, filename string) (*exec.Cmd, error) {
 	return editor.OpenFileToEditorCmd(path)
 }
 
-func getEditor() (string, []string, error) {
-	editor := strings.Fields(viper.GetString("editor"))
-	if len(editor) == 1 {
-		return editor[0], []string{}, nil
-	}
-	if len(editor) > 1 {
-		return editor[0], editor[1:], nil
-	}
-	// TODO read default editor from configuration
-	return "", []string{}, errors.New("Editor is not configured through configuration file or $EDITOR environment variable.")
-}
-
 func renameRequest(newName string, r Request, mold model.RequestMold) (Request, *model.RequestMold, bool) {
 	original := Request{
 		Name:   r.Name,

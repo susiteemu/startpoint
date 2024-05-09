@@ -38,6 +38,15 @@ func createFileAndReturnOpenToEditorCmd(root, filename, content string) (*exec.C
 	return editor.OpenFileToEditorCmd(path)
 }
 
+func openFileToEditorCmd(root, filename string) (*exec.Cmd, error) {
+	if len(filename) <= 0 {
+		return nil, errors.New("profile does not have a filename")
+	}
+	path := filepath.Join(root, filename)
+	log.Info().Msgf("About to open profile file %v\n", path)
+	return editor.OpenFileToEditorCmd(path)
+}
+
 func readProfile(root, filename string) (Profile, bool) {
 	profile, err := loader.ReadProfile(root, filename)
 	if err != nil {

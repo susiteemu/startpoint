@@ -1,0 +1,48 @@
+theme:
+  syntax: catppuccin-latte
+  bgColor: '#eff1f5'
+  primaryTextFgColor: '#4c4f69'
+  secondaryTextFgColor: '#5c5f77'
+  titleFgColor: '#eff1f5'
+  titleBgColor: '#40a02b'
+  borderFgColor: '#4c4f69'
+  whitespaceFgColor: '#ccd0da'
+  statusbar:
+    primaryBgColor: '#dce0e8'
+    primaryFgColor: '#4c4f69'
+    secondaryFgColor: '#eff1f5'
+    modePrimaryBgColor: '#df8e1d'
+    modeSecondaryBgColor: '#40a02b'
+    thirdColBgColor: '#179299'
+    fourthColBgColor: '#1e66f5'
+  httpMethods:
+    textFgColor: '#eff1f5'
+    defaultBgColor: '#4c4f69'
+    getBgColor: '#1e66f5'
+    postBgColor: '#40a02b'
+    putBgColor: '#df8e1d'
+    deleteBgColor: '#d20f39'
+    patchBgColor: '#179299'
+    optionsBgColor: ''
+  urlFgColor: '#1e66f5'
+  urlBgColor: ''
+  urlTemplatedSectionFgColor: '#df8e1d'
+  urlTemplatedSectionBgColor: ''
+  urlUnfilledTemplatedSectionFgColor: '#d20f39'
+  urlUnfilledTemplatedSectionBgColor: ''
+printer:
+  response:
+    formatter: terminal16m
+editor: /opt/homebrew/bin/nvim
+httpClient:
+  debug: true
+  enableTraceInfo: true
+  insecure: false
+  proxyUrl: https://some-proxy.com
+  timeoutSeconds: 60
+  clientCertificates:
+    - certFile: /path/to/client.pem
+      keyFile: /path/to/client.key
+  rootCertificates:
+    - /path/to/rootcert.pem
+    - /path/to/another/rootcert.pem

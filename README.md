@@ -460,4 +460,4 @@ There are things still in progress and planned for some later date.
 - [ ] Add basicAuth and authToken so no need to include them into headers? v.1.1
 - [ ] Add print request? v.1.1
 - [ ] Add continueOnPrevRequestStatus etc v.1.1
-
+- [w] Make failures (running request fails) more pretty/informative

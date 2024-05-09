@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -70,12 +71,10 @@ func initConfig() {
 		viper.SetConfigName(".startpoint")
 
 	}
-	viper.AutomaticEnv()
 	cwd, err := os.Getwd()
 	cobra.CheckErr(err)
 	viper.SetDefault("workspace", cwd)
 	// TODO: where should default values come from?
-	viper.SetDefault("theme.syntax", "native")
 	viper.SetDefault("printer.response.formatter", "terminal16m")
 
 	// If a config file is found, read it in.
@@ -95,5 +94,7 @@ func initConfig() {
 			viper.MergeConfigMap(workspaceViper.AllSettings())
 		}
 	}
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
 
 }

@@ -44,11 +44,12 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 				continue
 			}
 			printOpts := print.PrintOpts{
-				PrettyPrint:    true,
+				PrettyPrint:    config.GetBoolWithDefault("printer.pretty", true),
 				PrintBody:      true,
 				PrintHeaders:   true,
 				PrintTraceInfo: config.GetBool("httpClient.enableTraceInfo"),
 			}
+			log.Debug().Msgf("Printing with opts %v", printOpts)
 			printed, err := print.SprintResponse(resp, printOpts)
 			if err != nil {
 				return RunRequestFinishedWithFailureMsg(fmt.Sprintf("Error occurred: %v", err))

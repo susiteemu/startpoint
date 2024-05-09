@@ -3,6 +3,7 @@ package print
 import (
 	"fmt"
 	"regexp"
+	"startpoint/core/configuration"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters"
@@ -10,8 +11,9 @@ import (
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
+
+var config *configuration.Configuration = configuration.New()
 
 func resolveLexer(contentType string) chroma.Lexer {
 	var lexer chroma.Lexer
@@ -25,9 +27,8 @@ func resolveLexer(contentType string) chroma.Lexer {
 	return lexer
 }
 
-// TODO replace direct viper calls with configuration.GetXXX
 func resolveStyle() *chroma.Style {
-	style := styles.Get(viper.GetString("theme.syntax"))
+	style := styles.Get(config.GetStringOrDefault("theme.syntax"))
 	if style == nil {
 		style = styles.Fallback
 	}
@@ -35,7 +36,7 @@ func resolveStyle() *chroma.Style {
 }
 
 func resolveFormatter() chroma.Formatter {
-	formatter := formatters.Get(viper.GetString("printer.response.formatter"))
+	formatter := formatters.Get(config.GetStringOrDefault("printer.response.formatter"))
 	if formatter == nil {
 		formatter = formatters.Fallback
 	}

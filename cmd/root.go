@@ -6,6 +6,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"startpoint/core/configuration"
 	"startpoint/core/writer"
 	"strings"
 
@@ -60,7 +61,13 @@ func init() {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 		multi := zerolog.MultiLevelWriter(runLogFile)
 		log.Logger = zerolog.New(multi).With().Timestamp().Logger()
-		log.Info().Msg("Initialized logging")
+		// Default level for this example is info, unless debug flag is present
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		if configuration.New().GetBoolWithDefault("debug", false) {
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		}
+
+		log.Info().Msgf("Initialized logging with level %s", zerolog.GlobalLevel().String())
 		return nil
 	}
 }

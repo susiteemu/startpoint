@@ -11,11 +11,13 @@ import (
 )
 
 // TODO: colors from theme
-var promptStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f44")).BorderStyle(lipgloss.RoundedBorder()).Padding(1)
-var inputStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#cdd6f44")).BorderStyle(lipgloss.NormalBorder()).Padding(1).MarginTop(1)
-var errInputStyle = inputStyle.Copy().BorderForeground(lipgloss.Color("#f38ba8"))
-var descriptionStyle = lipgloss.NewStyle()
-var helpStyle = lipgloss.NewStyle().Padding(1, 1, 0, 1)
+var (
+	promptStyle      = lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1)
+	inputStyle       = lipgloss.NewStyle().BorderStyle(lipgloss.NormalBorder()).Padding(1).MarginTop(1)
+	errInputStyle    = inputStyle.Copy()
+	descriptionStyle = lipgloss.NewStyle()
+	helpStyle        = lipgloss.NewStyle().Padding(1, 1, 0, 1)
+)
 
 type keyMap struct {
 	Save key.Binding
@@ -107,6 +109,10 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	theme := styles.GetTheme()
 	commonStyles := styles.GetCommonStyles(theme)
 
+	promptStyle = promptStyle.BorderForeground(theme.BorderFgColor)
+	inputStyle = inputStyle.BorderForeground(theme.BorderFgColor)
+	errInputStyle = errInputStyle.BorderForeground(theme.ErrorFgColor)
+
 	nameInput := textinput.New()
 	nameInput.Focus()
 	nameInput.CharLimit = 64
@@ -115,7 +121,7 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	nameInput.Prompt = ""
 	if validator != nil {
 		// validator blocks writing on invalid input; there is a fix for this, but it is not released yet
-		nameInput.Validate = validator
+		//nameInput.Validate = validator
 	}
 
 	help := help.New()

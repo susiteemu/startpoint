@@ -4,35 +4,28 @@ import (
 	"errors"
 	"fmt"
 	"startpoint/core/model"
+	"startpoint/tui/styles"
 
 	"github.com/charmbracelet/lipgloss"
-)
-
-var (
-	style200   = lipgloss.NewStyle().Foreground(lipgloss.Color("#a6e3a1"))
-	style300   = lipgloss.NewStyle().Foreground(lipgloss.Color("#f9e2af"))
-	style400   = lipgloss.NewStyle().Foreground(lipgloss.Color("#f38ba8"))
-	style500   = lipgloss.NewStyle().Foreground(lipgloss.Color("#f38ba8"))
-	styleProto = lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa"))
 )
 
 func SprintStatus(resp *model.Response, pretty bool) (string, error) {
 	if resp == nil {
 		return "", errors.New("Response must not be nil!")
 	}
-
+	theme := styles.GetTheme()
 	protoStyle := lipgloss.NewStyle()
 	statusStyle := lipgloss.NewStyle()
 	if pretty {
-		protoStyle = styleProto
+		protoStyle = lipgloss.NewStyle().Foreground(theme.ResponseProtoFgColor)
 		if resp.StatusCode < 300 {
-			statusStyle = style200
+			statusStyle = lipgloss.NewStyle().Foreground(theme.ResponseStatus200FgColor)
 		} else if resp.StatusCode < 400 {
-			statusStyle = style300
+			statusStyle = lipgloss.NewStyle().Foreground(theme.ResponseStatus300FgColor)
 		} else if resp.StatusCode < 500 {
-			statusStyle = style400
+			statusStyle = lipgloss.NewStyle().Foreground(theme.ResponseStatus400FgColor)
 		} else {
-			statusStyle = style500
+			statusStyle = lipgloss.NewStyle().Foreground(theme.ResponseStatus500FgColor)
 		}
 	}
 

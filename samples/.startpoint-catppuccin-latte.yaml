@@ -7,6 +7,7 @@ theme:
   titleBgColor: '#40a02b'
   borderFgColor: '#4c4f69'
   whitespaceFgColor: '#ccd0da'
+  errorFgColor: '#d20f39'
   statusbar:
     primaryBgColor: '#dce0e8'
     primaryFgColor: '#4c4f69'
@@ -30,6 +31,13 @@ theme:
   urlTemplatedSectionBgColor: ''
   urlUnfilledTemplatedSectionFgColor: '#d20f39'
   urlUnfilledTemplatedSectionBgColor: ''
+  response:
+    status200FgColor: '#40a02b'
+    status300FgColor: '#df8e1d'
+    status400FgColor: '#d20f39'
+    status500FgColor: '#d20f39'
+    protoFgColor: '#1e66f5'
+    headerFgColor: '#1e66f5'
 printer:
   response:
     formatter: terminal16m

@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"sort"
 	"startpoint/core/model"
+	"startpoint/tui/styles"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-)
-
-var (
-	headerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa"))
 )
 
 func SprintHeaders(resp *model.Response, pretty bool) (string, error) {
 	if resp == nil {
 		return "", errors.New("response must not be nil")
 	}
+
+	theme := styles.GetTheme()
+	headerStyle := lipgloss.NewStyle().Foreground(theme.ResponseHeaderFgColor)
 
 	respHeaders := resp.Headers
 	respHeadersStr := ""

@@ -443,7 +443,7 @@ options:
 
 There are things still in progress and planned for some later date.
 
-- [w] Tui for profiles v.1.0
+- [x] Tui for profiles v.1.0
 - [w] Add logging v.1.0
 - [w] Make configurable things configurable v.1.0
 - [w] Add README.md v.1.0

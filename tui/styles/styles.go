@@ -35,6 +35,14 @@ type Theme struct {
 	UrlUnfilledTemplatedSectionFgColor lipgloss.Color
 	UrlUnfilledTemplatedSectionBgColor lipgloss.Color
 	WhitespaceFgColor                  lipgloss.Color
+	ErrorFgColor                       lipgloss.Color
+
+	ResponseStatus200FgColor lipgloss.Color
+	ResponseStatus300FgColor lipgloss.Color
+	ResponseStatus400FgColor lipgloss.Color
+	ResponseStatus500FgColor lipgloss.Color
+	ResponseProtoFgColor     lipgloss.Color
+	ResponseHeaderFgColor    lipgloss.Color
 }
 
 var config *configuration.Configuration = configuration.New()
@@ -72,6 +80,13 @@ func GetTheme() *Theme {
 			UrlUnfilledTemplatedSectionFgColor: lipgloss.Color(getColor("theme.urlUnfilledTemplatedSectionFgColor")),
 			UrlUnfilledTemplatedSectionBgColor: lipgloss.Color(getColor("theme.urlUnfilledTemplatedSectionBgColor")),
 			WhitespaceFgColor:                  lipgloss.Color(getColor("theme.whitespaceFgColor")),
+			ErrorFgColor:                       lipgloss.Color(getColor("theme.errorFgColor")),
+			ResponseStatus200FgColor:           lipgloss.Color(getColor("theme.response.status200FgColor")),
+			ResponseStatus300FgColor:           lipgloss.Color(getColor("theme.response.status300FgColor")),
+			ResponseStatus400FgColor:           lipgloss.Color(getColor("theme.response.status400FgColor")),
+			ResponseStatus500FgColor:           lipgloss.Color(getColor("theme.response.status500FgColor")),
+			ResponseProtoFgColor:               lipgloss.Color(getColor("theme.response.protoFgColor")),
+			ResponseHeaderFgColor:              lipgloss.Color(getColor("theme.response.headerFgColor")),
 		}
 	}
 

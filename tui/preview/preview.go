@@ -83,10 +83,10 @@ func New(title, content string) Model {
 	v.Style = v.Style.Padding(0, 0)
 
 	statusbarItems := []statusbar.StatusbarItem{
-		{Text: "PREVIEW", BackgroundColor: statusbarFirstColBg, ForegroundColor: statusbarFirstColFg},
-		{Text: title, BackgroundColor: statusbarSecondColBg, ForegroundColor: statusbarSecondColFg},
-		{Text: fmt.Sprintf("%3.f%%", v.ScrollPercent()*100), BackgroundColor: statusbarThirdColBg, ForegroundColor: statusbarThirdColFg},
-		{Text: "startpoint", BackgroundColor: statusbarFourthColBg, ForegroundColor: statusbarFourthColFg},
+		{Text: "PREVIEW", BackgroundColor: theme.StatusbarModePrimaryBgColor, ForegroundColor: theme.StatusbarSecondaryFgColor},
+		{Text: title, BackgroundColor: theme.StatusbarPrimaryBgColor, ForegroundColor: theme.StatusbarPrimaryFgColor},
+		{Text: fmt.Sprintf("%3.f%%", v.ScrollPercent()*100), BackgroundColor: theme.StatusbarThirdColBgColor, ForegroundColor: theme.StatusbarSecondaryFgColor},
+		{Text: "startpoint", BackgroundColor: theme.StatusbarFourthColBgColor, ForegroundColor: theme.StatusbarSecondaryFgColor},
 	}
 	sb := statusbar.New(statusbarItems, 1, 0)
 

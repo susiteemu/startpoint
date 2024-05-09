@@ -116,7 +116,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case tea.KeyEsc.String():
-			return m, nil
+			if m.active == Preview || m.active == Prompt {
+				m.active = List
+				return m, nil
+			}
 		case "ctrl+c":
 			return m, tea.Quit
 		case "q":

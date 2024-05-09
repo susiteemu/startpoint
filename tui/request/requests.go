@@ -262,7 +262,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.mode == Edit && m.active == List {
 			requestMold, err := findRequestMold(msg.Request, m)
 			if err != nil {
-				log.Error().Err(err).Msgf("Coul not find request mold with request %v", msg.Request)
+				log.Error().Err(err).Msgf("Could not find request mold with request %v", msg.Request)
 				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
 			}
 			deleted := requestMold.DeleteFromFS()

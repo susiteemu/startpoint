@@ -27,6 +27,12 @@ jobs:
       - name: Build for macOS
         run: GOOS=darwin GOARCH=amd64 go build -o startpoint-darwin-amd64
 
+      - name: Compress artifacts
+        run: |
+          tar -czvf startpoint-linux-amd64.tar.gz startpoint-linux-amd64
+          tar -czvf startpoint-darwin-amd64.tar.gz startpoint-darwin-amd64
+          zip -r startpoint-windows-amd64.zip startpoint-windows-amd64.exe
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -45,9 +51,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./startpoint-windows-amd64.exe
-          asset_name: startpoint-windows-amd64.exe
-          asset_content_type: application/octet-stream
+          asset_path: ./startpoint-windows-amd64.zip
+          asset_name: startpoint-windows-amd64.zip
+          asset_content_type: application/zip
 
       - name: Upload Release Asset Linux
         id: upload-release-asset-linux
@@ -56,9 +62,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./startpoint-linux-amd64
-          asset_name: startpoint-linux-amd64
-          asset_content_type: application/octet-stream
+          asset_path: ./startpoint-linux-amd64.tar.gz
+          asset_name: startpoint-linux-amd64.tar.gz
+          asset_content_type: application/gzip
 
       - name: Upload Release Asset MacOS
         id: upload-release-asset-macos
@@ -67,6 +73,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./startpoint-darwin-amd64
-          asset_name: startpoint-darwin-amd64
-          asset_content_type: application/octet-stream
+          asset_path: ./startpoint-darwin-amd64.tar.gz
+          asset_name: startpoint-darwin-amd64.tar.gz
+          asset_content_type: application/gzip

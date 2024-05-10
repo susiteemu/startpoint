@@ -49,4 +49,4 @@ brews:
     description: 'A tui app to run and manage HTTP requests'
     folder: Formula
     install: |
-      bin.install "susiteemu"
+      bin.install "startpoint"

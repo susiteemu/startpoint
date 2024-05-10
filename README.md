@@ -16,8 +16,8 @@
 - [Manual](#manual)
   * [Quickstart](#quickstart)
   * [Installing](#installing)
-  * [Adding and Running Requests](#adding-and-running-requests)
   * [Commands](#commands)
+  * [Features](#features)
   * [Request Composition](#request-composition)
     + [Different Content Types](#different-content-types)
     + [Chaining Requests](#chaining-requests)
@@ -26,6 +26,7 @@
   * [Profiles](#profiles)
   * [Configuration](#configuration)
   * [Examples](#examples)
+- [TODO](#todo)
 
 <!-- tocstop -->
 
@@ -93,12 +94,6 @@ As a more concrete list, at this point of time I have plans or have implemented:
 ### Installing
 
 
-### Adding and Running Requests
-
-You can either add requests with `requests` tui app or by creating `yaml` or `starlark` files directly with your favorite editor: it doesn't matter which way they are created. The app does not have any metadata mumbo-jumbo files to consider. At least in the beginning it is recommended to use the tui app since it creates a template for you to use.
-
-Requests can be run either with tui app or directly with `run` command. At the moment there is no autocompletion when using `run` command so you would have to check the name of the request.
-
 
 ### Commands
 
@@ -106,7 +101,7 @@ There are few different commands.
 
 ```
 ❯ startpoint --help
-Startpoint is a tui app with which you can manage and run HTTP requests from your terminal. It offers a way for flexible chaining and scripting requests as well as defining them in a simple format.
+Startpoint is a TUI app with which you can manage and run HTTP requests from your terminal. It offers a way for flexible chaining and scripting requests as well as defining them in a simple format.
 
 Usage:
   startpoint [flags]
@@ -114,8 +109,8 @@ Usage:
 
 Available Commands:
   help        Help about any command
-  profiles    Start up a tui application to manage profiles
-  requests    Start up a tui application to manage and run requests
+  profiles    Start up a TUI application to manage profiles
+  requests    Start up a TUI application to manage and run requests
   run         Run a http request from workspace
 ```
 
@@ -148,7 +143,7 @@ With `profiles` you can pass `workspace` and `config` file.
 
 ```
 ❯ startpoint profiles --help
-Start up a tui application to manage profiles
+Start up a TUI application to manage profiles
 
 Usage:
   startpoint profiles [flags]
@@ -163,7 +158,7 @@ And the same with `run`.
 
 ```
 ❯ startpoint requests --help
-Start up a tui application to manage and run requests
+Start up a TUI application to manage and run requests
 
 Usage:
   startpoint requests [flags]
@@ -173,6 +168,45 @@ Global Flags:
       --help               Displays help
   -w, --workspace string   Workspace directory (default is current dir)
 ```
+
+### Requests TUI
+
+Requests TUI app has functionalities to add, edit, copy, remove, rename, preview and run requests and select active profile.
+
+TUI has two distinct _modes_: *SELECT* and *EDIT* modes.
+* In *SELECT* mode you can change active profile, preview and run requests.
+* In *EDIT* mode you can manage requests by adding, editing, copying, removing and renaming them. You can also preview them.
+
+These are the keymappings for the *SELECT* mode:
+
+```
+ ↑/k      up             p preview             / filter
+ ↓/j      down           r run
+ →/l/pgdn next page      i edit mode
+ ←/h/pgup prev page      a activate profile
+ g/home   go to start
+ G/end    go to end
+```
+
+And these for the *EDIT* mode:
+
+```
+ ↑/k      up             a   add          / filter
+ ↓/j      down           e   edit
+ →/l/pgdn next page      d   delete
+ ←/h/pgup prev page      p   preview
+ g/home   go to start    r   rename
+ G/end    go to end      c   copy
+                         esc view mode
+```
+
+You can quit the app with `q` or `ctrl+c`.
+
+### Features
+
+You can either add requests with `requests` TUI app or by creating `yaml` or `starlark` files directly with your favorite editor: it doesn't matter which way they are created. The app does not have any metadata mumbo-jumbo files to consider. At least in the beginning it is recommended to use the TUI app since it creates a template for you to use.
+
+Requests can be run either with TUI app or directly with `run` command. At the moment there is no autocompletion when using `run` command so you would have to check the name of the request.
 
 
 ### Request Composition
@@ -443,13 +477,13 @@ options:
 
 There are things still in progress and planned for some later date.
 
-- [x] Tui for profiles v.1.0
+- [x] TUI for profiles v.1.0
 - [w] Add logging v.1.0
 - [x] Make configurable things configurable v.1.0
 - [w] Add README.md v.1.0
 - [ ] Setup ci/cd v.1.0
-- [w] Add support/test different payloads
-- [w] Create server to test requests/check if httpbin can be used effectively
+- [x] Add support/test different payloads
+- [x] Create server to test requests/check if httpbin can be used effectively
 - [ ] Add check for deleting request whether is breaks other requests v.1.0
 - [ ] Fix bug in copy/edit/rename during filtering: before setting item, cancel filtering, maybe it fixes it? And could be logical: why continue filtering after that v.1.0
 - [w] Http client settings: proxies, timeouts, trace logging, ... v1.0 (partly at least)

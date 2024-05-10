@@ -14,9 +14,10 @@
 - [Background and Motivation](#background-and-motivation)
 - [My Plans for `startpoint`](#my-plans-for-startpoint)
 - [Manual](#manual)
-  * [Quickstart](#quickstart)
   * [Installing](#installing)
+    + [On macOS](#on-macos)
   * [Commands](#commands)
+  * [Requests TUI](#requests-tui)
   * [Features](#features)
   * [Request Composition](#request-composition)
     + [Different Content Types](#different-content-types)
@@ -34,7 +35,7 @@
 
 `startpoint` is a terminal ui / terminal app for managing and running HTTP requests. You can chain requests, use values from previous request's response and do lots of other kind script magic.
 
-To install `startpoint` do XXX
+To install `startpoint` see [Installing](#installing).
 
 After installing you can run it with `startpoint requests`. This opens a ui to add/edit/manage requests. Add your own* and run. Done.
 
@@ -87,13 +88,22 @@ As a more concrete list, at this point of time I have plans or have implemented:
 
 ## Manual
 
-### Quickstart
-
-
 
 ### Installing
 
+There are several ways of installing `startpoint`.
 
+#### On macOS
+
+To install using Homebrew:
+```
+brew tap susiteemu/tap
+brew install startpoint
+```
+
+To install manually:
+* Download tar.gz file from release
+* Uncompress and either move to a location that is in your `$PATH` or run as a standalone from your desired location.
 
 ### Commands
 
@@ -481,7 +491,7 @@ There are things still in progress and planned for some later date.
 - [w] Add logging v.1.0
 - [x] Make configurable things configurable v.1.0
 - [w] Add README.md v.1.0
-- [ ] Setup ci/cd v.1.0
+- [w] Setup ci/cd v.1.0
 - [x] Add support/test different payloads
 - [x] Create server to test requests/check if httpbin can be used effectively
 - [ ] Add check for deleting request whether is breaks other requests v.1.0

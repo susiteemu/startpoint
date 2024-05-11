@@ -306,10 +306,80 @@ body = {
 
 #### Chaining Requests
 
+At times it is useful to run a request before another, e.g. when using a API that has a authentication scheme requiring to pass a token. Each request, regardless of being "simple" or "complex" has a property `prev_req` that can be used to point to a another request. When used with "simple" (`yaml` based) requests you can't use values from the previous response but you can nevertheless chain them if need be. The real benefit comes when using "complex" (`starlark` based) requests: you can take values from previous response's headers and body, build logic upon them and pass them to the current request.
+
+An example illustrates how to authenticate to oauth2 endpoint.
+
+This is the `User details.star` request. It wants to perform a `GET` request to `/auth/oauth2/users/me` endpoint that returns data about the user. The endpoint is protected with oauth2 which basically means you have to pass a header `Authorization` with the value of `Bearer + <access token>` in order to authenticate. This request has a previous request defined `Token` from which it gets `prevResponse` dictionary/map. Using this map it accesses the previous response's body and from the body `access_token` attribute.
+
+```
+"""
+meta:prev_req: Token
+"""
+url = "http://localhost:8000/auth/oauth2/users/me/"
+method = "GET"
+auth = "Bearer " + prevResponse["body"]["access_token"]
+headers = { "Authorization": auth }
+```
+
+The `Token.yaml` request is as follows. It performs a `POST` request to `/auth/oauth2/token` with form data holding the user credentials. Note that form fields depend on which authentication flow is used. Note also, that it is not advised to put sensitive values such as passwords directly to requests but use the [templating](#templating-yaml-requests) mechanism.
+
+```
+url: http://localhost:8000/auth/oauth2/token
+method: POST
+headers:
+  Content-Type: 'application/x-www-form-urlencoded'
+  Accept: 'application/x-www-form-urlencoded, application/json'
+body:
+  username: 'johndoe'
+  password: 'secret'
+  grant_type: 'password'
+```
+
+
 #### Templating `yaml` Requests
+
+It is possible and often useful to template request values: this way you can use the same request definition in different profiles/environments.
+
+To template a value, just use `{value_name}` syntax. The `value_name` refers to variable defined in the profile file. You can template:
+* the url of the request
+* header names and/or header values
+* parts of body
+
+An example: you want to perform a `GET` request to an endpoint `/foo`. You have multiple environments you want to ultimately test/try. You define the request as follows:
+
+```
+url: {domain}/foo
+method: GET
+```
+
+Your profiles files could then look like this:
+
+```
+# .env
+domain=http://localhost:8000
+```
+```
+# .env.test
+domain=https://yourtestdomain.com
+```
+```
+# .env.prod
+domain=https://yourdomain.com
+```
+
+Now, when you run your request in the `default` (`.env`) profile, your url would be `http://localhost:8000/foo`. In `test` it would be `https://yourtestdmain.com/foo` and in `prod` `https://yourdomain.com/foo`.
+
 
 #### Advanced `starlark` Requests
 
+
+Using values from the profile.
+
+```
+url = "http://" + profile["domain"] + "/foo/" + profile["id"]
+method = "GET"
+```
 ### Profiles
 
 Profiles are a way to run requests with different groups of variables. You can e.g. have one profile for your local environment holding request urls such as `http://localhost:8080` etc and one for your prod environment having its own urls. When you define profiles and variables inside them, you can use these variables in requests allowing you to avoid hard-coding values and reusing same request definitions on different situations and needs.
@@ -332,12 +402,12 @@ Profiles with suffix `.local` are meant to hold sensitive values such as passwor
 
 Not to confuse with profiles, which are used to define variables to requests, the configuration is metadata used to change the look and behaviour of the application.
 
-The configuration allows you to customize the look of the ui, set some properties for the HTTP client (e.g. proxy settings), change logging levels, define whether a response will print etc.
+The configuration allows you to customize the look of the ui, set some properties for the HTTP client (e.g. proxy settings), change logging levels, define whether a response parts will print etc.
 
 Configuration can come from multiple sources:
 * from a config file in user home directory
 * from a config file in the used workspace
-* from a explicitly defined config file
+* from an explicitly defined config file
 * from environment variables
 * from the request that is being run
 
@@ -354,58 +424,60 @@ If you explicitly define a config file, the corresponding order will be:
 * merge with configuration coming from environment variables
 * when running a request, merge with configuration coming the this request
 
-All configuration values are:
-```
-theme:
-  syntax: catppuccin-mocha
-  bgColor: '#1e1e2e'
-  primaryTextFgColor: '#cdd6f4'
-  secondaryTextFgColor: '#bac2de'
-  titleFgColor: '#1e1e2e'
-  titleBgColor: '#a6e3a1'
-  borderFgColor: '#cdd6f4'
-  whitespaceFgColor: '#313244'
-  statusbar:
-    primaryBgColor: '#11111b'
-    primaryFgColor: '#cdd6f4'
-    secondaryFgColor: '#1e1e2e'
-    modePrimaryBgColor: '#f9e2af'
-    modeSecondaryBgColor: '#a6e3a1'
-    thirdColBgColor: '#94e2d5'
-    fourthColBgColor: '#89b4fa'
-  httpMethods:
-    textFgColor: '#1e1e2e'
-    defaultBgColor: '#cdd6f4'
-    getBgColor: '#89b4fa'
-    postBgColor: '#a6e3a1'
-    putBgColor: '#f9e2af'
-    deleteBgColor: '#f38ba8'
-    patchBgColor: '#94e2d5'
-    optionsBgColor: ''
-  urlFgColor: '#89b4fa'
-  urlBgColor: ''
-  urlTemplatedSectionFgColor: '#f9e2af'
-  urlTemplatedSectionBgColor: ''
-  urlUnfilledTemplatedSectionFgColor: '#f38ba8'
-  urlUnfilledTemplatedSectionBgColor: ''
-printer:
-  response:
-    formatter: terminal16m
-editor: /opt/homebrew/bin/nvim
-httpClient:
-  debug: true
-  enableTraceInfo: true
-  insecure: false
-  proxyUrl: https://some-proxy.com
-  timeoutSeconds: 60
-  clientCertificates:
-    - certFile: /path/to/client.pem
-      keyFile: /path/to/client.key
-  rootCertificates:
-    - /path/to/rootcert.pem
-    - /path/to/another/rootcert.pem
-```
+The configuration is given in `yaml` format (excluding those coming from environment). An example of configuration file is [here](./samples/.startpoint-all-configurations.yaml).
 
+All configuration values are:
+
+
+| Key | Default Value | Description |
+| ------------- | -------------- | -------------- |
+| theme.syntax | catppuccin-mocha | Sets syntax coloring for [Chroma](https://github.com/alecthomas/chroma). See [all available styles](https://github.com/alecthomas/chroma/tree/master/styles). |
+| theme.bgColor | #1e1e2e | Background color for the TUI apps |
+| theme.primaryTextFgColor | #cdd6f4 | Primary text foreground color |
+| theme.secondaryTextFgColor | #bac2de | Secondary text foreground color |
+| theme.titleFgColor | #1e1e2e | App title foreground color |
+| theme.titleBgColor | #a6e3a1 | App title background color |
+| theme.borderFgColor | #cdd6f4 | Border foreground color |
+| theme.whitespaceFgColor | #313244 | Foreground color for the whitespace (shown as a background for dialogs/prompts) |
+| theme.errorFgColor | #f38ba8 | Foreground color for errors |
+| theme.statusbar.primaryBgColor | #11111b | Background color for the primary section of the statusbar (e.g. that displays messages) |
+| theme.statusbar.primaryFgColor | #cdd6f4 | Foreground color for the primary section of the statusbar (e.g. that displays messages) |
+| theme.statusbar.secondaryFgColor | #1e1e2e | Foreground color for "secondary" content such as other, colored, sections |
+| theme.statusbar.modePrimaryBgColor | #f9e2af | Background color for the "primary" (e.g. in requests TUI the *SELECT*) mode section of the statusbar|
+| theme.statusbar.modeSecondaryBgColor | #a6e3a1 | Background color for the "secondary" (e.g. in requests TUI the *EDIT*) mode section of the statusbar|
+| theme.statusbar.thirdColBgColor | #94e2d5 | Background color for the third section of the statusbar |
+| theme.statusbar.fourthColBgColor | #89b4fa | Background color for the fourth section of the statusbar |
+| theme.httpMethods.textFgColor | #1e1e2e | In list items, the foreground color for the label showing request's http method |
+| theme.httpMethods.defaultBgColor | #cdd6f4 | In list items, the default background color for the label showing request's http method |
+| theme.httpMethods.getBgColor | #89b4fa | In list items, the background color for the label showing request's http method when the method is `GET` |
+| theme.httpMethods.postBgColor | #a6e3a1 | In list items, the background color for the label showing request's http method when the method is `POST` |
+| theme.httpMethods.putBgColor | #f9e2af | In list items, the background color for the label showing request's http method when the method is `PUT` |
+| theme.httpMethods.deleteBgColor | #f38ba8 | In list items, the background color for the label showing request's http method when the method is `DELETE` |
+| theme.httpMethods.patchBgColor | #94e2d5 | In list items, the background color for the label showing request's http method when the method is `PATCH` |
+| theme.httpMethods.optionsBgColor |  | In list items, the background color for the label showing request's http method when the method is `OPTIONS` |
+| theme.urlFgColor | #89b4fa | In list items, the foreground color for request's URL |
+| theme.urlBgColor |  |  In list items, the background color for request's URL |
+| theme.urlTemplatedSectionFgColor | #f9e2af | In list items, the foreground color for the templated section of the request's URL |
+| theme.urlTemplatedSectionBgColor |  | In list items, the background color for the templated section of the request's URL |
+| theme.urlUnfilledTemplatedSectionFgColor | #f38ba8 |In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable |
+| theme.urlUnfilledTemplatedSectionBgColor |  |  In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable |
+| theme.response.status200FgColor | #a6e3a1 | Foreground color for the response's 2xx status |
+| theme.response.status300FgColor | #f9e2af | Foreground color for the response's 3xx status |
+| theme.response.status400FgColor | #f38ba8 | Foreground color for the response's 4xx status |
+| theme.response.status500FgColor | #f38ba8 | Foreground color for the response's 5xx status |
+| theme.response.protoFgColor | #89b4fa | Foreground color for the response's proto part |
+| theme.response.headerFgColor | #89b4fa | Foreground color for the response's header names |
+| printer.pretty | true | Pretty print responses |
+| printer.response.formatter | terminal16m | Which formatter to use with Chroma |
+| editor | | Which editor to use for creating/editing requests and profiles |
+| httpClient.debug | false | Enable debug logging for the http client |
+| httpClient.enableTraceInfo | false | Include and print traceinfo with the response |
+| httpClient.insecure | false | Disable security check for https |
+| httpClient.proxyUrl | | Set proxy |
+| httpClient.timeoutSeconds | | Set timeout in seconds |
+| httpClient.clientCertificates[].certFile | | Array of certFile and keyFile pairs; certFile contains path to the public key file |
+| httpClient.clientCertificates[].keyFile | |  Array of certFile and keyFile pairs; keyFile contains path to the private key file |
+| httpClient.rootCertificates[] | | Array of paths to custom root certificates |
 
 
 ### Examples
@@ -488,15 +560,15 @@ options:
 There are things still in progress and planned for some later date.
 
 - [x] TUI for profiles v.1.0
-- [w] Add logging v.1.0
+- [ ] WIP: Add logging v.1.0
 - [x] Make configurable things configurable v.1.0
-- [w] Add README.md v.1.0
-- [w] Setup ci/cd v.1.0
+- [ ] WIP: Add README.md v.1.0
+- [x] Setup ci/cd v.1.0
 - [x] Add support/test different payloads
 - [x] Create server to test requests/check if httpbin can be used effectively
 - [ ] Add check for deleting request whether is breaks other requests v.1.0
 - [ ] Fix bug in copy/edit/rename during filtering: before setting item, cancel filtering, maybe it fixes it? And could be logical: why continue filtering after that v.1.0
-- [w] Http client settings: proxies, timeouts, trace logging, ... v1.0 (partly at least)
+- [x] Http client settings: proxies, timeouts, trace logging, ... v1.0 (partly at least)
 - [ ] Renaming request: also rename prev_req for other requests v.1.0
 - [ ] Import from openspec v.1.1
 - [ ] Shell completions: https://github.com/spf13/cobra/blob/main/site/content/completions/_index.md v.1.1
@@ -504,4 +576,5 @@ There are things still in progress and planned for some later date.
 - [ ] Add basicAuth and authToken so no need to include them into headers? v.1.1
 - [ ] Add print request? v.1.1
 - [ ] Add continueOnPrevRequestStatus etc v.1.1
-- [w] Make failures (running request fails) more pretty/informative
+- [ ] WIP: Make failures (running request fails) more pretty/informative
+- [ ] Add templating support for yaml bodies

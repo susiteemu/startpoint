@@ -64,6 +64,8 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 			}
 		}
 		yamlRequest.Headers = headers
+
+		// TODO: process template variables in body too
 	}
 
 	options := make(map[string]interface{})

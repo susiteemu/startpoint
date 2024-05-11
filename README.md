@@ -373,13 +373,6 @@ Now, when you run your request in the `default` (`.env`) profile, your url would
 
 #### Advanced `starlark` Requests
 
-
-Using values from the profile.
-
-```
-url = "http://" + profile["domain"] + "/foo/" + profile["id"]
-method = "GET"
-```
 ### Profiles
 
 Profiles are a way to run requests with different groups of variables. You can e.g. have one profile for your local environment holding request urls such as `http://localhost:8080` etc and one for your prod environment having its own urls. When you define profiles and variables inside them, you can use these variables in requests allowing you to avoid hard-coding values and reusing same request definitions on different situations and needs.
@@ -578,3 +571,5 @@ There are things still in progress and planned for some later date.
 - [ ] Add continueOnPrevRequestStatus etc v.1.1
 - [ ] WIP: Make failures (running request fails) more pretty/informative
 - [ ] Add templating support for yaml bodies
+- [ ] Change getting values from a profile in starlark requests to be template-based, same as for yaml
+- [ ] Add Lua based requests v.1.2

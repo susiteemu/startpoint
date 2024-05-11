@@ -33,8 +33,7 @@ headers = { "X-Foo": "bar", "X-Foos": [ "Bar1", "Bar2" ] }
 body = { "id": 1474, "prev": prev, "bar": [
     {"name": "Joe"},
     {"name": "Jane"},
-] }
-`
+] }`
 
 	starlarkRequest := model.RequestMold{
 		Starlark: &model.StarlarkRequest{
@@ -65,8 +64,7 @@ body: >
   {
     "id": 1,
     "name": "Jane"
-  }
-`,
+  }`,
 		},
 		ContentType: "yaml",
 		Filename:    "yaml_request.yaml",

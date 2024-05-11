@@ -12,18 +12,13 @@ import (
 	"go.starlark.net/syntax"
 )
 
-func RunStarlarkScript(request model.RequestMold, previousResponse *model.Response, profile model.Profile) (map[string]interface{}, error) {
+func RunStarlarkScript(request model.RequestMold, previousResponse *model.Response) (map[string]interface{}, error) {
 
-	log.Info().Msgf("Running Starlark script with request %v, previousResponse %v, profile %v", request, previousResponse, profile)
+	log.Info().Msgf("Running Starlark script with request %v, previousResponse %v", request, previousResponse)
 
 	if request.Starlark == nil {
 		log.Error().Msg("Starlark request is nil, aborting")
 		return nil, errors.New("starlark request must not be nil")
-	}
-
-	profileValues, err := starlarkconv.Convert(profile.Variables)
-	if err != nil {
-		return nil, err
 	}
 
 	previousResponseStarlark := starlark.Dict{}
@@ -53,7 +48,6 @@ func RunStarlarkScript(request model.RequestMold, previousResponse *model.Respon
 	}
 
 	predeclared := starlark.StringDict{
-		"profile":      profileValues,
 		"prevResponse": &previousResponseStarlark,
 	}
 

@@ -29,6 +29,10 @@ func TestReadProfiles(t *testing.T) {
 				"domain": "foobar.com",
 				"foo":    "bar",
 			},
+			Root:     "testdata",
+			Filename: ".env",
+			Raw: `domain=foobar.com
+foo=bar`,
 		},
 		{
 			Name: "production",
@@ -36,6 +40,10 @@ func TestReadProfiles(t *testing.T) {
 				"domain": "foobarprod.com",
 				"foo":    "bar2",
 			},
+			Root:     "testdata",
+			Filename: ".env.production",
+			Raw: `domain=foobarprod.com
+foo=bar2`,
 		},
 	}
 

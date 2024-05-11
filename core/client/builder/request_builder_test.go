@@ -136,3 +136,57 @@ body = {
 		t.Errorf("got\n%q\nwanted\n%q\n", request, wantedRequest)
 	}
 }
+func TestBuildStarlarkRequestWithTemplateVariables(t *testing.T) {
+	requestMold := model.RequestMold{
+		Name: "Starlark request",
+		Starlark: &model.StarlarkRequest{
+			Script: `
+"""
+meta:prev_req: Some previous request
+doc:url: http://foobar.com
+doc:method: POST
+"""
+url = "http://{domain}"
+headers = { "X-Foo": "Bar", "X-Foos": [ "Bar1", "Bar2" ], "X-Tmpl-Var": "{header-value-test}" }
+method = "POST"
+body = {
+    "id": 1,
+    "amount": 1.2001,
+    "name": "Jane"
+}`,
+		},
+	}
+
+	wantedRequest := model.Request{
+		Url:    "http://foobar.com",
+		Method: "POST",
+		Headers: model.Headers{
+			"X-Foo":      {"Bar"},
+			"X-Foos":     {"Bar1", "Bar2"},
+			"X-Tmpl-Var": {"Value from template var"},
+		},
+		Body: map[string]interface{}{
+			"id":     big.NewInt(1),
+			"amount": 1.2001,
+			"name":   "Jane",
+		},
+		Options: make(map[string]interface{}),
+	}
+
+	profile := model.Profile{
+		Name: "some-profile",
+		Variables: map[string]string{
+			"domain":            "foobar.com",
+			"header-value-test": "Value from template var",
+		},
+	}
+	request, err := BuildRequest(&requestMold, profile)
+	if err != nil {
+		t.Errorf("did not expect error %v", err)
+		return
+	}
+
+	if !cmp.Equal(request, wantedRequest, cmp.AllowUnexported(big.Int{})) {
+		t.Errorf("got\n%q\nwanted\n%q\n", request, wantedRequest)
+	}
+}

@@ -90,7 +90,14 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 		return model.Request{}, false, nil
 	}
 
-	res, err := starlarkng.RunStarlarkScript(*requestMold, previousResponse, profile)
+	script := requestMold.Starlark.Script
+	if len(profile.Variables) > 0 {
+		for k, v := range profile.Variables {
+			script, _ = templateng.ProcessTemplateVariable(script, k, v)
+		}
+	}
+	requestMold.Starlark.Script = script
+	res, err := starlarkng.RunStarlarkScript(*requestMold, previousResponse)
 	if err != nil {
 		log.Error().Err(err).Msg("Running Starlark script resulted to error")
 		return model.Request{}, true, err

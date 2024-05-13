@@ -14,15 +14,22 @@
 - [Background and Motivation](#background-and-motivation)
 - [My Plans for `startpoint`](#my-plans-for-startpoint)
 - [Manual](#manual)
-  * [Installing](#installing)
+  * [Installation](#installation)
     + [On macOS](#on-macos)
   * [Commands](#commands)
   * [Requests TUI](#requests-tui)
   * [Features](#features)
-  * [Request Composition](#request-composition)
-    + [Different Content Types](#different-content-types)
+  * [Request Definitions](#request-definitions)
+    + [Different Requests](#different-requests)
+      - [JSON](#json)
+      - [Plaintext](#plaintext)
+      - [XML](#xml)
+      - [Form data](#form-data)
+      - [Multipart form data](#multipart-form-data)
+      - [Downloading files](#downloading-files)
+      - [Uploading files](#uploading-files)
     + [Chaining Requests](#chaining-requests)
-    + [Templating `yaml` Requests](#templating-yaml-requests)
+    + [Templating Requests](#templating-requests)
     + [Advanced `starlark` Requests](#advanced-starlark-requests)
   * [Profiles](#profiles)
   * [Configuration](#configuration)
@@ -35,14 +42,14 @@
 
 `startpoint` is a terminal ui / terminal app for managing and running HTTP requests. You can chain requests, use values from previous request's response and do lots of other kind script magic.
 
-To install `startpoint` see [Installing](#installing).
+To install `startpoint` see [Installation](#installation).
 
 After installing you can run it with `startpoint requests`. This opens a ui to add/edit/manage requests. Add your own* and run. Done.
 
 *)
 You can test e.g. with this:
 
-```
+```yaml
 url: https://httpbin.org/anything
 method: POST
 headers:
@@ -89,14 +96,14 @@ As a more concrete list, at this point of time I have plans or have implemented:
 ## Manual
 
 
-### Installing
+### Installation
 
 There are several ways of installing `startpoint`.
 
 #### On macOS
 
 To install using Homebrew:
-```
+```bash
 brew tap susiteemu/tap
 brew install startpoint
 ```
@@ -109,7 +116,7 @@ To install manually:
 
 There are few different commands.
 
-```
+```bash
 ❯ startpoint --help
 Startpoint is a TUI app with which you can manage and run HTTP requests from your terminal. It offers a way for flexible chaining and scripting requests as well as defining them in a simple format.
 
@@ -128,7 +135,7 @@ For each command there are some arguments/flags you can pass.
 
 With `run` you can use flags/arguments to define which parts of the response to print.
 
-```
+```bash
 ❯ startpoint run --help
 Run a http request from workspace
 
@@ -151,7 +158,7 @@ Global Flags:
 
 With `profiles` you can pass `workspace` and `config` file.
 
-```
+```bash
 ❯ startpoint profiles --help
 Start up a TUI application to manage profiles
 
@@ -166,7 +173,7 @@ Global Flags:
 
 And the same with `run`.
 
-```
+```bash
 ❯ startpoint requests --help
 Start up a TUI application to manage and run requests
 
@@ -219,7 +226,7 @@ You can either add requests with `requests` TUI app or by creating `yaml` or `st
 Requests can be run either with TUI app or directly with `run` command. At the moment there is no autocompletion when using `run` command so you would have to check the name of the request.
 
 
-### Request Composition
+### Request Definitions
 
 `startpoint` has different kinds of requests for varying needs: simple and more complex ones. Simple ones are defined with `yaml`, can be templated and run as a part of a request chain, but they can't use values from a previous request's response. Complex ones are scripted with `starlark`, can use values from both profile and previous request's response and use the bells and whistles of a programming language.
 
@@ -237,13 +244,12 @@ In addition there are some properties related to authentication which can be use
 
 A very simple example of request would be:
 
-```
+```yaml
 # A request.yaml
 url: https://httpbin.org/anything
 method: GET
-
-### Or with starlark
-
+```
+```python
 # A request.star
 url = "https://httpbin.org/anything"
 method = "GET"
@@ -252,27 +258,26 @@ Both of these would perform a HTTP GET request url `https://httpbin.org/anything
 
 To add some headers, you would do:
 
-```
+```yaml
 # A request with headers.yaml
 url: https://httpbin.org/anything
 method: GET
 headers:
   Accept: "application/json"
   X-Custom-Header: "Some custom value"
-
-### Or with starlark
-
+```
+```python
 # A request with headers.star
 url = "https://httpbin.org/anything"
 method = "GET"
-headers: {
+headers = {
   "Accept": "application/json",
   "X-Custom-Header": "Some custom value"
 }
 ```
 And to add a body, you would do:
 
-```
+```yaml
 # A request with body.yaml
 url: https://httpbin.org/anything
 method: GET
@@ -285,9 +290,8 @@ body: >
    "id": 1,
    "name": "Jane"
  }
-
-### Or with starlark
-
+```
+```python
 # A request with body.star
 url = "https://httpbin.org/anything"
 method = "GET"
@@ -302,7 +306,21 @@ body = {
 }
 ```
 
-#### Different Content Types
+#### Different Requests
+
+##### JSON
+
+##### Plaintext
+
+##### XML
+
+##### Form data
+
+##### Multipart form data
+
+##### Downloading files
+
+##### Uploading files
 
 #### Chaining Requests
 
@@ -312,7 +330,7 @@ An example illustrates how to authenticate to oauth2 endpoint.
 
 This is the `User details.star` request. It wants to perform a `GET` request to `/auth/oauth2/users/me` endpoint that returns data about the user. The endpoint is protected with oauth2 which basically means you have to pass a header `Authorization` with the value of `Bearer + <access token>` in order to authenticate. This request has a previous request defined `Token` from which it gets `prevResponse` dictionary/map. Using this map it accesses the previous response's body and from the body `access_token` attribute.
 
-```
+```python
 """
 meta:prev_req: Token
 """
@@ -324,7 +342,7 @@ headers = { "Authorization": auth }
 
 The `Token.yaml` request is as follows. It performs a `POST` request to `/auth/oauth2/token` with form data holding the user credentials. Note that form fields depend on which authentication flow is used. Note also, that it is not advised to put sensitive values such as passwords directly to requests but use the [templating](#templating-yaml-requests) mechanism.
 
-```
+```yaml
 url: http://localhost:8000/auth/oauth2/token
 method: POST
 headers:
@@ -337,7 +355,7 @@ body:
 ```
 
 
-#### Templating `yaml` Requests
+#### Templating Requests
 
 It is possible and often useful to template request values: this way you can use the same request definition in different profiles/environments.
 
@@ -348,22 +366,28 @@ To template a value, just use `{value_name}` syntax. The `value_name` refers to 
 
 An example: you want to perform a `GET` request to an endpoint `/foo`. You have multiple environments you want to ultimately test/try. You define the request as follows:
 
-```
+```yaml
+# Using templates.yaml
 url: {domain}/foo
 method: GET
+```
+```python
+# Using templates.star
+url = "{domain}/foo"
+method = "GET"
 ```
 
 Your profiles files could then look like this:
 
-```
+```bash
 # .env
 domain=http://localhost:8000
 ```
-```
+```bash
 # .env.test
 domain=https://yourtestdomain.com
 ```
-```
+```bash
 # .env.prod
 domain=https://yourdomain.com
 ```
@@ -378,8 +402,8 @@ Now, when you run your request in the `default` (`.env`) profile, your url would
 Profiles are a way to run requests with different groups of variables. You can e.g. have one profile for your local environment holding request urls such as `http://localhost:8080` etc and one for your prod environment having its own urls. When you define profiles and variables inside them, you can use these variables in requests allowing you to avoid hard-coding values and reusing same request definitions on different situations and needs.
 
 Profiles are based on dotenv, meaning you can define a "default" profile by creating a file called `.env` and filling it with variables like:
-```
-DOMAIN=http://localhost:8080
+```bash
+domain=http://localhost:8080
 ```
 To create different profiles, you would add more files: `.env.test`, `.env.prod` etc.
 
@@ -425,47 +449,47 @@ All configuration values are:
 | Key | Default Value | Description |
 | ------------- | -------------- | -------------- |
 | theme.syntax | catppuccin-mocha | Sets syntax coloring for [Chroma](https://github.com/alecthomas/chroma). See [all available styles](https://github.com/alecthomas/chroma/tree/master/styles). |
-| theme.bgColor | #1e1e2e | Background color for the TUI apps |
-| theme.primaryTextFgColor | #cdd6f4 | Primary text foreground color |
-| theme.secondaryTextFgColor | #bac2de | Secondary text foreground color |
-| theme.titleFgColor | #1e1e2e | App title foreground color |
-| theme.titleBgColor | #a6e3a1 | App title background color |
-| theme.borderFgColor | #cdd6f4 | Border foreground color |
-| theme.whitespaceFgColor | #313244 | Foreground color for the whitespace (shown as a background for dialogs/prompts) |
-| theme.errorFgColor | #f38ba8 | Foreground color for errors |
-| theme.statusbar.primaryBgColor | #11111b | Background color for the primary section of the statusbar (e.g. that displays messages) |
-| theme.statusbar.primaryFgColor | #cdd6f4 | Foreground color for the primary section of the statusbar (e.g. that displays messages) |
-| theme.statusbar.secondaryFgColor | #1e1e2e | Foreground color for "secondary" content such as other, colored, sections |
-| theme.statusbar.modePrimaryBgColor | #f9e2af | Background color for the "primary" (e.g. in requests TUI the *SELECT*) mode section of the statusbar|
-| theme.statusbar.modeSecondaryBgColor | #a6e3a1 | Background color for the "secondary" (e.g. in requests TUI the *EDIT*) mode section of the statusbar|
-| theme.statusbar.thirdColBgColor | #94e2d5 | Background color for the third section of the statusbar |
-| theme.statusbar.fourthColBgColor | #89b4fa | Background color for the fourth section of the statusbar |
-| theme.httpMethods.textFgColor | #1e1e2e | In list items, the foreground color for the label showing request's http method |
-| theme.httpMethods.defaultBgColor | #cdd6f4 | In list items, the default background color for the label showing request's http method |
-| theme.httpMethods.getBgColor | #89b4fa | In list items, the background color for the label showing request's http method when the method is `GET` |
-| theme.httpMethods.postBgColor | #a6e3a1 | In list items, the background color for the label showing request's http method when the method is `POST` |
-| theme.httpMethods.putBgColor | #f9e2af | In list items, the background color for the label showing request's http method when the method is `PUT` |
-| theme.httpMethods.deleteBgColor | #f38ba8 | In list items, the background color for the label showing request's http method when the method is `DELETE` |
-| theme.httpMethods.patchBgColor | #94e2d5 | In list items, the background color for the label showing request's http method when the method is `PATCH` |
+| theme.bgColor | ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e` | Background color for the TUI apps |
+| theme.primaryTextFgColor | ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Primary text foreground color |
+| theme.secondaryTextFgColor | ![#bac2de](https://via.placeholder.com/15/bac2de/000000.png?text=+) `#bac2de`  | Secondary text foreground color |
+| theme.titleFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | App title foreground color |
+| theme.titleBgColor | ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`  | App title background color |
+| theme.borderFgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Border foreground color |
+| theme.whitespaceFgColor | ![#313244](https://via.placeholder.com/15/313244/000000.png?text=+) `#313244`  | Foreground color for the whitespace (shown as a background for dialogs/prompts) |
+| theme.errorFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`  | Foreground color for errors |
+| theme.statusbar.primaryBgColor | ![#11111b](https://via.placeholder.com/15/11111b/000000.png?text=+) `#11111b`   | Background color for the primary section of the statusbar (e.g. that displays messages) |
+| theme.statusbar.primaryFgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4`  | Foreground color for the primary section of the statusbar (e.g. that displays messages) |
+| theme.statusbar.secondaryFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | Foreground color for "secondary" content such as other, colored, sections |
+| theme.statusbar.modePrimaryBgColor | ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`   | Background color for the "primary" (e.g. in requests TUI the *SELECT*) mode section of the statusbar|
+| theme.statusbar.modeSecondaryBgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | Background color for the "secondary" (e.g. in requests TUI the *EDIT*) mode section of the statusbar|
+| theme.statusbar.thirdColBgColor | ![#94e2d5](https://via.placeholder.com/15/94e2d5/000000.png?text=+) `#94e2d5` | Background color for the third section of the statusbar |
+| theme.statusbar.fourthColBgColor | ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`  | Background color for the fourth section of the statusbar |
+| theme.httpMethods.textFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | In list items, the foreground color for the label showing request's http method |
+| theme.httpMethods.defaultBgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4`  | In list items, the default background color for the label showing request's http method |
+| theme.httpMethods.getBgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | In list items, the background color for the label showing request's http method when the method is `GET` |
+| theme.httpMethods.postBgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | In list items, the background color for the label showing request's http method when the method is `POST` |
+| theme.httpMethods.putBgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | In list items, the background color for the label showing request's http method when the method is `PUT` |
+| theme.httpMethods.deleteBgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | In list items, the background color for the label showing request's http method when the method is `DELETE` |
+| theme.httpMethods.patchBgColor | ![#94e2d5](https://via.placeholder.com/15/94e2d5/000000.png?text=+) `#94e2d5`  | In list items, the background color for the label showing request's http method when the method is `PATCH` |
 | theme.httpMethods.optionsBgColor |  | In list items, the background color for the label showing request's http method when the method is `OPTIONS` |
-| theme.urlFgColor | #89b4fa | In list items, the foreground color for request's URL |
+| theme.urlFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | In list items, the foreground color for request's URL |
 | theme.urlBgColor |  |  In list items, the background color for request's URL |
-| theme.urlTemplatedSectionFgColor | #f9e2af | In list items, the foreground color for the templated section of the request's URL |
+| theme.urlTemplatedSectionFgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | In list items, the foreground color for the templated section of the request's URL |
 | theme.urlTemplatedSectionBgColor |  | In list items, the background color for the templated section of the request's URL |
-| theme.urlUnfilledTemplatedSectionFgColor | #f38ba8 |In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable |
+| theme.urlUnfilledTemplatedSectionFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   |In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable |
 | theme.urlUnfilledTemplatedSectionBgColor |  |  In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable |
-| theme.response.status200FgColor | #a6e3a1 | Foreground color for the response's 2xx status |
-| theme.response.status300FgColor | #f9e2af | Foreground color for the response's 3xx status |
-| theme.response.status400FgColor | #f38ba8 | Foreground color for the response's 4xx status |
-| theme.response.status500FgColor | #f38ba8 | Foreground color for the response's 5xx status |
-| theme.response.protoFgColor | #89b4fa | Foreground color for the response's proto part |
-| theme.response.headerFgColor | #89b4fa | Foreground color for the response's header names |
-| printer.pretty | true | Pretty print responses |
+| theme.response.status200FgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | Foreground color for the response's 2xx status |
+| theme.response.status300FgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | Foreground color for the response's 3xx status |
+| theme.response.status400FgColor |  ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | Foreground color for the response's 4xx status |
+| theme.response.status500FgColor |  ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | Foreground color for the response's 5xx status |
+| theme.response.protoFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's proto part |
+| theme.response.headerFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's header names |
+| printer.pretty | `true` | Pretty print responses |
 | printer.response.formatter | terminal16m | Which formatter to use with Chroma |
 | editor | | Which editor to use for creating/editing requests and profiles |
-| httpClient.debug | false | Enable debug logging for the http client |
-| httpClient.enableTraceInfo | false | Include and print traceinfo with the response |
-| httpClient.insecure | false | Disable security check for https |
+| httpClient.debug | `false` | Enable debug logging for the http client |
+| httpClient.enableTraceInfo | `false` | Include and print traceinfo with the response |
+| httpClient.insecure | `false` | Disable security check for https |
 | httpClient.proxyUrl | | Set proxy |
 | httpClient.timeoutSeconds | | Set timeout in seconds |
 | httpClient.clientCertificates[].certFile | | Array of certFile and keyFile pairs; certFile contains path to the public key file |
@@ -476,14 +500,14 @@ All configuration values are:
 ### Examples
 
 Request without body or headers:
-```
+```yaml
 # Yaml
 url: https://httpbin.org/anything
 method: GET
 ```
 
 Request with body and headers:
-```
+```yaml
 # Yaml
 url: https://httpbin.org/anything
 method: POST
@@ -497,7 +521,7 @@ body: >
 ```
 
 Request with formdata:
-```
+```yaml
 # Yaml
 url: https://httpbin.org/anything
 method: POST
@@ -510,7 +534,7 @@ body:
 ```
 
 Request with basic auth (NOTE: not implemented yet):
-```
+```yaml
 # Yaml
 url: https://httpbin.org/basic-auth/someuser/somepassword
 method: GET
@@ -521,7 +545,7 @@ auth:
 ```
 
 Request with bearer token (NOTE: not implemented yet):
-```
+```yaml
 # Yaml
 url: https://example.com/auth-with-bearer-token
 method: GET
@@ -530,7 +554,7 @@ auth:
 ```
 
 Request with file output:
-```
+```yaml
 # Yaml
 url: https://example.com/somefile.pdf
 method: GET
@@ -538,7 +562,7 @@ output: ./somefile.pdf
 ```
 
 Request with options:
-```
+```yaml
 # Yaml
 url: https://example.com/somefile.pdf
 method: GET
@@ -571,5 +595,5 @@ There are things still in progress and planned for some later date.
 - [ ] Add continueOnPrevRequestStatus etc v.1.1
 - [ ] WIP: Make failures (running request fails) more pretty/informative
 - [ ] Add templating support for yaml bodies
-- [ ] Change getting values from a profile in starlark requests to be template-based, same as for yaml
+- [x] Change getting values from a profile in starlark requests to be template-based, same as for yaml
 - [ ] Add Lua based requests v.1.2

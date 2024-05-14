@@ -1,8 +1,6 @@
 # A cli tool for managing and scripting http/restful requests: startpoint
 
-  ![Made with VHS](https://vhs.charm.sh/vhs-4s7pHET7k6McPIeayjjKHX.gif)
-
-
+![Made with VHS](https://vhs.charm.sh/vhs-4QCyBGCkuYBKuAk7Wz4C9D.gif)
 ```
 ###############################
 #                             #

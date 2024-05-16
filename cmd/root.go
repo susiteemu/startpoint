@@ -21,11 +21,18 @@ import (
 //go:embed config/.startpoint-default.yaml
 var config embed.FS
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "startpoint",
-	Short: "Startpoint is a tui app for managing and running HTTP requests",
+	Use:     "startpoint",
+	Version: version + " (commit=" + commit + ", build date=" + date + ")",
+	Short:   "Startpoint is a tui app for managing and running HTTP requests",
 	Long: `Startpoint is a tui app with which you can manage and run HTTP requests from your terminal. It offers a way for flexible chaining and scripting requests as well as defining them in a simple format.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -70,6 +77,7 @@ func init() {
 		log.Info().Msgf("Initialized logging with level %s", zerolog.GlobalLevel().String())
 		return nil
 	}
+
 }
 
 func initConfig() {

@@ -17,6 +17,8 @@ builds:
       - darwin
     flags:
       - -mod=mod
+    ldflags:
+      - -s -w -X cmd.version={{.Version}} -X cmd.commit={{.Commit}} -X cmd.date={{.Date}}
 
 archives:
   - format: tar.gz

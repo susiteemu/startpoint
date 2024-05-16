@@ -110,6 +110,12 @@ To install using Homebrew:
 brew tap susiteemu/tap
 brew install startpoint
 ```
+To update using Homebrew:
+```bash
+brew update
+brew upgrade startpoint
+```
+
 
 To install manually:
 * Download tar.gz file from release
@@ -119,7 +125,7 @@ To install manually:
 
 There are few different commands.
 
-```bash
+```
 ❯ startpoint --help
 Startpoint is a TUI app with which you can manage and run HTTP requests from your terminal. It offers a way for flexible chaining and scripting requests as well as defining them in a simple format.
 
@@ -132,13 +138,19 @@ Available Commands:
   profiles    Start up a TUI application to manage profiles
   requests    Start up a TUI application to manage and run requests
   run         Run a http request from workspace
+
+Flags:
+      --config string      config file (default is a merge of $HOME/.startpoint.yaml and <workspace>/.startpoint.yaml)
+      --help               Displays help
+  -v, --version            version for startpoint
+  -w, --workspace string   Workspace directory (default is current dir)
 ```
 
 For each command there are some arguments/flags you can pass.
 
 With `run` you can use flags/arguments to define which parts of the response to print.
 
-```bash
+```
 ❯ startpoint run --help
 Run a http request from workspace
 
@@ -161,7 +173,7 @@ Global Flags:
 
 With `profiles` you can pass `workspace` and `config` file.
 
-```bash
+```
 ❯ startpoint profiles --help
 Start up a TUI application to manage profiles
 
@@ -176,7 +188,7 @@ Global Flags:
 
 And the same with `run`.
 
-```bash
+```
 ❯ startpoint requests --help
 Start up a TUI application to manage and run requests
 

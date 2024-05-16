@@ -18,7 +18,7 @@ builds:
     flags:
       - -mod=mod
     ldflags:
-      - -s -w -X cmd.version={{.Version}} -X cmd.commit={{.Commit}} -X cmd.date={{.Date}}
+      - -s -w -X startpoint/cmd.version={{.Version}} -X startpoint/cmd.commit={{.Commit}} -X startpoint/cmd.date={{.Date}}
 
 archives:
   - format: tar.gz

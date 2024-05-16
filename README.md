@@ -1,6 +1,8 @@
 # A cli tool for managing and scripting http/restful requests: startpoint
 
-![Made with VHS](https://vhs.charm.sh/vhs-4QCyBGCkuYBKuAk7Wz4C9D.gif)
+With Catppuccin Mocha (FTW!)             |  Works with light mode too (Catppuccin Latte)
+:-------------------------:|:-------------------------:
+![Dark mode FTW!](https://vhs.charm.sh/vhs-4QCyBGCkuYBKuAk7Wz4C9D.gif) | ![It can have a light mode too!](https://vhs.charm.sh/vhs-2k75iICDoW522csX8Cc3dv.gif)
 ```
 ###############################
 #                             #

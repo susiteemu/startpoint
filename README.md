@@ -33,7 +33,6 @@ With Catppuccin Mocha (FTW!)             |  Works with light mode too (Catppucci
       - [Uploading files](#uploading-files)
     + [Chaining Requests](#chaining-requests)
     + [Templating Requests](#templating-requests)
-    + [Advanced `starlark` Requests](#advanced-starlark-requests)
   * [Profiles](#profiles)
   * [Configuration](#configuration)
   * [Examples](#examples)
@@ -234,11 +233,13 @@ And these for the *EDIT* mode:
 
 You can quit the app with `q` or `ctrl+c`.
 
-### Features
+#### Features
 
-You can either add requests with `requests` TUI app or by creating `yaml` or `starlark` files directly with your favorite editor: it doesn't matter which way they are created. The app does not have any metadata mumbo-jumbo files to consider. At least in the beginning it is recommended to use the TUI app since it creates a template for you to use.
+You can either add requests with `requests` TUI app or by creating `yaml` or `starlark` files directly with your favorite editor: it doesn't matter which way they are created. The app does not have any metadata mumbo-jumbo files to consider. At least in the beginning it is recommended to use the TUI app since it creates a template for you to use. To add a request with TUI app, press `a` when in *EDIT* mode. The app will ask if you want to add a `yaml` or `starlark` request. After this it will open your cup of editor (`$EDITOR`) and you can write the definition for it. After quitting the editor you can continue with the app.
 
-Requests can be run either with TUI app or directly with `run` command. At the moment there is no autocompletion when using `run` command so you would have to check the name of the request.
+![Adding a request](https://vhs.charm.sh/vhs-4iURqd0C5mbNHs6lXNoVyS.gif)
+
+Requests can be run either with TUI app (pressing `r` when in *SELECT* mode) or directly with `run` command. At the moment there is no autocompletion when using `run` command so you would have to check the name of the request.
 
 
 ### Request Definitions
@@ -409,8 +410,6 @@ domain=https://yourdomain.com
 
 Now, when you run your request in the `default` (`.env`) profile, your url would be `http://localhost:8000/foo`. In `test` it would be `https://yourtestdmain.com/foo` and in `prod` `https://yourdomain.com/foo`.
 
-
-#### Advanced `starlark` Requests
 
 ### Profiles
 

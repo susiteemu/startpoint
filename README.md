@@ -1,8 +1,13 @@
 # A cli tool for managing and scripting http/restful requests: startpoint
 
-With Catppuccin Mocha (FTW!)             |  Works with light mode too (Catppuccin Latte)
-:-------------------------:|:-------------------------:
-![Dark mode FTW!](https://vhs.charm.sh/vhs-4QCyBGCkuYBKuAk7Wz4C9D.gif) | ![It can have a light mode too!](https://vhs.charm.sh/vhs-2k75iICDoW522csX8Cc3dv.gif)
+With Catppuccin Mocha (FTW!) |
+:-------------------------:|
+![Dark mode FTW!](https://vhs.charm.sh/vhs-4QCyBGCkuYBKuAk7Wz4C9D.gif)
+
+
+Works with light mode too (Catppuccin Latte) |
+:-------------------------:|
+![It can have a light mode too!](https://vhs.charm.sh/vhs-2k75iICDoW522csX8Cc3dv.gif)
 ```
 ###############################
 #                             #
@@ -21,7 +26,9 @@ With Catppuccin Mocha (FTW!)             |  Works with light mode too (Catppucci
     + [On macOS](#on-macos)
   * [Commands](#commands)
   * [Requests TUI](#requests-tui)
-  * [Features](#features)
+    + [Features in *EDIT* mode](#features-in-edit-mode)
+    + [Features in *SELECT* mode](#features-in-select-mode)
+    + [Themes](#themes)
   * [Request Definitions](#request-definitions)
     + [Different Requests](#different-requests)
       - [JSON](#json)
@@ -204,6 +211,8 @@ Global Flags:
 
 Requests TUI app has functionalities to add, edit, copy, remove, rename, preview and run requests and select active profile.
 
+![Help](https://vhs.charm.sh/vhs-2h1wK683LjjPPSWkdrGVEt.gif)
+
 TUI has two distinct _modes_: *SELECT* and *EDIT* modes.
 * In *SELECT* mode you can change active profile, preview and run requests.
 * In *EDIT* mode you can manage requests by adding, editing, copying, removing and renaming them. You can also preview them.
@@ -233,13 +242,33 @@ And these for the *EDIT* mode:
 
 You can quit the app with `q` or `ctrl+c`.
 
-#### Features
+#### Features in *EDIT* mode
 
-You can either add requests with `requests` TUI app or by creating `yaml` or `starlark` files directly with your favorite editor: it doesn't matter which way they are created. The app does not have any metadata mumbo-jumbo files to consider. At least in the beginning it is recommended to use the TUI app since it creates a template for you to use. To add a request with TUI app, press `a` when in *EDIT* mode. The app will ask if you want to add a `yaml` or `starlark` request. After this it will open your cup of editor (`$EDITOR`) and you can write the definition for it. After quitting the editor you can continue with the app.
+You can either *add* requests with `requests` TUI app or by creating `yaml` or `starlark` files directly with your favorite editor: it doesn't matter which way they are created. The app does not have any metadata mumbo-jumbo files to consider. At least in the beginning it is recommended to use the TUI app since it creates a template for you to use. To add a request with TUI app, press `a` when in *EDIT* mode. The app will ask if you want to add a `yaml` or `starlark` request. After this it will open your cup of editor (`$EDITOR`) and you can write the definition for it. After quitting the editor you can continue with the app.
 
 ![Adding a request](https://vhs.charm.sh/vhs-4iURqd0C5mbNHs6lXNoVyS.gif)
 
-Requests can be run either with TUI app (pressing `r` when in *SELECT* mode) or directly with `run` command. At the moment there is no autocompletion when using `run` command so you would have to check the name of the request.
+*Editing* works the same: you can either do it directly by opening the request file with an editor or by opening the TUI app and starting the editing there.
+
+*Deleting* means simply deleting the request file so it can also be done directly from file system or with the TUI app. The app does some checks before deleting (whether the request is defined as a previous request to other requests; TODO).
+
+*Preview* opens the selected request to a syntax highlighted and scrollable view. Note that it shows the "raw" version of request and does not fill any template variables.
+
+*Renaming* simply renames the request file so it can also be done through the file system. The app however has a ability to rename `prev_req` properties for other requests in case you are renaming a request that is used as a previous request to others.
+
+*Copy* duplicates selected request, meaning you can use it as a base for a new request. Similar to many features above, you can do it either with the app or directly with your file system tools.
+
+#### Features in *SELECT* mode
+
+Requests can be *run* either with TUI app (pressing `r` when in *SELECT* mode) or directly with `run` command. At the moment there is no autocompletion when using `run` command so you would have to check the name of the request.
+
+*Preview* is also available in this mode. It opens the selected request to a syntax highlighted and scrollable view. Note that it shows the "raw" version of request and does not fill any template variables.
+
+With profile *activation* you tell the app to use variables from the profile and fill any possible template variables in the request. Read more about [Profiles](#profiles)
+
+#### Themes
+
+Currently there is no direct theming support, excluding syntax coloring which comes from [Chroma](https://github.com/alecthomas/chroma). However, you can assign colors to different configuration attributes in [Configuration](#configuration). As an example, [samples](samples) directory contains two different "themes": `.startpoint-catpuccing-latte.yaml` and `.startpoint-catppuccin-mocha.yaml`. The latter is also used as the default theme for the TUI apps.
 
 
 ### Request Definitions
@@ -611,3 +640,4 @@ There are things still in progress and planned for some later date.
 - [ ] Add templating support for yaml bodies
 - [x] Change getting values from a profile in starlark requests to be template-based, same as for yaml
 - [ ] Add Lua based requests v.1.2
+- [ ] Fix yaml deser panic v.1.0

@@ -29,15 +29,16 @@ Works with light mode too (Catppuccin Latte) |
     + [Features in *EDIT* mode](#features-in-edit-mode)
     + [Features in *SELECT* mode](#features-in-select-mode)
     + [Themes](#themes)
+  * [Profiles TUI](#profiles-tui)
   * [Request Definitions](#request-definitions)
     + [Different Requests](#different-requests)
       - [JSON](#json)
-      - [Plaintext](#plaintext)
+      - [Plain text](#plain-text)
       - [XML](#xml)
       - [Form data](#form-data)
-      - [Multipart form data](#multipart-form-data)
+      - [Multipart form data and Uploading files](#multipart-form-data-and-uploading-files)
       - [Downloading files](#downloading-files)
-      - [Uploading files](#uploading-files)
+      - [URL/Query Parameters and Path Variables](#urlquery-parameters-and-path-variables)
     + [Chaining Requests](#chaining-requests)
     + [Templating Requests](#templating-requests)
   * [Profiles](#profiles)
@@ -270,6 +271,8 @@ With profile *activation* you tell the app to use variables from the profile and
 
 Currently there is no direct theming support, excluding syntax coloring which comes from [Chroma](https://github.com/alecthomas/chroma). However, you can assign colors to different configuration attributes in [Configuration](#configuration). As an example, [samples](samples) directory contains two different "themes": `.startpoint-catpuccing-latte.yaml` and `.startpoint-catppuccin-mocha.yaml`. The latter is also used as the default theme for the TUI apps.
 
+### Profiles TUI
+
 
 ### Request Definitions
 
@@ -353,19 +356,215 @@ body = {
 
 #### Different Requests
 
+
 ##### JSON
 
-##### Plaintext
+In `yaml` based requests you simply define the json body as a string:
+
+```yaml
+# ... other attributes...
+body: '{"id": 1, "name": "Jane"}'
+
+```
+
+Or with "folded block scalar" (`>`):
+```yaml
+# ... other attributes...
+body: >
+  {
+    "id": 1,
+    "name": "Jane"
+  }
+```
+
+In addition you (probably, depending on the endpoint you are using) need to include `Content-Type` header with the request:
+
+```yaml
+headers:
+  Content-Type = "application/json"
+```
+
+In `starlark` based requests you can either define the json body as a string or as a dict. Which you choose depends on your needs: it is probably more convenient to use dictionaries when appending items dynamically.
+
+As a string you would do:
+```python
+# ... other attributes...
+body = '{"id": 1, "name": "Jane"}'
+```
+
+And as a dict you would do:
+```python
+# ... other attributes...
+body = {
+  "id": 1,
+  "name": "Jane",
+}
+```
+
+As with `yaml` requests, you probably want to add appropriate header:
+```python
+headers = {
+  "Content-Type": "application/json"
+}
+```
+
+
+##### Plain text
+
+Plain text is plain and simple: pass it to all requests as a string. You also probably want to add appropriate headers.
+
+With `yaml` based requests:
+```yaml
+headers:
+  Content-Type: "text/plain"
+body: "Plain text body"
+```
+
+And with `starlark` based requests:
+```python
+headers = {
+  "Content-Type": "text/plain"
+}
+body = "Plain text body"
+```
 
 ##### XML
 
+XML formatted body is passed simply as a string. You probably also need to include correct header.
+
+With `yaml` based requests you could do:
+
+```yaml
+url: http://localhost:8000/echo
+method: POST
+headers:
+  Content-Type: application/xml
+body: >
+  <root>
+    <id>1</id>
+    <name>Jane</name>
+  </root>
+```
+
+And with `starlark` based requests you could do:
+
+```python
+url = "http://localhost:8000/echo"
+method = "POST"
+headers = {
+  "Content-Type": "application/xml"
+}
+body = """
+  <root>
+    <id>1</id>
+    <name>Jane</name>
+  </root>
+"""
+```
+
 ##### Form data
 
-##### Multipart form data
+You can send form data by adding either `application/x-www-form-urlencoded` or `multipart/form-data` as `Content-Type` header (see more about [Multipart form data](#multipart-form-data-and-uploading-files)) and defining the body as a map/dict.
+
+With `yaml` based requests:
+
+```yaml
+url: http://localhost:8000/form
+method: POST
+headers:
+  Content-Type: 'application/x-www-form-urlencoded'
+body:
+  field1: val1
+  field2: val2
+  field3: val3
+```
+
+With `starlark` based requests:
+
+```python
+url = "http://localhost:8000/form"
+method = "POST"
+headers = {
+  "Content-Type": "application/x-www-form-urlencoded"
+}
+body = {
+  "field1": "val1",
+  "field2": "val2",
+  "field3": "val3",
+}
+```
+
+##### Multipart form data and Uploading files
+
+Sending multipart form data and uploading files is possible by adding a) appropriate header and b) defining the body as a map/dict.
+
+If you want to upload a file, the map/dict entry should begin with `@` followed by the path to the file.
+
+With `yaml` based requests you can send multipart form data like this:
+
+```yaml
+url: http://localhost:8000/multipart-form
+method: POST
+headers:
+  Content-Type: 'multipart/form-data'
+body:
+  title: 'Image title'
+  file: '@resources/Image.png'
+```
+
+And with `starlark` based requests like this:
+
+```python
+url = "http://localhost:8000/multipart-form"
+method = "POST"
+headers = {
+  "Content-Type": "multipart/form-data"
+}
+body = {
+  "title": "Image title",
+  "file": "@resources/Image.png",
+}
+```
 
 ##### Downloading files
 
-##### Uploading files
+When you want to download the response instead of printing it, which would be sensible especially when response is a binary file, you define `output` property and point it to a file you want the response be saved to.
+
+
+With `starlark` based requests you would do:
+
+```python
+url = "http://localhost:8000/download"
+output = "/path/to/some/file.png"
+```
+
+##### URL/Query Parameters and Path Variables
+
+Currently there is no special property for passing query parameters and path variables. Instead you would simply add them to the url property. Check [templating](#templating-requests) of how to pass values from environment. With `starlark` based requests you can also assign values dynamically.
+
+Query parameters with `yaml` based requests:
+
+```yaml
+url: "http://localhost:8000?arg1=val1&arg2=val2"
+```
+
+Query parameters with `starlark` based requests:
+
+```python
+url = "http://localhost:8000?arg1=val1&arg2=val2"
+```
+
+Path variables with `yaml` based requests:
+
+```yaml
+url: "http://localhost:8000/some-path-var/123"
+```
+
+Path variables with `starlark` based requests:
+
+```python
+url = "http://localhost:8000/some-path-var/123"
+```
 
 #### Chaining Requests
 

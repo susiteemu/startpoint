@@ -435,10 +435,8 @@ XML formatted body is passed simply as a string. You probably also need to inclu
 With `yaml` based requests you could do:
 
 ```yaml
-url: http://localhost:8000/echo
-method: POST
 headers:
-  Content-Type: application/xml
+  Content-Type: "application/xml"
 body: >
   <root>
     <id>1</id>
@@ -449,8 +447,6 @@ body: >
 And with `starlark` based requests you could do:
 
 ```python
-url = "http://localhost:8000/echo"
-method = "POST"
 headers = {
   "Content-Type": "application/xml"
 }
@@ -469,7 +465,6 @@ You can send form data by adding either `application/x-www-form-urlencoded` or `
 With `yaml` based requests:
 
 ```yaml
-url: http://localhost:8000/form
 method: POST
 headers:
   Content-Type: 'application/x-www-form-urlencoded'
@@ -482,7 +477,6 @@ body:
 With `starlark` based requests:
 
 ```python
-url = "http://localhost:8000/form"
 method = "POST"
 headers = {
   "Content-Type": "application/x-www-form-urlencoded"
@@ -503,7 +497,6 @@ If you want to upload a file, the map/dict entry should begin with `@` followed 
 With `yaml` based requests you can send multipart form data like this:
 
 ```yaml
-url: http://localhost:8000/multipart-form
 method: POST
 headers:
   Content-Type: 'multipart/form-data'
@@ -515,7 +508,6 @@ body:
 And with `starlark` based requests like this:
 
 ```python
-url = "http://localhost:8000/multipart-form"
 method = "POST"
 headers = {
   "Content-Type": "multipart/form-data"
@@ -529,6 +521,14 @@ body = {
 ##### Downloading files
 
 When you want to download the response instead of printing it, which would be sensible especially when response is a binary file, you define `output` property and point it to a file you want the response be saved to.
+
+With `yaml` based requests you would do:
+
+
+```yaml
+url: "http://localhost:8000/download"
+output: "/path/to/some/file.png"
+```
 
 
 With `starlark` based requests you would do:

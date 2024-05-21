@@ -96,7 +96,7 @@ func TestBuildStarlarkRequest(t *testing.T) {
 		Starlark: &model.StarlarkRequest{
 			Script: `
 """
-meta:prev_req: Some previous request
+prev_req: Some previous request
 doc:url: http://foobar.com
 doc:method: POST
 """
@@ -142,7 +142,7 @@ func TestBuildStarlarkRequestWithTemplateVariables(t *testing.T) {
 		Starlark: &model.StarlarkRequest{
 			Script: `
 """
-meta:prev_req: Some previous request
+prev_req: Some previous request
 doc:url: http://foobar.com
 doc:method: POST
 """

@@ -31,6 +31,7 @@ Works with light mode too (Catppuccin Latte) |
     + [Themes](#themes)
   * [Profiles TUI](#profiles-tui)
   * [Request Definitions](#request-definitions)
+      - [A Note About Starlark and Runtime](#a-note-about-starlark-and-runtime)
     + [Different Requests](#different-requests)
       - [JSON](#json)
       - [Plain text](#plain-text)
@@ -354,6 +355,31 @@ body = {
 }
 ```
 
+##### A Note About Starlark and Runtime
+
+Since `starlark` is executable, values might be only resolved during runtime. This poses a challenge for cases when the app needs to know values for certain properties before running the script. These are:
+- Requests TUI app displays request url and method in the listing. This is mainly to help you remember and know which request is which so it has only documentation purpose.
+- When building request chain, previous request needs to be known before-hand.
+
+For the first case, there are two possibilities:
+- If your url and/or method is static (i.e. it does not change during runtime) you can just define it as is and the app will parse the value and show it.
+- If your url and/or method changes during runtime, you can define a "multi-line comment block"* and add a "static version" there. Although what you see on the TUI would differ from what is the actual value when running the request, it could still be beneficial to see e.g. that your `method` is `GET or POST` instead of seeing `<blank>`.
+
+*) An example of multi-line comment block
+```python
+"""
+doc:url: http://localhost:8000/api/foo
+doc:method: GET or POST
+"""
+```
+
+For the second case, similar to the first one, you would also use the multi-line comment block:
+```python
+"""
+prev_req: Some other request
+"""
+```
+
 #### Different Requests
 
 
@@ -570,13 +596,27 @@ url = "http://localhost:8000/some-path-var/123"
 
 At times it is useful to run a request before another, e.g. when using a API that has a authentication scheme requiring to pass a token. Each request, regardless of being "simple" or "complex" has a property `prev_req` that can be used to point to a another request. When used with "simple" (`yaml` based) requests you can't use values from the previous response but you can nevertheless chain them if need be. The real benefit comes when using "complex" (`starlark` based) requests: you can take values from previous response's headers and body, build logic upon them and pass them to the current request.
 
+With `yaml` based requests you can define previous request like so:
+```yaml
+# ... other attributes...
+prev_req: Some other request
+```
+
+With `starlark` based requests you can do it like so:
+```python
+"""
+prev_req: Some other request
+"""
+
+```
+
 An example illustrates how to authenticate to oauth2 endpoint.
 
 This is the `User details.star` request. It wants to perform a `GET` request to `/auth/oauth2/users/me` endpoint that returns data about the user. The endpoint is protected with oauth2 which basically means you have to pass a header `Authorization` with the value of `Bearer + <access token>` in order to authenticate. This request has a previous request defined `Token` from which it gets `prevResponse` dictionary/map. Using this map it accesses the previous response's body and from the body `access_token` attribute.
 
 ```python
 """
-meta:prev_req: Token
+prev_req: Token
 """
 url = "http://localhost:8000/auth/oauth2/users/me/"
 method = "GET"

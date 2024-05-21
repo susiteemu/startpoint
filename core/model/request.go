@@ -22,7 +22,7 @@ var (
 		regexp.MustCompile(`(?mU)^\s*method\s*=(.*)$`),
 	}
 	starlarkPrevReqPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?mU)^.*meta:prev_req:(.*)$`),
+		regexp.MustCompile(`(?mU)^.*prev_req:(.*)$`),
 	}
 	starlarkOutputPatterns = []*regexp.Regexp{
 		regexp.MustCompile(`(?mU)^.*meta:output:(.*)$`),

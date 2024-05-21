@@ -10,7 +10,7 @@ func TestStarlarkRequestDocString(t *testing.T) {
 		Name: "Starlark request",
 		Starlark: &StarlarkRequest{
 			Script: `"""
-meta:prev_req: Some previous request
+prev_req: Some previous request
 meta:output: ./output.txt
 doc:url: http://foobar.com
 doc:method: POST
@@ -56,7 +56,7 @@ func TestStarlarkRequestDocStringMissingParts(t *testing.T) {
 	starlarkRequest := RequestMold{
 		Starlark: &StarlarkRequest{
 			Script: `"""
-meta:prev_req: Some previous request
+prev_req: Some previous request
 doc:url: http://foobar.com
 doc:method: POST
 """
@@ -102,7 +102,7 @@ func TestStarlarkRequestParseValuesFromActualCode(t *testing.T) {
 	starlarkRequest := RequestMold{
 		Starlark: &StarlarkRequest{
 			Script: `"""
-meta:prev_req: Some previous request
+prev_req: Some previous request
 """
 url = "http://foobar.com"
 method = "POST"

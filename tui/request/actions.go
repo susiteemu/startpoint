@@ -112,7 +112,7 @@ func createComplexRequestFileCmd(name string) (string, string, *exec.Cmd, error)
 	filename := fmt.Sprintf("%s.star", name)
 	// TODO read from template
 	content := `"""
-meta:prev_req: <call other request before this>
+prev_req: <call other request before this>
 doc:url: <your url for display>
 doc:method: GET
 """

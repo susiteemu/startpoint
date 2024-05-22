@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -135,6 +136,22 @@ func (r *RequestMold) PreviousReq() string {
 		return findWithPatterns(r.Starlark.Script, starlarkPrevReqPatterns)
 	}
 	return ""
+}
+
+/*
+* NOTE: assumes previous request is set before; if previous request is not set, this can't add it to the raw versions
+ */
+func (r *RequestMold) ChangePreviousReq(prevReq string) {
+	if r.Yaml != nil {
+		r.Yaml.PrevReq = prevReq
+		pattern := regexp.MustCompile(`(?mU)^prev_req:(.*)$`)
+		changed := pattern.ReplaceAllString(r.Yaml.Raw, fmt.Sprintf("prev_req: \"%s\"", prevReq))
+		r.Yaml.Raw = changed
+	} else if r.Starlark != nil {
+		pattern := regexp.MustCompile(`(?mU)^prev_req:(.*)$`)
+		changed := pattern.ReplaceAllString(r.Starlark.Script, fmt.Sprintf("prev_req: %s", prevReq))
+		r.Starlark.Script = changed
+	}
 }
 
 func (r *RequestMold) Output() string {

@@ -348,10 +348,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				log.Error().Err(err).Msgf("Failed to find request mold with %v", request)
 				return m, messages.CreateStatusMsg("Failed to rename request")
 			}
+			oldName := requestMold.Name
 			moldIndex := slices.Index(m.requestMolds, requestMold)
 			renamedRequest, renamedRequestMold, ok := renameRequest(msg.Input, request, *requestMold)
 			if ok {
 				m.requestMolds = slices.Replace(m.requestMolds, moldIndex, moldIndex+1, renamedRequestMold)
+				_, ok = changePrevReq(oldName, renamedRequestMold.Name, m.requestMolds)
+				if !ok {
+					return m, messages.CreateStatusMsg("Failed to refactor dependent requests")
+				}
+
 				setCmd := m.list.SetItem(m.list.Index(), renamedRequest)
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Renamed request to %s", renamedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)

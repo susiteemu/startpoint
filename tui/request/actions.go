@@ -158,6 +158,7 @@ func openFileToEditorCmd(root, filename string) (*exec.Cmd, error) {
 	return editor.OpenFileToEditorCmd(path)
 }
 
+// TODO: refactor from bool to error
 func renameRequest(newName string, r Request, mold model.RequestMold) (Request, *model.RequestMold, bool) {
 	original := Request{
 		Name:   r.Name,
@@ -187,6 +188,26 @@ func renameRequest(newName string, r Request, mold model.RequestMold) (Request, 
 	return r, &mold, true
 }
 
+// TODO: refactor from bool to error
+func changePrevReq(oldPrevReq string, newPrevReq string, molds []*model.RequestMold) ([]*model.RequestMold, bool) {
+	for _, mold := range molds {
+		log.Debug().Msgf("Compare %s with %s", mold.PreviousReq(), oldPrevReq)
+		if mold.PreviousReq() == oldPrevReq {
+			log.Debug().Msgf("A match! Change to %s", newPrevReq)
+			mold.ChangePreviousReq(newPrevReq)
+			log.Debug().Msgf("Changed %s", mold.PreviousReq())
+			path := filepath.Join(mold.Root, mold.Filename)
+			_, err := writer.WriteFile(path, mold.Raw())
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to write to file %s", path)
+				return molds, false
+			}
+		}
+	}
+	return molds, true
+}
+
+// TODO: refactor from bool to error
 func copyRequest(name string, r Request, mold model.RequestMold) (Request, *model.RequestMold, bool) {
 	copy := Request{
 		Name:   name,
@@ -216,6 +237,7 @@ func changeMoldName(name string, m *model.RequestMold) {
 	}
 }
 
+// TODO: refactor from bool to error
 func readRequest(root, filename string) (Request, *model.RequestMold, bool) {
 	mold, err := loader.ReadRequest(root, filename)
 	if err != nil {

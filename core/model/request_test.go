@@ -125,3 +125,78 @@ body = { "id": 1474, "prev": prev, "bar": [
 	}
 
 }
+
+func TestChangePreviousRequest(t *testing.T) {
+
+	starlarkRequest := RequestMold{
+		Starlark: &StarlarkRequest{
+			Script: `"""
+prev_req: Some previous request
+"""
+url = "http://foobar.com"
+method = "POST"
+headers = { "X-Foo": "bar", "X-Foos": [ "Bar1", "Bar2" ] }
+body = { "id": 1474, "prev": prev, "bar": [
+    {"name": "Joe"},
+    {"name": "Jane"},
+] }
+`},
+	}
+
+	if starlarkRequest.PreviousReq() != "Some previous request" {
+		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.PreviousReq(), "Some previous request")
+		return
+	}
+
+	starlarkRequest.ChangePreviousReq("Some other previous request")
+
+	if starlarkRequest.PreviousReq() != "Some other previous request" {
+		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.PreviousReq(), "Some other previous request")
+		return
+	}
+
+	yamlRequest := RequestMold{
+		Yaml: &YamlRequest{
+			PrevReq: "Some previous request",
+			Raw: `
+prev_req: Some previous request,
+url: http://foobar.com
+method: POST
+`,
+		},
+	}
+	if yamlRequest.PreviousReq() != "Some previous request" {
+		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.PreviousReq(), "Some previous request")
+		return
+	}
+
+	yamlRequest.ChangePreviousReq("Some other previous request")
+
+	if yamlRequest.PreviousReq() != "Some other previous request" {
+		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.PreviousReq(), "Some other previous request")
+		return
+	}
+
+	yamlRequest = RequestMold{
+		Yaml: &YamlRequest{
+			PrevReq: "Some previous request",
+			Raw: `
+prev_req: "Some previous request",
+url: http://foobar.com
+method: POST
+`,
+		},
+	}
+	if yamlRequest.PreviousReq() != "Some previous request" {
+		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.PreviousReq(), "Some previous request")
+		return
+	}
+
+	yamlRequest.ChangePreviousReq("Some other previous request")
+
+	if yamlRequest.PreviousReq() != "Some other previous request" {
+		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.PreviousReq(), "Some other previous request")
+		return
+	}
+
+}

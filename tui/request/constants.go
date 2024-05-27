@@ -22,8 +22,10 @@ const (
 )
 
 const (
+	CreateRequest        = "CReq"
 	CreateSimpleRequest  = "CSmplReq"
 	CreateComplexRequest = "CCmplxReq"
+	DeleteRequest        = "DReq"
 	EditRequest          = "EReq"
 	PrintRequest         = "PReq"
 	PrintFailedRequest   = "PEReq"

@@ -20,6 +20,7 @@ import (
 	"startpoint/tui/styles"
 
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
@@ -184,7 +185,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ShowKeyprompt:
 		if m.mode == Edit && m.active == List {
 			m.active = Keyprompt
-			m.keyprompt = keyprompt.New(msg.Label, msg.Entries)
+			m.keyprompt = keyprompt.New(msg.Label, msg.Entries, msg.Type, msg.Payload, m.width)
 		}
 
 	case RunRequestMsg:
@@ -266,16 +267,44 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				log.Error().Err(err).Msgf("Could not find request mold with request %v", msg.Request)
 				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
 			}
-			deleted := requestMold.DeleteFromFS()
-			if deleted {
-				index := m.list.Index()
-				m.list.RemoveItem(index)
-				removeIndex := slices.Index(m.requestMolds, requestMold)
-				m.requestMolds = slices.Delete(m.requestMolds, removeIndex, removeIndex+1)
-				return m, messages.CreateStatusMsg(fmt.Sprintf("Deleted %s", msg.Request.Title()))
-			} else {
-				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
+
+			label := "Are you sure you want to delete this request?"
+			if isUsedAsPrevReq(requestMold.Name, m.requestMolds) {
+				label += " It is used by other requests."
 			}
+
+			var keys []keyprompt.KeypromptEntry
+			keys = append(keys, keyprompt.KeypromptEntry{
+				Text: "yes", Key: "y",
+			})
+			keys = append(keys, keyprompt.KeypromptEntry{
+				Text: "no", Key: "n",
+			})
+			return m, tea.Cmd(func() tea.Msg {
+				return ShowKeyprompt{
+					Label:   label,
+					Entries: keys,
+					Type:    DeleteRequest,
+					Payload: msg.Request,
+				}
+			})
+
+		}
+	case DeleteRequestConfirmedMsg:
+		requestMold, err := findRequestMold(msg.Request, m)
+		if err != nil {
+			log.Error().Err(err).Msgf("Could not find request mold with request %v", msg.Request)
+			return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
+		}
+		deleted := requestMold.DeleteFromFS()
+		if deleted {
+			index := m.list.Index()
+			m.list.RemoveItem(index)
+			removeIndex := slices.Index(m.requestMolds, requestMold)
+			m.requestMolds = slices.Delete(m.requestMolds, removeIndex, removeIndex+1)
+			return m, messages.CreateStatusMsg(fmt.Sprintf("Deleted %s", msg.Request.Title()))
+		} else {
+			return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
 		}
 	case EditRequestFinishedMsg:
 		oldRequest := msg.Request
@@ -434,21 +463,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case keyprompt.KeypromptAnsweredMsg:
 		m.active = List
-		if msg.Key == "y" {
-			return m, tea.Cmd(func() tea.Msg {
-				return CreateRequestMsg{
-					Simple: true,
-				}
-			})
-		} else if msg.Key == "s" {
-			return m, tea.Cmd(func() tea.Msg {
-				return CreateRequestMsg{
-					Simple: false,
-				}
-			})
-		} else {
-			return m, nil
+		if msg.Type == CreateRequest {
+			if msg.Key == "y" {
+				return m, tea.Cmd(func() tea.Msg {
+					return CreateRequestMsg{
+						Simple: true,
+					}
+				})
+			} else if msg.Key == "s" {
+				return m, tea.Cmd(func() tea.Msg {
+					return CreateRequestMsg{
+						Simple: false,
+					}
+				})
+			}
+		} else if msg.Type == DeleteRequest {
+			if msg.Key == "y" {
+				return m, tea.Cmd(func() tea.Msg {
+					return DeleteRequestConfirmedMsg{
+						Request: msg.Payload.(Request),
+					}
+				})
+			}
+
 		}
+
+		return m, nil
 
 	case messages.StatusMessage:
 		updateStatusbar(&m, string(msg))
@@ -615,6 +655,16 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	requestList.Styles.NoItems = requestList.Styles.StatusBar.Copy()
 	requestList.Styles.FilterPrompt = requestList.Styles.FilterPrompt.Foreground(style.listFilterPromptFg).Padding(1, 0, 0, 0)
 	requestList.Styles.FilterCursor = requestList.Styles.FilterCursor.Foreground(style.listFilterCursorFg)
+
+	// NOTE: removing few default keybindings so that pressing our own keys (e.g. 'd') would not have any side-effects
+	requestList.KeyMap.PrevPage = key.NewBinding(
+		key.WithKeys("left", "h", "pgup", "b"),
+		key.WithHelp("←/h/pgup", "prev page"),
+	)
+	requestList.KeyMap.NextPage = key.NewBinding(
+		key.WithKeys("right", "l", "pgdown", "f"),
+		key.WithHelp("→/l/pgdn", "next page"),
+	)
 
 	requestList.SetShowHelp(false)
 

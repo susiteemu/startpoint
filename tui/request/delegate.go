@@ -152,6 +152,7 @@ func newEditModeDelegate() list.DefaultDelegate {
 					return ShowKeyprompt{
 						Label:   "Select type of request to create",
 						Entries: keys,
+						Type:    CreateRequest,
 					}
 				})
 			case "d":

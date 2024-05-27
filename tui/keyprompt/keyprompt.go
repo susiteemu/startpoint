@@ -19,11 +19,12 @@ var (
 )
 
 type Model struct {
-	width   int
-	height  int
-	label   string
-	entries []KeypromptEntry
-	keys    []string
+	width      int
+	label      string
+	entries    []KeypromptEntry
+	keys       []string
+	promptType string
+	payload    interface{}
 }
 
 func (m Model) Init() tea.Cmd {
@@ -33,8 +34,8 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		newWidth := min(40, msg.Width-2)
+		m.width = newWidth
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case tea.KeyEsc.String():
@@ -48,7 +49,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				log.Debug().Msgf("Key %s", key)
 				return m, tea.Cmd(func() tea.Msg {
 					return KeypromptAnsweredMsg{
-						Key: key,
+						Key:     key,
+						Type:    m.promptType,
+						Payload: m.payload,
 					}
 				})
 			}
@@ -61,7 +64,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) View() string {
 
 	inputViews := []string{}
-	inputViews = append(inputViews, descriptionStyle.Render(m.label))
+	inputViews = append(inputViews, descriptionStyle.Width(m.width).Render(m.label))
 
 	renderItems := []KeypromptEntry{}
 	maxKeyLen := 0
@@ -89,10 +92,10 @@ func (m Model) View() string {
 	separator := strings.Repeat(" ", 1+maxKeyLen-len(escKey.Key))
 	inputViews = append(inputViews, fmt.Sprintf("%s%s%s", escKey.Key, separator, entryTextStyle.Render(escKey.Text)))
 
-	return promptStyle.Render(lipgloss.JoinVertical(lipgloss.Left, inputViews...))
+	return promptStyle.Width(m.width).Render(lipgloss.JoinVertical(lipgloss.Left, inputViews...))
 }
 
-func New(label string, entries []KeypromptEntry) Model {
+func New(label string, entries []KeypromptEntry, promptType string, payload interface{}, width int) Model {
 
 	theme := styles.GetTheme()
 	commonStyles := styles.GetCommonStyles(theme)
@@ -108,9 +111,12 @@ func New(label string, entries []KeypromptEntry) Model {
 	}
 
 	return Model{
-		label:   label,
-		keys:    keys,
-		entries: entries,
+		label:      label,
+		keys:       keys,
+		entries:    entries,
+		promptType: promptType,
+		payload:    payload,
+		width:      min(40, width-2),
 	}
 }
 
@@ -120,7 +126,9 @@ type KeypromptEntry struct {
 }
 
 type KeypromptAnsweredMsg struct {
-	Key string
+	Key     string
+	Type    string
+	Payload interface{}
 }
 
 type KeypromptCancelledMsg struct{}

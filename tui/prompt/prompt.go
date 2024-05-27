@@ -1,6 +1,7 @@
 package promptui
 
 import (
+	"fmt"
 	"startpoint/tui/styles"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -51,6 +52,7 @@ type Model struct {
 	label     string
 	keys      keyMap
 	help      help.Model
+	width     int
 }
 
 func (m Model) Init() tea.Cmd {
@@ -60,8 +62,10 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		newWidth := min(64, msg.Width-2)
-		m.nameInput.Width = newWidth
+		newWidth := min(64, msg.Width)
+		m.width = newWidth
+		m.nameInput.Width = m.width - 2
+		m.nameInput.SetValue(fmt.Sprintf("Width: %d", newWidth))
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:
@@ -86,21 +90,25 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 
+	/*
+	*  WARN: contains magic numbers. Dunno exactly why, but the numbers used below make things work.
+	 */
+
 	helpView := helpStyle.Render(m.help.View(m.keys))
 
 	inputViews := []string{}
-	var descStyle = descriptionStyle.Width(m.nameInput.Width)
+	var descStyle = descriptionStyle.Width(m.width - 2)
 	inputViews = append(inputViews, descStyle.Render(m.label))
 
-	var style = inputStyle.Width(m.nameInput.Width)
+	var style = inputStyle.Width(m.width - 6)
 	if m.nameInput.Err != nil {
-		style = errInputStyle.Width(m.nameInput.Width)
+		style = errInputStyle.Width(m.width - 6)
 	}
 
 	inputViews = append(inputViews, style.Render(m.nameInput.View()))
 	inputViews = append(inputViews, helpView)
 
-	return promptStyle.Render(lipgloss.JoinVertical(lipgloss.Left, inputViews...))
+	return promptStyle.Width(m.width - 2).Render(lipgloss.JoinVertical(lipgloss.Left, inputViews...))
 
 }
 
@@ -140,6 +148,7 @@ func New(context PromptContext, initialValue string, label string, validator fun
 		label:     label,
 		keys:      keys,
 		help:      help,
+		width:     min(64, w),
 	}
 }
 

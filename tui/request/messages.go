@@ -31,6 +31,10 @@ type DeleteRequestMsg struct {
 	Request Request
 }
 
+type DeleteRequestConfirmedMsg struct {
+	Request Request
+}
+
 type PreviewRequestMsg struct {
 	Request Request
 }
@@ -51,4 +55,6 @@ type ActivateProfile struct{}
 type ShowKeyprompt struct {
 	Label   string
 	Entries []keyprompt.KeypromptEntry
+	Type    string
+	Payload interface{}
 }

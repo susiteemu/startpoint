@@ -191,11 +191,8 @@ func renameRequest(newName string, r Request, mold model.RequestMold) (Request, 
 // TODO: refactor from bool to error
 func changePrevReq(oldPrevReq string, newPrevReq string, molds []*model.RequestMold) ([]*model.RequestMold, bool) {
 	for _, mold := range molds {
-		log.Debug().Msgf("Compare %s with %s", mold.PreviousReq(), oldPrevReq)
 		if mold.PreviousReq() == oldPrevReq {
-			log.Debug().Msgf("A match! Change to %s", newPrevReq)
 			mold.ChangePreviousReq(newPrevReq)
-			log.Debug().Msgf("Changed %s", mold.PreviousReq())
 			path := filepath.Join(mold.Root, mold.Filename)
 			_, err := writer.WriteFile(path, mold.Raw())
 			if err != nil {
@@ -205,6 +202,15 @@ func changePrevReq(oldPrevReq string, newPrevReq string, molds []*model.RequestM
 		}
 	}
 	return molds, true
+}
+
+func isUsedAsPrevReq(name string, molds []*model.RequestMold) bool {
+	for _, mold := range molds {
+		if mold.PreviousReq() == name {
+			return true
+		}
+	}
+	return false
 }
 
 // TODO: refactor from bool to error

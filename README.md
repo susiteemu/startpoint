@@ -252,7 +252,7 @@ You can either *add* requests with `requests` TUI app or by creating `yaml` or `
 
 *Editing* works the same: you can either do it directly by opening the request file with an editor or by opening the TUI app and starting the editing there.
 
-*Deleting* means simply deleting the request file so it can also be done directly from file system or with the TUI app. The app does some checks before deleting (whether the request is defined as a previous request to other requests; TODO).
+*Deleting* means simply deleting the request file so it can also be done directly from file system or with the TUI app. The app does some checks before deleting (whether the request is defined as a previous request to other requests).
 
 *Preview* opens the selected request to a syntax highlighted and scrollable view. Note that it shows the "raw" version of request and does not fill any template variables.
 

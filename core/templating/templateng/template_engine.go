@@ -2,7 +2,7 @@ package templateng
 
 import (
 	"fmt"
-	"strings"
+	"regexp"
 )
 
 func ProcessTemplateVariables(s []string, variableName string, variableValue interface{}) []string {
@@ -15,9 +15,6 @@ func ProcessTemplateVariables(s []string, variableName string, variableValue int
 }
 
 func ProcessTemplateVariable(s string, variableName string, variableValue interface{}) (string, bool) {
-	templateVariable := fmt.Sprintf("{%s}", variableName)
-	if strings.Contains(s, templateVariable) {
-		return strings.ReplaceAll(s, templateVariable, variableValue.(string)), true
-	}
-	return s, false
+	templateVariable := regexp.MustCompile(fmt.Sprintf(`{\s*%s\s*}`, variableName))
+	return templateVariable.ReplaceAllString(s, variableValue.(string)), true
 }

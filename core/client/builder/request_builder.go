@@ -8,6 +8,7 @@ import (
 	"startpoint/core/templating/templateng"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 )
 
 var builders = []func(requestMold *model.RequestMold, previousResponse *model.Response, profile model.Profile) (model.Request, bool, error){
@@ -55,17 +56,22 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 	yamlRequest := requestMold.Yaml
 
 	if len(profile.Variables) > 0 {
-		headers := yamlRequest.Headers
-		for k, v := range profile.Variables {
-			processedUrl, _ := templateng.ProcessTemplateVariable(yamlRequest.Url, k, v)
-			yamlRequest.Url = processedUrl
-			for headerName, headerValues := range yamlRequest.Headers {
-				headers[headerName] = templateng.ProcessTemplateVariables(headerValues, k, v)
-			}
-		}
-		yamlRequest.Headers = headers
 
-		// TODO: process template variables in body too
+		rawYaml := requestMold.Yaml.Raw
+		for k, v := range profile.Variables {
+			rawYaml, _ = templateng.ProcessTemplateVariable(rawYaml, k, v)
+		}
+		log.Debug().Msgf("Processed raw into %s", rawYaml)
+
+		yamlRequest = &model.YamlRequest{}
+		err := yaml.Unmarshal([]byte(rawYaml), yamlRequest)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to unmarshal yaml %s", rawYaml)
+			return model.Request{}, false, err
+		}
+		yamlRequest.Raw = rawYaml
+
+		log.Debug().Msgf("Processed into yaml request %v", yamlRequest)
 	}
 
 	options := make(map[string]interface{})

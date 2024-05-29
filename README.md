@@ -876,7 +876,7 @@ There are things still in progress and planned for some later date.
 - [ ] Add print request? v.1.1
 - [ ] Add continueOnPrevRequestStatus etc v.1.1
 - [ ] WIP: Make failures (running request fails) more pretty/informative
-- [ ] Add templating support for yaml bodies
+- [x] Add templating support for yaml bodies v.1.0
 - [x] Change getting values from a profile in starlark requests to be template-based, same as for yaml
 - [ ] Add Lua based requests v.1.2
 - [ ] Fix yaml deser panic v.1.0

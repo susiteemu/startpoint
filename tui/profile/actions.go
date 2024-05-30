@@ -8,13 +8,19 @@ import (
 	"startpoint/core/editor"
 	"startpoint/core/loader"
 	"startpoint/core/writer"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
 func createProfileFileCmd(name string) (string, string, *exec.Cmd, error) {
-	filename := fmt.Sprintf(".env.%s", name)
+	filename := ""
+	if len(strings.TrimSpace(name)) == 0 || name == "default" {
+		filename = ".env"
+	} else {
+		filename = fmt.Sprintf(".env.%s", name)
+	}
 	content := ""
 	workspace := viper.GetString("workspace")
 	cmd, err := createFileAndReturnOpenToEditorCmd(workspace, filename, content)

@@ -1,7 +1,6 @@
 package promptui
 
 import (
-	"fmt"
 	"startpoint/tui/styles"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -65,7 +64,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		newWidth := min(64, msg.Width)
 		m.width = newWidth
 		m.nameInput.Width = m.width - 2
-		m.nameInput.SetValue(fmt.Sprintf("Width: %d", newWidth))
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:
@@ -97,7 +95,7 @@ func (m Model) View() string {
 	helpView := helpStyle.Render(m.help.View(m.keys))
 
 	inputViews := []string{}
-	var descStyle = descriptionStyle.Width(m.width - 2)
+	var descStyle = descriptionStyle
 	inputViews = append(inputViews, descStyle.Render(m.label))
 
 	var style = inputStyle.Width(m.width - 6)

@@ -30,7 +30,7 @@ const (
 )
 
 const (
-	CreateProfileLabel = "Choose a name for your profile. Make it filename compatible and unique within this workspace. After choosing \"ok\" your $EDITOR will open and you will be able to write the contents of the profile. Remember to quit your editor window to return back."
+	CreateProfileLabel = "Choose a name for your profile (for default profile, leave the name blank). Make it filename compatible and unique within this workspace. After choosing \"ok\" your $EDITOR will open and you will be able to write the contents of the profile. Remember to quit your editor window to return back."
 	RenameProfileLabel = "Rename your profile"
 	CopyProfileLabel   = "Choose a name to your profile"
 )

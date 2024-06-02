@@ -65,7 +65,8 @@ foo=bar2`,
 func TestGetProfileValues(t *testing.T) {
 	profiles := []*model.Profile{
 		{
-			Name: "default",
+			Name:     "default",
+			Filename: ".env",
 			Variables: map[string]string{
 				"domain": "foobar.com",
 				"foo":    "bar",
@@ -73,11 +74,19 @@ func TestGetProfileValues(t *testing.T) {
 			},
 		},
 		{
-			Name: "production",
+			Name:     "production",
+			Filename: ".env.production",
 			Variables: map[string]string{
 				"domain": "foobarprod.com",
 				"foo":    "bar2",
 				"bar2":   "foo2",
+			},
+		},
+		{
+			Name:     "production.local",
+			Filename: ".env.production.local",
+			Variables: map[string]string{
+				"secret": "very secret",
 			},
 		},
 	}
@@ -89,6 +98,7 @@ func TestGetProfileValues(t *testing.T) {
 		"foo":    "bar2",
 		"bar":    "foo",
 		"bar2":   "foo2",
+		"secret": "very secret",
 	}
 
 	if len(profileValues) != len(wantedProfileValues) {

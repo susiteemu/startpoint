@@ -2,6 +2,7 @@ package loader
 
 import (
 	"bytes"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -71,11 +72,13 @@ func ReadProfiles(root string) ([]*model.Profile, error) {
 	return profileSlice, nil
 }
 
+// FIXME: quick and dirty implementation for overriding profile values
 func GetProfileValues(currentProfile *model.Profile, profiles []*model.Profile) map[string]string {
 	profileMap := make(map[string]string)
 	if currentProfile == nil || profiles == nil {
 		return profileMap
 	}
+	// take base from default profile
 	for _, profile := range profiles {
 		if profile.Name == "default" {
 			for k, v := range profile.Variables {
@@ -83,8 +86,20 @@ func GetProfileValues(currentProfile *model.Profile, profiles []*model.Profile) 
 			}
 		}
 	}
-	for k, v := range currentProfile.Variables {
-		profileMap[k] = v
+	// override values with selected profile
+	if currentProfile.Name != "default" {
+		for k, v := range currentProfile.Variables {
+			profileMap[k] = v
+		}
 	}
+	// override values from .local
+	for _, profile := range profiles {
+		if profile.Name == fmt.Sprintf("%s.local", currentProfile.Name) {
+			for k, v := range profile.Variables {
+				profileMap[k] = v
+			}
+		}
+	}
+
 	return profileMap
 }

@@ -8,6 +8,7 @@ import (
 	"startpoint/core/loader"
 	"startpoint/core/model"
 	"startpoint/core/print"
+	"strings"
 	"time"
 
 	"os"
@@ -50,6 +51,30 @@ func modeStr(mode Mode) string {
 		return "EDIT"
 	}
 	return ""
+}
+
+func indexOfByName(name string, m Model) int {
+	index := -1
+	for i, item := range m.list.Items() {
+		itemRequest := item.(Request)
+		if itemRequest.Name == name {
+			index = i
+			break
+		}
+	}
+	return index
+}
+
+func indexOfNew(name string, m Model) int {
+	index := len(m.list.Items()) + 1
+	for i, item := range m.list.Items() {
+		itemRequest := item.(Request)
+		if strings.Compare(itemRequest.Name, name) > 0 {
+			index = i
+			break
+		}
+	}
+	return index
 }
 
 func findRequestMold(r Request, m Model) (*model.RequestMold, error) {
@@ -232,16 +257,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err == nil {
 			newRequest, newRequestMold, ok := readRequest(msg.root, msg.filename)
 			if ok {
-				setCmd := m.list.InsertItem(m.list.Index()+1, newRequest)
+				m.list.ResetFilter()
+				m.help.ShowAll = false
+				listHeight := calculateListHeight(m)
+				m.list.SetHeight(listHeight)
+				index := indexOfNew(newRequest.Name, m)
+				setCmd := m.list.InsertItem(index, newRequest)
+				m.list.Select(index)
 				// NOTE: order is not relevant here
 				m.requestMolds = append(m.requestMolds, newRequestMold)
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Created request %s", newRequest.Title()))
-				return m, tea.Batch(setCmd, statusCmd)
+				return m, tea.Sequence(setCmd, statusCmd)
 			}
 		}
 		return m, messages.CreateStatusMsg("Failed to create request")
 	case EditRequestMsg:
 		if m.mode == Edit && m.active == List {
+			log.Debug().Msgf("Starting to edit request %v", msg.Request)
 			requestMold, err := findRequestMold(msg.Request, m)
 			if err != nil {
 				log.Error().Msgf("Could not find request mold with request %v", msg.Request)
@@ -298,7 +330,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		deleted := requestMold.DeleteFromFS()
 		if deleted {
+			// NOTE: use index of selected item with delete: for some reason it works whereas with edit/rename it does not
 			index := m.list.Index()
+			log.Debug().Msgf("Index of request to delete is %d", index)
 			m.list.RemoveItem(index)
 			removeIndex := slices.Index(m.requestMolds, requestMold)
 			m.requestMolds = slices.Delete(m.requestMolds, removeIndex, removeIndex+1)
@@ -308,16 +342,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case EditRequestFinishedMsg:
 		oldRequest := msg.Request
+		oldName := msg.Request.Name
 		if msg.err == nil {
+			log.Debug().Msgf("Finishing editing request %v", oldRequest)
 			requestMold, err := findRequestMold(oldRequest, m)
 			if err != nil {
 				log.Error().Err(err).Msgf("Could not find request mold with request %v", msg.Request)
 				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to edit request %s", oldRequest.Title()))
 			}
+			log.Debug().Msgf("Found corresponding request mold %v", requestMold)
 			editedRequest, editedRequestMold, ok := readRequest(requestMold.Root, requestMold.Filename)
 			if ok {
-				setCmd := m.list.SetItem(m.list.Index(), editedRequest)
-				index := slices.Index(m.requestMolds, requestMold)
+				index := indexOfByName(oldName, m)
+				log.Debug().Msgf("Index of request is %v", index)
+				setCmd := m.list.SetItem(index, editedRequest)
+				index = slices.Index(m.requestMolds, requestMold)
 				m.requestMolds = slices.Replace(m.requestMolds, index, index+1, editedRequestMold)
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Edited request %s", oldRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
@@ -353,6 +392,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case RenameRequestMsg:
 		if m.mode == Edit && m.active == List {
+			log.Debug().Msgf("Starting to rename request %v", msg.Request.Name)
 			m.active = Prompt
 			m.prompt = prompt.New(prompt.PromptContext{
 				Key:        RenameRequest,
@@ -387,7 +427,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, messages.CreateStatusMsg("Failed to refactor dependent requests")
 				}
 
-				setCmd := m.list.SetItem(m.list.Index(), renamedRequest)
+				log.Debug().Msgf("Length of items %d", len(m.list.Items()))
+				index := indexOfByName(oldName, m)
+				log.Debug().Msgf("Going to replace item in index %d", index)
+				setCmd := m.list.SetItem(index, renamedRequest)
+
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Renamed request to %s", renamedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			} else {
@@ -404,7 +448,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if ok {
 				// note order is not relevant here
 				m.requestMolds = append(m.requestMolds, copiedRequestMold)
-				setCmd := m.list.InsertItem(m.list.Index()+1, copiedRequest)
+				index := indexOfByName(request.Name, m)
+				setCmd := m.list.InsertItem(index+1, copiedRequest)
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Copied request to %s", copiedRequest.Title()))
 				return m, tea.Batch(setCmd, statusCmd)
 			} else {

@@ -858,25 +858,15 @@ options:
 
 There are things still in progress and planned for some later date.
 
-- [x] TUI for profiles v.1.0
 - [ ] WIP: Add logging v.1.0
-- [x] Make configurable things configurable v.1.0
 - [ ] WIP: Add README.md v.1.0
-- [x] Setup ci/cd v.1.0
-- [x] Add support/test different payloads
-- [x] Create server to test requests/check if httpbin can be used effectively
-- [x] Add check for deleting request whether is breaks other requests v.1.0
-- [ ] Fix bug in copy/edit/rename during filtering: before setting item, cancel filtering, maybe it fixes it? And could be logical: why continue filtering after that v.1.0
 - [x] Http client settings: proxies, timeouts, trace logging, ... v1.0 (partly at least)
-- [x] Renaming request: also rename prev_req for other requests v.1.0
 - [ ] Import from openspec v.1.1
 - [ ] Shell completions: https://github.com/spf13/cobra/blob/main/site/content/completions/_index.md v.1.1
-- [ ] Env "local"
+- [ ] Env "local" profile v.1.0
 - [ ] Add basicAuth and authToken so no need to include them into headers? v.1.1
 - [ ] Add print request? v.1.1
 - [ ] Add continueOnPrevRequestStatus etc v.1.1
-- [ ] WIP: Make failures (running request fails) more pretty/informative
-- [x] Add templating support for yaml bodies v.1.0
-- [x] Change getting values from a profile in starlark requests to be template-based, same as for yaml
+- [ ] WIP: Make failures (running request fails) more pretty/informative v.1.0
 - [ ] Add Lua based requests v.1.2
 - [ ] Fix yaml deser panic v.1.0

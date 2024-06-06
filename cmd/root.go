@@ -47,8 +47,6 @@ func Execute() {
 }
 
 func init() {
-	// disable for now, before custom completion is implemented
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().Bool("help", false, "Displays help")
 

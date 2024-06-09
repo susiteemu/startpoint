@@ -1,6 +1,8 @@
 package loader
 
 import (
+	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -26,6 +28,7 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 		yamlRequest := &model.YamlRequest{}
 		err = yaml.Unmarshal(file, yamlRequest)
 		if err != nil {
+			log.Error().Err(err).Msgf("Failed to unmarshal file %s", path)
 			return nil, err
 		}
 		yamlRequest.Raw = strings.TrimSuffix(string(file), "\n")
@@ -57,6 +60,11 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 			Name:        strings.TrimSuffix(filename, extension),
 		}
 
+	}
+
+	if request == nil {
+		log.Error().Msgf("Request could not be read %s", path)
+		return nil, errors.New(fmt.Sprintf("failed to read request %s", path))
 	}
 
 	return request, nil

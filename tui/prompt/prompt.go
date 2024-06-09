@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/rs/zerolog/log"
 )
 
 // TODO: colors from theme
@@ -52,6 +53,7 @@ type Model struct {
 	keys      keyMap
 	help      help.Model
 	width     int
+	validator func(s string) error
 }
 
 func (m Model) Init() tea.Cmd {
@@ -59,6 +61,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		newWidth := min(64, msg.Width)
@@ -71,19 +74,30 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return PromptCancelledMsg{}
 			})
 		case tea.KeyEnter:
-			return m, tea.Cmd(func() tea.Msg {
-				return PromptAnsweredMsg{
-					Context: m.context,
-					Input:   m.nameInput.Value(),
-				}
-			})
+			if m.nameInput.Err == nil {
+				return m, tea.Cmd(func() tea.Msg {
+					return PromptAnsweredMsg{
+						Context: m.context,
+						Input:   m.nameInput.Value(),
+					}
+				})
+			}
 		}
+		// other keys
+		cmds = append(cmds, tea.Cmd(func() tea.Msg {
+			return promptTyped(msg.String())
+		}))
+	case promptTyped:
+		err := m.validator(m.nameInput.Value())
+		log.Debug().Msgf("Validation result %v", err)
+		m.nameInput.Err = err
 	}
 
 	var cmd tea.Cmd
 	m.nameInput, cmd = m.nameInput.Update(msg)
+	cmds = append(cmds, cmd)
 
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -127,6 +141,7 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	nameInput.Prompt = ""
 	if validator != nil {
 		// validator blocks writing on invalid input; there is a fix for this, but it is not released yet
+		// for now going with custom implementation (see promptTyped)
 		//nameInput.Validate = validator
 	}
 
@@ -147,6 +162,7 @@ func New(context PromptContext, initialValue string, label string, validator fun
 		keys:      keys,
 		help:      help,
 		width:     min(64, w),
+		validator: validator,
 	}
 }
 
@@ -161,3 +177,5 @@ type PromptAnsweredMsg struct {
 }
 
 type PromptCancelledMsg struct{}
+
+type promptTyped string

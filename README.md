@@ -8,13 +8,6 @@ With Catppuccin Mocha (FTW!) |
 Works with light mode too (Catppuccin Latte) |
 :-------------------------:|
 ![It can have a light mode too!](https://vhs.charm.sh/vhs-2k75iICDoW522csX8Cc3dv.gif)
-```
-###############################
-#                             #
-#       WORK IN PROGRESS      #
-#                             #
-###############################
-```
 
 <!-- toc -->
 

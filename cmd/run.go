@@ -83,7 +83,10 @@ var runCmd = &cobra.Command{
 		var profile *model.Profile
 		for _, p := range profiles {
 			if p.Name == profileName {
-				profile = p
+				profile = &model.Profile{
+					Name:      p.Name,
+					Variables: loader.GetProfileValues(p, profiles),
+				}
 				break
 			}
 		}

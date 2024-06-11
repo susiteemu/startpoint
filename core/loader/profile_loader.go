@@ -101,5 +101,14 @@ func GetProfileValues(currentProfile *model.Profile, profiles []*model.Profile) 
 		}
 	}
 
+	// override and extend with what comes from environment
+	env := os.Environ()
+	for _, e := range env {
+		pair := strings.SplitN(e, "=", 2)
+		if len(pair) == 2 {
+			profileMap[pair[0]] = pair[1]
+		}
+	}
+
 	return profileMap
 }

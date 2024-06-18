@@ -851,9 +851,10 @@ options:
 
 There are things still in progress and planned for some later date.
 
-- [ ] Import from openspec v.1.1
+- [ ] Import from openspec v.1.1: https://github.com/pb33f/libopenapi
 - [ ] Shell completions: https://github.com/spf13/cobra/blob/main/site/content/completions/_index.md v.1.1
 - [ ] Add basicAuth and authToken so no need to include them into headers? v.1.1
 - [ ] Add print request? v.1.1
 - [ ] Add continueOnPrevRequestStatus etc v.1.1
 - [ ] Add Lua based requests v.1.2
+- [ ] dotenv "variable in variable"

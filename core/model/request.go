@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -97,7 +98,12 @@ func (r *Request) BodyAsMap() (map[string]string, bool) {
 	}
 	asMapString := make(map[string]string)
 	for k, v := range asMapInterface {
-		asMapString[k] = v.(string)
+		asInt, isInt := v.(int)
+		if isInt {
+			asMapString[k] = strconv.Itoa(asInt)
+		} else {
+			asMapString[k] = v.(string)
+		}
 	}
 	return asMapString, true
 }

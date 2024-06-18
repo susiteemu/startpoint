@@ -29,6 +29,6 @@ func IsValidMethod(rawMethod string) bool {
 }
 
 func IsValidUrl(rawUrl string) bool {
-	_, err := url.ParseRequestURI(rawUrl)
-	return err == nil
+	u, err := url.Parse(rawUrl)
+	return err == nil && u.Scheme != "" && u.Host != ""
 }

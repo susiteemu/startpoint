@@ -6,6 +6,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	requestchain "startpoint/core/chaining"
 	"startpoint/core/client/runner"
 	"startpoint/core/loader"
@@ -81,11 +82,12 @@ var runCmd = &cobra.Command{
 			profileName = "default"
 		}
 		var profile *model.Profile
+		envVars := os.Environ()
 		for _, p := range profiles {
 			if p.Name == profileName {
 				profile = &model.Profile{
 					Name:      p.Name,
-					Variables: loader.GetProfileValues(p, profiles),
+					Variables: loader.GetProfileValues(p, profiles, envVars),
 				}
 				break
 			}

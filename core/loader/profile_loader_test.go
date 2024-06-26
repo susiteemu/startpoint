@@ -86,19 +86,29 @@ func TestGetProfileValues(t *testing.T) {
 			Name:     "production.local",
 			Filename: ".env.production.local",
 			Variables: map[string]string{
-				"secret": "very secret",
+				"secret":       "very secret",
+				"another_var":  "foobar",
+				"var-in-var":   "{another_var}",
+				"var-in-var2":  "{another_var2}",
+				"another_var2": "BAR_{another_var}",
+				"var-in-var3":  "{another_var}_{bar}_{foo}",
 			},
 		},
 	}
 
-	profileValues := GetProfileValues(profiles[1], profiles)
+	profileValues := GetProfileValues(profiles[1], profiles, []string{})
 
 	wantedProfileValues := map[string]string{
-		"domain": "foobarprod.com",
-		"foo":    "bar2",
-		"bar":    "foo",
-		"bar2":   "foo2",
-		"secret": "very secret",
+		"domain":       "foobarprod.com",
+		"foo":          "bar2",
+		"bar":          "foo",
+		"bar2":         "foo2",
+		"secret":       "very secret",
+		"var-in-var":   "foobar",
+		"another_var":  "foobar",
+		"var-in-var2":  "BAR_foobar",
+		"another_var2": "BAR_foobar",
+		"var-in-var3":  "foobar_foo_bar2",
 	}
 
 	if len(profileValues) != len(wantedProfileValues) {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"startpoint/core/model"
+	"startpoint/core/templating/templateng"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -73,7 +74,7 @@ func ReadProfiles(root string) ([]*model.Profile, error) {
 }
 
 // FIXME: quick and dirty implementation for overriding profile values
-func GetProfileValues(currentProfile *model.Profile, profiles []*model.Profile) map[string]string {
+func GetProfileValues(currentProfile *model.Profile, profiles []*model.Profile, environmentVars []string) map[string]string {
 	profileMap := make(map[string]string)
 	if currentProfile == nil || profiles == nil {
 		return profileMap
@@ -102,12 +103,24 @@ func GetProfileValues(currentProfile *model.Profile, profiles []*model.Profile) 
 	}
 
 	// override and extend with what comes from environment
-	env := os.Environ()
-	for _, e := range env {
+	for _, e := range environmentVars {
 		pair := strings.SplitN(e, "=", 2)
 		if len(pair) == 2 {
 			profileMap[pair[0]] = pair[1]
 		}
+	}
+
+	// process possible templated variables in profile
+	for k, v := range profileMap {
+		val := v
+		for k2, v2 := range profileMap {
+			if k == k2 {
+				continue
+			}
+			processedVal, _ := templateng.ProcessTemplateVariable(val, k2, v2)
+			val = processedVal
+		}
+		profileMap[k] = val
 	}
 
 	return profileMap

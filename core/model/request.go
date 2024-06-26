@@ -9,7 +9,11 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 )
+
+const CONTENT_TYPE_YAML = "yaml"
+const CONTENT_TYPE_STARLARK = "star"
 
 var (
 	starlarkNamePatterns = []*regexp.Regexp{
@@ -50,14 +54,14 @@ type RequestMold struct {
 }
 
 type YamlRequest struct {
-	PrevReq string                 `yaml:"prev_req"`
+	PrevReq string                 `yaml:"prev_req,omitempty"`
 	Url     string                 `yaml:"url"`
 	Method  string                 `yaml:"method"`
-	Headers Headers                `yaml:"headers"`
-	Body    Body                   `yaml:"body"`
-	Output  string                 `yaml:"output"`
-	Options map[string]interface{} `yaml:"options"`
-	Raw     string
+	Headers Headers                `yaml:"headers,omitempty"`
+	Body    Body                   `yaml:"body,omitempty"`
+	Output  string                 `yaml:"output,omitempty"`
+	Options map[string]interface{} `yaml:"options,omitempty"`
+	Raw     string                 `yaml:"raw,omitempty"`
 }
 
 type StarlarkRequest struct {
@@ -128,6 +132,14 @@ func (r *RequestMold) Method() string {
 
 func (r *RequestMold) Raw() string {
 	if r.Yaml != nil {
+		if r.Yaml.Raw == "" {
+			asYaml, err := yaml.Marshal(r.Yaml)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to marshal YAML request to YAML")
+			} else {
+				r.Yaml.Raw = string(asYaml)
+			}
+		}
 		return r.Yaml.Raw
 	} else if r.Starlark != nil {
 		return r.Starlark.Script

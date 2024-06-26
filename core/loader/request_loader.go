@@ -36,7 +36,7 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 		if yamlRequest.Url != "" || yamlRequest.Method != "" {
 			request = &model.RequestMold{
 				Yaml:        yamlRequest,
-				ContentType: "yaml",
+				ContentType: model.CONTENT_TYPE_YAML,
 				Root:        root,
 				Filename:    filename,
 				Name:        strings.TrimSuffix(filename, extension),
@@ -54,7 +54,7 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 		}
 		request = &model.RequestMold{
 			Starlark:    starlarkRequest,
-			ContentType: "star",
+			ContentType: model.CONTENT_TYPE_STARLARK,
 			Root:        root,
 			Filename:    filename,
 			Name:        strings.TrimSuffix(filename, extension),

@@ -1,8 +1,10 @@
 package model
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -22,4 +24,21 @@ func (p *Profile) DeleteFromFS() bool {
 		return false
 	}
 	return true
+}
+
+func (p *Profile) AsDotEnv() string {
+	if p == nil {
+		return ""
+	}
+
+	if p.Variables == nil {
+		return ""
+	}
+
+	contents := []string{}
+	for k, v := range p.Variables {
+		contents = append(contents, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return strings.Join(contents, "\n")
 }

@@ -661,10 +661,11 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 		requests = append(requests, r)
 	}
 
+	envVars := os.Environ()
 	for _, p := range loadedProfiles {
 		profile := &model.Profile{
 			Name:      p.Name,
-			Variables: loader.GetProfileValues(p, loadedProfiles),
+			Variables: loader.GetProfileValues(p, loadedProfiles, envVars),
 		}
 		if profile.Name == "default" {
 			activeProfile = profile

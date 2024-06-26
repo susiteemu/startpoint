@@ -25,6 +25,9 @@ func (headerValues *HeaderValues) UnmarshalYAML(node *yaml.Node) error {
 	*headerValues = sl
 	return nil
 }
+func (headerValues HeaderValues) MarshalYAML() (interface{}, error) {
+	return strings.Join(headerValues, ","), nil
+}
 
 func (headerValues *HeaderValues) ToString() string {
 	return strings.Join(*headerValues, ",")

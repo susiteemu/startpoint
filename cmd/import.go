@@ -26,6 +26,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type ImportConfig struct {
@@ -37,15 +38,16 @@ var importConfig ImportConfig
 // importCmd represents the import command
 var importCmd = &cobra.Command{
 	Use:   "import",
-	Short: "Not in use yet",
+	Short: "EXPERIMENTAL: import workspace from OpenAPI spec",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info().Msgf("Called import cmd with %v", importConfig)
-		openapi.ReadSpec(importConfig.Path)
+		workspace := viper.GetString("workspace")
+		openapi.ReadSpec(importConfig.Path, workspace)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(importCmd)
 
-	importCmd.PersistentFlags().StringVarP(&importConfig.Path, "path", "p", "", "OpenAPI spec file path")
+	importCmd.PersistentFlags().StringVarP(&importConfig.Path, "path", "p", "", "OpenAPI spec location (filepath or url")
 }

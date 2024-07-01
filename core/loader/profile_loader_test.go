@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadProfiles(t *testing.T) {
@@ -17,10 +18,7 @@ func TestReadProfiles(t *testing.T) {
 		return
 	}
 
-	if len(profiles) != 2 {
-		t.Errorf("got %d, wanted %d", len(profiles), 2)
-		return
-	}
+	assert.Equal(t, 2, len(profiles))
 
 	wantedProfiles := []model.Profile{
 		{
@@ -111,16 +109,11 @@ func TestGetProfileValues(t *testing.T) {
 		"var-in-var3":  "foobar_foo_bar2",
 	}
 
-	if len(profileValues) != len(wantedProfileValues) {
-		t.Errorf("lengths do not match: got %d, wanted %d", len(profileValues), len(wantedProfileValues))
-		return
-	}
+	assert.Equal(t, len(wantedProfileValues), len(profileValues))
 
 	for k, got := range profileValues {
 		wanted := wantedProfileValues[k]
-		if got != wanted {
-			t.Errorf("got %s, wanted %s", got, wanted)
-		}
+		assert.Equal(t, wanted, got)
 	}
 
 }

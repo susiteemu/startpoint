@@ -1,0 +1,14 @@
+prev_req:
+url: foobar.com
+method: POST
+headers:
+  X-Foo-Bar: SomeValue
+auth:
+  basic:
+    username: user
+    password: pw
+body: >
+  {
+    "id": 1,
+    "name": "Jane"
+  }

@@ -38,7 +38,7 @@ var importConfig ImportConfig
 // importCmd represents the import command
 var importCmd = &cobra.Command{
 	Use:   "import",
-	Short: "EXPERIMENTAL: import workspace from OpenAPI spec",
+	Short: "import workspace from OpenAPI Spec v3",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info().Msgf("Called import cmd with %v", importConfig)
 		workspace := viper.GetString("workspace")
@@ -49,5 +49,5 @@ var importCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(importCmd)
 
-	importCmd.PersistentFlags().StringVarP(&importConfig.Path, "path", "p", "", "OpenAPI spec location (filepath or url")
+	importCmd.PersistentFlags().StringVarP(&importConfig.Path, "path", "p", "", "OpenAPI Spec v3 location (filepath or url")
 }

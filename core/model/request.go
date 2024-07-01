@@ -35,6 +35,16 @@ var (
 	}
 )
 
+type BasicAuth struct {
+	user     string
+	password string
+}
+
+type Auth struct {
+	Basic  BasicAuth `yaml:"basic_auth"`
+	Bearer string    `yaml:"bearer_token"`
+}
+
 type Request struct {
 	Url     string
 	Method  string
@@ -62,6 +72,7 @@ type YamlRequest struct {
 	Output  string                 `yaml:"output,omitempty"`
 	Options map[string]interface{} `yaml:"options,omitempty"`
 	Raw     string                 `yaml:"raw,omitempty"`
+	Auth    Auth                   `yaml:"auth,omitempty"`
 }
 
 type StarlarkRequest struct {

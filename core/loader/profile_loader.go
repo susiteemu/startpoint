@@ -112,14 +112,7 @@ func GetProfileValues(currentProfile *model.Profile, profiles []*model.Profile, 
 
 	// process possible templated variables in profile
 	for k, v := range profileMap {
-		val := v
-		for k2, v2 := range profileMap {
-			if k == k2 {
-				continue
-			}
-			processedVal, _ := templateng.ProcessTemplateVariable(val, k2, v2)
-			val = processedVal
-		}
+		val := templateng.ProcessTemplateVariableRecursively(v, profileMap)
 		profileMap[k] = val
 	}
 

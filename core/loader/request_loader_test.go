@@ -4,7 +4,7 @@ import (
 	"startpoint/core/model"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadRequests(t *testing.T) {
@@ -15,10 +15,7 @@ func TestReadRequests(t *testing.T) {
 		return
 	}
 
-	if len(requests) != 2 {
-		t.Errorf("got %d, wanted %d", len(requests), 2)
-		return
-	}
+	assert.Equal(t, 3, len(requests))
 
 	var wantedRequests []model.RequestMold
 
@@ -40,8 +37,9 @@ body = { "id": 1474, "prev": prev, "bar": [
 			Script: script,
 		},
 		ContentType: "star",
+		Root:        "testdata",
 		Filename:    "starlark_request.star",
-		Name:        "startlark_request",
+		Name:        "starlark_request",
 	}
 
 	wantedRequests = append(wantedRequests, starlarkRequest)
@@ -66,38 +64,65 @@ body: >
     "name": "Jane"
   }`,
 		},
+		Root:        "testdata",
 		ContentType: "yaml",
 		Filename:    "yaml_request.yaml",
 		Name:        "yaml_request",
 	}
 
+	yamlRequestWithBasicAuth := model.RequestMold{
+		Yaml: &model.YamlRequest{
+			PrevReq: "",
+			Url:     "foobar.com",
+			Method:  "POST",
+			Headers: map[string]model.HeaderValues{
+				"X-Foo-Bar": {"SomeValue"},
+			},
+			Body: "{\n  \"id\": 1,\n  \"name\": \"Jane\"\n}\n",
+			Raw: `prev_req:
+url: foobar.com
+method: POST
+headers:
+  X-Foo-Bar: SomeValue
+auth:
+  basic:
+    username: user
+    password: pw
+body: >
+  {
+    "id": 1,
+    "name": "Jane"
+  }`,
+		},
+		Root:        "testdata",
+		ContentType: "yaml",
+		Filename:    "yaml_request_with_basic_auth.yaml",
+		Name:        "yaml_request_with_basic_auth",
+	}
+
 	wantedRequests = append(wantedRequests, yamlRequest)
+	wantedRequests = append(wantedRequests, yamlRequestWithBasicAuth)
 
 	for i := 0; i < len(requests); i++ {
 
 		request := requests[i]
 		wantedRequest := wantedRequests[i]
+
 		if request.Yaml != nil {
 			r := request.Yaml
 			w := wantedRequest.Yaml
-			if !cmp.Equal(r, w) {
-				t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", r, w)
-			}
+			assert.Equal(t, w, r)
 		}
 		if request.Starlark != nil {
 			r := request.Starlark
 			w := wantedRequest.Starlark
-			if !cmp.Equal(r, w) {
-				t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", r, w)
-			}
+			assert.Equal(t, w, r)
 		}
-		if !cmp.Equal(request.ContentType, wantedRequest.ContentType) {
-			t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", request, wantedRequest)
-		}
+		assert.Equal(t, wantedRequest.ContentType, request.ContentType)
+		assert.Equal(t, wantedRequest.Root, request.Root)
+		assert.Equal(t, wantedRequest.Filename, request.Filename)
+		assert.Equal(t, wantedRequest.Name, request.Name)
 
-		if !cmp.Equal(request.Filename, wantedRequest.Filename) {
-			t.Errorf("structs are not equal!\ngot\n%v\nwanted\n%v", request, wantedRequest)
-		}
 	}
 
 }

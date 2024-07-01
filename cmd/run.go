@@ -12,6 +12,7 @@ import (
 	"startpoint/core/loader"
 	"startpoint/core/model"
 	"startpoint/core/print"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -117,6 +118,36 @@ var runCmd = &cobra.Command{
 			fmt.Println(responseStr)
 		}
 
+	},
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		log.Debug().Msgf("ValidArgsFunction args=%v, toComplete=%s, w=%s", args, toComplete, viper.GetString("workspace"))
+		if len(args) == 2 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		suggestions := []string{}
+		if len(args) == 0 {
+			requests, _ := loader.ReadRequests(viper.GetString("workspace"))
+			if requests == nil {
+				requests = []*model.RequestMold{}
+			}
+			for _, req := range requests {
+				if strings.Contains(req.Name, toComplete) {
+					suggestions = append(suggestions, req.Name)
+				}
+			}
+		} else if len(args) == 1 {
+			profiles, _ := loader.ReadProfiles(viper.GetString("workspace"))
+			if profiles == nil {
+				profiles = []*model.Profile{}
+			}
+			for _, p := range profiles {
+				if strings.Contains(p.Name, toComplete) {
+					suggestions = append(suggestions, p.Name)
+				}
+			}
+		}
+
+		return suggestions, cobra.ShellCompDirectiveNoFileComp
 	},
 }
 

@@ -59,7 +59,6 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 			Filename:    filename,
 			Name:        strings.TrimSuffix(filename, extension),
 		}
-
 	}
 
 	if request == nil {
@@ -83,14 +82,18 @@ func ReadRequests(root string) ([]*model.RequestMold, error) {
 		}
 
 		filename := info.Name()
-		log.Debug().Msgf("Walk crossed a file %s", filename)
 
-		requestMold, err := ReadRequest(root, filename)
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed to read file %s", filename)
-		}
-		if requestMold != nil {
-			requestSlice = append(requestSlice, requestMold)
+		extension := filepath.Ext(filename)
+		if extension == ".yaml" || extension == ".yml" || extension == ".star" {
+			log.Debug().Msgf("Walk crossed a file %s", filename)
+
+			requestMold, err := ReadRequest(root, filename)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to read file %s", filename)
+			}
+			if requestMold != nil {
+				requestSlice = append(requestSlice, requestMold)
+			}
 		}
 
 		return nil

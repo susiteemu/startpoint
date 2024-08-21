@@ -1,6 +1,6 @@
 module startpoint
 
-go 1.22
+go 1.23
 
 require (
 	github.com/alecthomas/chroma/v2 v2.12.0

@@ -1,6 +1,8 @@
 package builder
 
 import (
+	b64 "encoding/base64"
+	"fmt"
 	"reflect"
 	"startpoint/core/configuration"
 	"startpoint/core/model"
@@ -79,6 +81,24 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 		configuration.Flatten("", yamlRequest.Options, options)
 	}
 
+	auth := yamlRequest.Auth
+	if auth != (model.Auth{}) {
+		if auth.Basic != (model.BasicAuth{}) {
+			if auth.Basic.User != "" && auth.Basic.Password != "" {
+				userPwd := fmt.Sprintf("%s:%s", auth.Basic.User, auth.Basic.Password)
+				userPwdBytes := []byte(userPwd)
+				base64encoded := b64.StdEncoding.EncodeToString(userPwdBytes)
+				if yamlRequest.Headers == nil {
+					yamlRequest.Headers = model.Headers{}
+				}
+				yamlRequest.Headers[model.HEADER_NAME_AUTHORIZATION] = model.HeaderValues{fmt.Sprintf("%s %s", model.HEADER_VALUE_BASIC_AUTH, base64encoded)}
+			}
+
+		} else if auth.Bearer != "" {
+			yamlRequest.Headers[model.HEADER_NAME_AUTHORIZATION] = model.HeaderValues{fmt.Sprintf("%s %s", model.HEADER_VALUE_BEARER_AUTH, auth.Bearer)}
+		}
+	}
+
 	request := model.Request{
 		Url:     yamlRequest.Url,
 		Method:  yamlRequest.Method,
@@ -123,6 +143,31 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 				}
 				headers[k] = l
 			}
+		}
+	}
+
+	authResult, has := res["auth"]
+	if has {
+		t := reflect.TypeOf(authResult)
+		if t.String() == "map[string]interface {}" {
+			basicAuth, has := authResult.(map[string]interface{})["basic_auth"]
+			if has {
+				username, hasUser := basicAuth.(map[string]interface{})["username"]
+				password, hasPwd := basicAuth.(map[string]interface{})["password"]
+				if hasUser && hasPwd {
+					userPwd := fmt.Sprintf("%s:%s", username, password)
+					userPwdBytes := []byte(userPwd)
+					base64encoded := b64.StdEncoding.EncodeToString(userPwdBytes)
+					headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("%s %s", model.HEADER_VALUE_BASIC_AUTH, base64encoded)}
+				}
+			} else {
+				bearerToken, has := authResult.(map[string]interface{})["bearer_token"]
+				if has {
+					headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("%s %s", model.HEADER_VALUE_BEARER_AUTH, bearerToken)}
+				}
+			}
+		} else {
+			log.Warn().Msgf("Auth %v is in invalid format %s", authResult, t.String())
 		}
 	}
 

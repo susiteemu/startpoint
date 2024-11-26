@@ -44,7 +44,9 @@ Works with light mode too (Catppuccin Latte) |
 
 ## TL;DR Tell Me What and How
 
-`startpoint` is a terminal ui / terminal app for managing and running HTTP requests. You can chain requests, use values from previous request's response and do lots of other kind script magic.
+
+`startpoint` is a terminal-based application for managing and executing HTTP requests. It allows you to chain requests, use responses from previous requests, and automate complex workflows directly from the terminal.
+
 
 To install `startpoint` see [Installation](#installation).
 
@@ -80,6 +82,8 @@ Also worth mentioning is Bruno. I heard about it some time ago, after I had alre
 Few years ago I got more and more interested in the terminal and running lightweight apps/tools/commands there instead of using apps that contain their own browsers with hundreds of megabytes (or even gigabytes) of RAM usage. I switched from (the excellent) Sublime Merge to `lazygit`, from Keepass XC to `gopass` and the latest from Visual Studio Code to `neovim`. Terminal, I have found, is a very powerful tool containing hundreds or thousands of heavy-duty commands to process any kind of data you need to. Having these other tools I use in my daily development work there keeps all nicely together in the same environment.
 
 Then the idea got into my head. I had used and liked a lot `curl` and `httpie`, both tools for making http requests. The only caveat they had for me is that it would require some amount of scripting to achieve pre-requests and switchable profiles/environments. I started planning my own tool that supports of all my needs.
+
+This is where `startpoint` comes in – a terminal tool that doesn't require a GUI, doesn't push cloud services, and is easy to integrate with version control.
 
 ## My Plans for `startpoint`
 

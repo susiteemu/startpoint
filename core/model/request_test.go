@@ -2,6 +2,8 @@ package model
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStarlarkRequestDocString(t *testing.T) {
@@ -26,29 +28,19 @@ body = { "id": 1474, "prev": prev, "bar": [
 	}
 
 	wantedName := "Starlark request"
-	if starlarkRequest.Name != wantedName {
-		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name, wantedName)
-	}
+	assert.Equal(t, wantedName, starlarkRequest.Name)
 
 	wantedPrevReq := "Some previous request"
-	if starlarkRequest.PreviousReq() != wantedPrevReq {
-		t.Errorf("prev_req is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.PreviousReq(), wantedPrevReq)
-	}
+	assert.Equal(t, wantedPrevReq, starlarkRequest.PreviousReq())
 
 	wantedUrl := "http://foobar.com"
-	if starlarkRequest.Url() != wantedUrl {
-		t.Errorf("url is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Url(), wantedUrl)
-	}
+	assert.Equal(t, wantedUrl, starlarkRequest.Url())
 
 	wantedMethod := "POST"
-	if starlarkRequest.Method() != wantedMethod {
-		t.Errorf("method is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Method(), wantedMethod)
-	}
+	assert.Equal(t, wantedMethod, starlarkRequest.Method())
 
 	wantedOutput := "./output.txt"
-	if starlarkRequest.Output() != wantedOutput {
-		t.Errorf("output is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Output(), wantedOutput)
-	}
+	assert.Equal(t, wantedOutput, starlarkRequest.Output())
 }
 
 func TestStarlarkRequestDocStringMissingParts(t *testing.T) {
@@ -56,10 +48,10 @@ func TestStarlarkRequestDocStringMissingParts(t *testing.T) {
 	starlarkRequest := RequestMold{
 		Starlark: &StarlarkRequest{
 			Script: `"""
-prev_req: Some previous request
 doc:url: http://foobar.com
 doc:method: POST
 """
+#  prev_req: Some previous request
 url = "http://foobar.com"
 method = "POST"
 headers = { "X-Foo": "bar", "X-Foos": [ "Bar1", "Bar2" ] }
@@ -71,30 +63,19 @@ body = { "id": 1474, "prev": prev, "bar": [
 	}
 
 	wantedName := ""
-	if starlarkRequest.Name != wantedName {
-		t.Errorf("name is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Name, wantedName)
-	}
+	assert.Equal(t, wantedName, starlarkRequest.Name)
 
 	wantedPrevReq := "Some previous request"
-	if starlarkRequest.PreviousReq() != wantedPrevReq {
-		t.Errorf("prev req is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.PreviousReq(), wantedPrevReq)
-	}
+	assert.Equal(t, wantedPrevReq, starlarkRequest.PreviousReq())
 
 	wantedUrl := "http://foobar.com"
-	if starlarkRequest.Url() != wantedUrl {
-		t.Errorf("url is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Url(), wantedUrl)
-	}
+	assert.Equal(t, wantedUrl, starlarkRequest.Url())
 
 	wantedMethod := "POST"
-	if starlarkRequest.Method() != wantedMethod {
-		t.Errorf("method is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Method(), wantedMethod)
-	}
+	assert.Equal(t, wantedMethod, starlarkRequest.Method())
 
 	wantedOutput := ""
-	if starlarkRequest.Output() != wantedOutput {
-		t.Errorf("output is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Output(), wantedOutput)
-	}
-
+	assert.Equal(t, wantedOutput, starlarkRequest.Output())
 }
 
 func TestStarlarkRequestParseValuesFromActualCode(t *testing.T) {
@@ -115,15 +96,10 @@ body = { "id": 1474, "prev": prev, "bar": [
 	}
 
 	wantedUrl := "http://foobar.com"
-	if starlarkRequest.Url() != wantedUrl {
-		t.Errorf("url is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Url(), wantedUrl)
-	}
+	assert.Equal(t, wantedUrl, starlarkRequest.Url())
 
 	wantedMethod := "POST"
-	if starlarkRequest.Method() != wantedMethod {
-		t.Errorf("method is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.Method(), wantedMethod)
-	}
-
+	assert.Equal(t, wantedMethod, starlarkRequest.Method())
 }
 
 func TestChangePreviousRequest(t *testing.T) {
@@ -143,17 +119,13 @@ body = { "id": 1474, "prev": prev, "bar": [
 `},
 	}
 
-	if starlarkRequest.PreviousReq() != "Some previous request" {
-		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.PreviousReq(), "Some previous request")
-		return
-	}
+	wantedPrevReq := "Some previous request"
+	assert.Equal(t, wantedPrevReq, starlarkRequest.PreviousReq())
 
 	starlarkRequest.ChangePreviousReq("Some other previous request")
 
-	if starlarkRequest.PreviousReq() != "Some other previous request" {
-		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", starlarkRequest.PreviousReq(), "Some other previous request")
-		return
-	}
+	wantedPrevReq = "Some other previous request"
+	assert.Equal(t, wantedPrevReq, starlarkRequest.PreviousReq())
 
 	yamlRequest := RequestMold{
 		Yaml: &YamlRequest{
@@ -165,17 +137,14 @@ method: POST
 `,
 		},
 	}
-	if yamlRequest.PreviousReq() != "Some previous request" {
-		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.PreviousReq(), "Some previous request")
-		return
-	}
+
+	wantedPrevReq = "Some previous request"
+	assert.Equal(t, wantedPrevReq, yamlRequest.PreviousReq())
 
 	yamlRequest.ChangePreviousReq("Some other previous request")
 
-	if yamlRequest.PreviousReq() != "Some other previous request" {
-		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.PreviousReq(), "Some other previous request")
-		return
-	}
+	wantedPrevReq = "Some other previous request"
+	assert.Equal(t, wantedPrevReq, yamlRequest.PreviousReq())
 
 	yamlRequest = RequestMold{
 		Yaml: &YamlRequest{
@@ -187,16 +156,11 @@ method: POST
 `,
 		},
 	}
-	if yamlRequest.PreviousReq() != "Some previous request" {
-		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.PreviousReq(), "Some previous request")
-		return
-	}
+	wantedPrevReq = "Some previous request"
+	assert.Equal(t, wantedPrevReq, yamlRequest.PreviousReq())
 
 	yamlRequest.ChangePreviousReq("Some other previous request")
 
-	if yamlRequest.PreviousReq() != "Some other previous request" {
-		t.Errorf("previous request is not equal!\ngot\n%v\nwanted\n%v", yamlRequest.PreviousReq(), "Some other previous request")
-		return
-	}
-
+	wantedPrevReq = "Some other previous request"
+	assert.Equal(t, wantedPrevReq, yamlRequest.PreviousReq())
 }

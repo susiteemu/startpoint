@@ -18,6 +18,8 @@ type Response struct {
 }
 
 type TraceInfo struct {
+	IsConnReused   bool
+	IsConnWasIdle  bool
 	DNSLookup      time.Duration
 	ConnTime       time.Duration
 	TCPConnTime    time.Duration
@@ -25,8 +27,6 @@ type TraceInfo struct {
 	ServerTime     time.Duration
 	ResponseTime   time.Duration
 	TotalTime      time.Duration
-	IsConnReused   bool
-	IsConnWasIdle  bool
 	ConnIdleTime   time.Duration
 	RequestAttempt int
 	RemoteAddr     string

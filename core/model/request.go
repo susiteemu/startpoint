@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -14,30 +15,33 @@ import (
 
 const CONTENT_TYPE_YAML = "yaml"
 const CONTENT_TYPE_STARLARK = "star"
+const HEADER_NAME_AUTHORIZATION = "Authorization"
+const HEADER_VALUE_BASIC_AUTH = "Basic"
+const HEADER_VALUE_BEARER_AUTH = "Bearer"
 
 var (
-	starlarkNamePatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?mU)^.*meta:name:(.*)$`),
+	starlarkNameFields = []string{
+		"meta:name",
 	}
-	starlarkUrlPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?mU)^.*doc:url:(.*)$`),
-		regexp.MustCompile(`(?mU)^\s*url\s*=(.*)$`),
+	starlarkUrlFields = []string{
+		"doc:url",
+		"url",
 	}
-	starlarkMethodPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?mU)^.*doc:method:(.*)$`),
-		regexp.MustCompile(`(?mU)^\s*method\s*=(.*)$`),
+	starlarkMethodFields = []string{
+		"doc:method",
+		"method",
 	}
-	starlarkPrevReqPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?mU)^.*prev_req:(.*)$`),
+	starlarkPrevReqFields = []string{
+		"prev_req",
 	}
-	starlarkOutputPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?mU)^.*meta:output:(.*)$`),
+	starlarkOutputFields = []string{
+		"meta:output",
 	}
 )
 
 type BasicAuth struct {
-	user     string
-	password string
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
 }
 
 type Auth struct {
@@ -46,12 +50,12 @@ type Auth struct {
 }
 
 type Request struct {
+	Headers Headers
+	Options map[string]interface{}
+	Body    Body
 	Url     string
 	Method  string
-	Headers Headers
-	Body    Body
 	Output  string
-	Options map[string]interface{}
 }
 
 type RequestMold struct {
@@ -127,7 +131,7 @@ func (r *RequestMold) Url() string {
 	if r.Yaml != nil {
 		return r.Yaml.Url
 	} else if r.Starlark != nil {
-		return findWithPatterns(r.Starlark.Script, starlarkUrlPatterns)
+		return extractValueFromAlternativeFieldNames(r.Starlark.Script, starlarkUrlFields)
 	}
 	return ""
 }
@@ -136,7 +140,7 @@ func (r *RequestMold) Method() string {
 	if r.Yaml != nil {
 		return r.Yaml.Method
 	} else if r.Starlark != nil {
-		return findWithPatterns(r.Starlark.Script, starlarkMethodPatterns)
+		return extractValueFromAlternativeFieldNames(r.Starlark.Script, starlarkMethodFields)
 	}
 	return ""
 }
@@ -162,7 +166,7 @@ func (r *RequestMold) PreviousReq() string {
 	if r.Yaml != nil {
 		return r.Yaml.PrevReq
 	} else if r.Starlark != nil {
-		return findWithPatterns(r.Starlark.Script, starlarkPrevReqPatterns)
+		return extractValueFromAlternativeFieldNames(r.Starlark.Script, starlarkPrevReqFields)
 	}
 	return ""
 }
@@ -187,17 +191,7 @@ func (r *RequestMold) Output() string {
 	if r.Yaml != nil {
 		return r.Yaml.Output
 	} else if r.Starlark != nil {
-		return findWithPatterns(r.Starlark.Script, starlarkOutputPatterns)
-	}
-	return ""
-}
-
-func findWithPatterns(str string, patterns []*regexp.Regexp) string {
-	for _, pattern := range patterns {
-		match := pattern.FindStringSubmatch(str)
-		if len(match) == 2 {
-			return strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match[1]), "\"", ""), "'", "")
-		}
+		return extractValueFromAlternativeFieldNames(r.Starlark.Script, starlarkOutputFields)
 	}
 	return ""
 }
@@ -228,6 +222,7 @@ func (r *RequestMold) Clone() RequestMold {
 			Body:    r.Yaml.Body,
 			Output:  r.Yaml.Output,
 			Raw:     r.Yaml.Raw,
+			Auth:    r.Yaml.Auth,
 		}
 		copy.Yaml = &yamlRequest
 	} else if r.Starlark != nil {
@@ -238,4 +233,85 @@ func (r *RequestMold) Clone() RequestMold {
 	}
 
 	return copy
+}
+
+func extractValueFromAlternativeFieldNames(str string, fields []string) string {
+	for _, field := range fields {
+		match, has := extractValueFromField(field, str)
+		if has {
+			return strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(match), "\"", ""), "'", "")
+		}
+	}
+	return ""
+}
+
+func extractValueFromField(field string, str string) (string, bool) {
+	const (
+		INITIAL                    = -1
+		START_MATCHING_FIELD       = 0
+		START_DETECTING_ASSIGNMENT = 1
+		ASSIGNMENT_DETECTED        = 2
+		START_CAPTURING            = 3
+	)
+	var (
+		fieldRunes       = []rune(field)
+		fieldMatchIdxMax = len(fieldRunes)
+		capture          = []rune{}
+		match            = false
+	)
+
+	str = strings.ReplaceAll(str, "\r\n", "\n")
+	lines := strings.Split(str, "\n")
+	for lineNr, line := range lines {
+		if len(line) < len(field) {
+			continue
+		}
+		state := INITIAL
+		fieldMatchIdxPos := 0
+		capture = []rune{}
+		breakLoop := false
+		for idx, c := range line {
+			if unicode.IsSpace(c) && state == INITIAL {
+				continue
+			}
+			if !unicode.IsSpace(c) && state == INITIAL {
+				state = START_MATCHING_FIELD
+			}
+			switch state {
+			case START_MATCHING_FIELD:
+				if c == fieldRunes[fieldMatchIdxPos] {
+					fieldMatchIdxPos++
+				} else {
+					fieldMatchIdxPos = 0
+				}
+				if fieldMatchIdxPos == fieldMatchIdxMax {
+					state = START_DETECTING_ASSIGNMENT
+				}
+			case START_DETECTING_ASSIGNMENT:
+				if !unicode.IsSpace(c) && c != '=' && c != ':' {
+					log.Warn().Msgf("Encountered illegal character at position %d on line %d: %c", idx, lineNr, c)
+					breakLoop = true
+				} else if c == '=' || c == ':' {
+					state = ASSIGNMENT_DETECTED
+				}
+			case ASSIGNMENT_DETECTED:
+				if !unicode.IsSpace(c) {
+					state = START_CAPTURING
+				}
+			}
+
+			if state == START_CAPTURING {
+				capture = append(capture, c)
+			}
+
+			if breakLoop {
+				break
+			}
+		}
+		if state == START_CAPTURING {
+			match = true
+			break
+		}
+	}
+	return string(capture), match
 }

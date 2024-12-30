@@ -13,12 +13,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const CONTENT_TYPE_YAML = "yaml"
-const CONTENT_TYPE_STARLARK = "star"
-const HEADER_NAME_AUTHORIZATION = "Authorization"
-const HEADER_VALUE_BASIC_AUTH = "Basic"
-const HEADER_VALUE_BEARER_AUTH = "Bearer"
-
 var (
 	starlarkNameFields = []string{
 		"meta:name",
@@ -99,6 +93,21 @@ func (r *Request) IsMultipartForm() bool {
 	return strings.ToLower(strings.TrimSpace(contentType)) == "multipart/form-data"
 }
 
+func (r *Request) HasBodyAsMap() bool {
+	if r.Body == nil {
+		return false
+	}
+	_, yes := r.Body.(map[string]interface{})
+	if !yes {
+		_, yes := r.Body.(map[string][]string)
+		if !yes {
+			_, yes := r.Body.(map[string]string)
+			return yes
+		}
+	}
+	return true
+}
+
 func (r *Request) ContentType() (string, bool) {
 	contentType, ok := r.Headers["Content-Type"]
 	if !ok {
@@ -111,17 +120,38 @@ func (r *Request) ContentType() (string, bool) {
 }
 
 func (r *Request) BodyAsMap() (map[string]string, bool) {
-	asMapInterface, ok := r.Body.(map[string]interface{})
-	if !ok {
-		return map[string]string{}, false
-	}
 	asMapString := make(map[string]string)
-	for k, v := range asMapInterface {
-		asInt, isInt := v.(int)
-		if isInt {
-			asMapString[k] = strconv.Itoa(asInt)
-		} else {
-			asMapString[k] = v.(string)
+	asMapInterface, ok := r.Body.(map[string]interface{})
+	if ok {
+		for k, v := range asMapInterface {
+			asInt, isInt := v.(int)
+			if isInt {
+				asMapString[k] = strconv.Itoa(asInt)
+			} else {
+				asArr, isArr := v.([]interface{})
+				if isArr {
+					asStrArr := []string{}
+					for _, i := range asArr {
+						asInt, isInt := i.(int)
+						if isInt {
+							asStrArr = append(asStrArr, strconv.Itoa(asInt))
+						} else {
+							asStrArr = append(asStrArr, i.(string))
+						}
+					}
+					asMapString[k] = strings.Join(asStrArr, ", ")
+				} else {
+					asMapString[k] = v.(string)
+				}
+			}
+		}
+	} else {
+		asMapStringArr, ok := r.Body.(map[string][]string)
+		if !ok {
+			return map[string]string{}, false
+		}
+		for k, v := range asMapStringArr {
+			asMapString[k] = strings.Join(v, ", ")
 		}
 	}
 	return asMapString, true
@@ -247,11 +277,11 @@ func extractValueFromAlternativeFieldNames(str string, fields []string) string {
 
 func extractValueFromField(field string, str string) (string, bool) {
 	const (
-		INITIAL                    = -1
-		START_MATCHING_FIELD       = 0
-		START_DETECTING_ASSIGNMENT = 1
-		ASSIGNMENT_DETECTED        = 2
-		START_CAPTURING            = 3
+		INITIAL = iota
+		START_MATCHING_FIELD
+		START_DETECTING_ASSIGNMENT
+		ASSIGNMENT_DETECTED
+		START_CAPTURING
 	)
 	var (
 		fieldRunes       = []rune(field)

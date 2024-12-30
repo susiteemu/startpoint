@@ -58,16 +58,15 @@ func ImportOpenAPIV3(document libopenapi.Document, workspace string) ([]model.Re
 			operationValue := operation.Value()
 
 			headers, queryParams, variables := handleOperationParametersV3(operationValue.Parameters, jsonMockGenerator)
-
 			for _, sec := range operationValue.Security {
 				requirements := sec.Requirements
 				for reqPairs := requirements.First(); reqPairs != nil; reqPairs = reqPairs.Next() {
 					securityScheme := findSecurityScheme(reqPairs.Key(), securitySchemes)
 					if securityScheme.Scheme == "basic" {
-						headers["Authorization"] = []string{fmt.Sprintf("Basic {%s}", reqPairs.Key())}
+						headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("Basic {%s}", reqPairs.Key())}
 						variables[reqPairs.Key()] = ""
 					} else if securityScheme.Scheme == "bearer" {
-						headers["Authorization"] = []string{fmt.Sprintf("Bearer {%s}", reqPairs.Key())}
+						headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("Bearer {%s}", reqPairs.Key())}
 						variables[reqPairs.Key()] = ""
 					} else if securityScheme.Type == "apiKey" {
 						if securityScheme.In == "cookie" {
@@ -82,11 +81,11 @@ func ImportOpenAPIV3(document libopenapi.Document, workspace string) ([]model.Re
 						}
 					} else if securityScheme.Type == "openIdConnect" {
 						// TODO: check if there is a way to generate prev_req
-						headers["Authorization"] = []string{fmt.Sprintf("Bearer {%s}", reqPairs.Key())}
+						headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("Bearer {%s}", reqPairs.Key())}
 						variables[reqPairs.Key()] = ""
 					} else if securityScheme.Type == "oauth2" {
 						// TODO: check if there is a way to generate prev_req
-						headers["Authorization"] = []string{fmt.Sprintf("Bearer {%s}", reqPairs.Key())}
+						headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("Bearer {%s}", reqPairs.Key())}
 						variables[reqPairs.Key()] = ""
 					}
 				}
@@ -117,7 +116,7 @@ func ImportOpenAPIV3(document libopenapi.Document, workspace string) ([]model.Re
 						yamlRequest.Body = asMap
 					}
 
-					headers["Content-Type"] = []string{contentType}
+					headers[model.HEADER_NAME_CONTENT_TYPE] = []string{contentType}
 				}
 			}
 
@@ -158,15 +157,15 @@ func generateMockExample(contentValue *v3.MediaType, contentType string, jsonMoc
 	}
 	// special treatment to some content types
 	switch contentType {
-	case "application/xml":
+	case model.CONTENT_TYPE_APPLICATION_XML:
 		// there is no simple way to marshal data to xml/html
 		// so at least for now, this is what you get
 		return []byte("<xml></xml>")
-	case "text/html":
+	case model.CONTENT_TYPE_TEXT_HTML:
 		// there is no simple way to marshal data to xml/html
 		// so at least for now, this is what you get
 		return []byte("<html></html>")
-	case "application/x-www-form-urlencoded", "multipart/form-data":
+	case model.CONTENT_TYPE_FORM_URLENCODED, model.CONTENT_TYPE_MULTIPART_FORM:
 		return convertToMap(example)
 	default:
 		return example

@@ -36,7 +36,7 @@ func resolveStyle() *chroma.Style {
 }
 
 func resolveFormatter() chroma.Formatter {
-	formatter := formatters.Get(config.GetStringOrDefault("printer.response.formatter"))
+	formatter := formatters.Get(config.GetStringOrDefault("printer.formatter", "printer.response.formatter"))
 	if formatter == nil {
 		formatter = formatters.Fallback
 	}

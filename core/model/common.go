@@ -1,9 +1,24 @@
 package model
 
 import (
-	"gopkg.in/yaml.v3"
+	"errors"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
+
+const CONTENT_TYPE_YAML = "yaml"
+const CONTENT_TYPE_STARLARK = "star"
+const HEADER_NAME_AUTHORIZATION = "Authorization"
+const HEADER_VALUE_BASIC_AUTH = "Basic"
+const HEADER_VALUE_BEARER_AUTH = "Bearer"
+const HEADER_NAME_CONTENT_TYPE = "Content-Type"
+const CONTENT_TYPE_PLAINTEXT = "text/plain"
+const CONTENT_TYPE_APPLICATION_JSON = "application/json"
+const CONTENT_TYPE_APPLICATION_XML = "application/xml"
+const CONTENT_TYPE_TEXT_HTML = "text/html"
+const CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
+const CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
 
 type Body interface{}
 
@@ -47,4 +62,17 @@ func (headers *Headers) ToMap() map[string]string {
 		headerMap[k] = v.ToString()
 	}
 	return headerMap
+}
+
+func (headers *Headers) ContentType() (string, error) {
+	for k, v := range *headers {
+		if k == HEADER_NAME_CONTENT_TYPE {
+			contentType := v[0]
+			if strings.Contains(contentType, ";") {
+				contentType = strings.Split(contentType, ";")[0]
+			}
+			return contentType, nil
+		}
+	}
+	return "", errors.New("could not find content type")
 }

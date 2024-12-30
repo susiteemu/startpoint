@@ -37,7 +37,7 @@ func ReadSpec(path string, workspace string) {
 	if document.GetSpecInfo().SpecType == utils.OpenApi3 {
 		requests, profiles = ImportOpenAPIV3(document, workspace)
 	} else if document.GetSpecInfo().SpecType == utils.OpenApi2 {
-		// TODO:
+		// TODO: might impplement this later if there is need for it
 		fmt.Print("Importing from OpenAPI v2 is not supported\n")
 		return
 	}

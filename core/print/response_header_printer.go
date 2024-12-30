@@ -11,21 +11,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func SprintHeaders(resp *model.Response, pretty bool) (string, error) {
-	if resp == nil {
-		return "", errors.New("response must not be nil")
+func SprintHeaders(headers model.Headers, pretty bool) (string, error) {
+	if headers == nil {
+		return "", errors.New("headers must not be nil")
 	}
 
 	theme := styles.GetTheme()
 	headerStyle := lipgloss.NewStyle().Foreground(theme.ResponseHeaderFgColor)
 
-	respHeaders := resp.Headers
 	respHeadersStr := ""
 	// sort header names
-	respHeaderNames := sortHeaderNames(resp.Headers)
+	respHeaderNames := sortHeaderNames(headers)
 	for _, respHeader := range respHeaderNames {
 		header := respHeader
-		headerValues := strings.Join(respHeaders[respHeader], ", ")
+		headerValues := strings.Join(headers[respHeader], ", ")
 		if pretty {
 			header = headerStyle.Render(header)
 		}
@@ -36,7 +35,7 @@ func SprintHeaders(resp *model.Response, pretty bool) (string, error) {
 	return respHeadersStr, nil
 }
 
-func sortHeaderNames(headers map[string]model.HeaderValues) []string {
+func sortHeaderNames(headers model.Headers) []string {
 	sortedHeaders := make([]string, 0, len(headers))
 	for k := range headers {
 		sortedHeaders = append(sortedHeaders, k)

@@ -35,6 +35,7 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 		if err != nil {
 			return RunRequestFinishedWithFailureMsg(fmt.Sprintf("Error occurred:\n%v", err))
 		}
+		responseCount := len(responses)
 		var printedResponses []string
 		for _, resp := range responses {
 			var config *configuration.Configuration = configuration.NewWithRequestOptions(resp.Options)
@@ -48,13 +49,22 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 				PrintBody:      true,
 				PrintHeaders:   true,
 				PrintTraceInfo: config.GetBool("httpClient.enableTraceInfo"),
+				PrintRequest:   config.GetBoolWithDefault("printRequest", false),
 			}
 			log.Debug().Msgf("Printing with opts %v", printOpts)
 			printed, err := print.SprintResponse(resp, printOpts)
 			if err != nil {
 				return RunRequestFinishedWithFailureMsg(fmt.Sprintf("Error occurred: %v", err))
 			}
+			// FIXME: instead of responseCount, this should check if there are > 1 responses that would be printed
+			if responseCount > 1 {
+				printedResponses = append(printedResponses, print.SprintFaint(fmt.Sprintf(`#
+# %s
+#`, resp.RequestName)))
+
+			}
 			printedResponses = append(printedResponses, printed)
+			printedResponses = append(printedResponses, "")
 		}
 
 		return RunRequestFinishedMsg(strings.Join(printedResponses, "\n"))

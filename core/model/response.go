@@ -5,16 +5,18 @@ import (
 )
 
 type Response struct {
-	Headers    map[string]HeaderValues
-	Body       []byte
-	Status     string
-	StatusCode int
-	Proto      string
-	Size       int64
-	ReceivedAt time.Time
-	Time       time.Duration
-	TraceInfo  TraceInfo
-	Options    map[string]interface{}
+	Headers     map[string]HeaderValues
+	Body        []byte
+	Status      string
+	StatusCode  int
+	Proto       string
+	Size        int64
+	ReceivedAt  time.Time
+	Time        time.Duration
+	TraceInfo   TraceInfo
+	Options     map[string]interface{}
+	Request     Request
+	RequestName string
 }
 
 type TraceInfo struct {

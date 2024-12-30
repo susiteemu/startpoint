@@ -740,11 +740,18 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
-	originalBackground := termenv.DefaultOutput().BackgroundColor()
-	termenv.DefaultOutput().SetBackgroundColor(termenv.RGBColor(theme.BgColor))
+	output := termenv.DefaultOutput()
+	//originalBackground := termenv.DefaultOutput().BackgroundColor()
+	// termenv.DefaultOutput().SetBackgroundColor(termenv.RGBColor(theme.BgColor))
+
+	log.Debug().Msgf("Got background color for terminal %s", output.BackgroundColor())
+
+	originalBackground := output.BackgroundColor()
+	output.SetBackgroundColor(termenv.RGBColor(theme.BgColor))
 
 	r, err := p.Run()
-	termenv.DefaultOutput().SetBackgroundColor(originalBackground)
+	output.SetBackgroundColor(originalBackground)
+	output.Reset()
 	if err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)

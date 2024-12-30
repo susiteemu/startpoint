@@ -1,7 +1,6 @@
 package loader
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -13,13 +12,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	YAML_EXT = ".yaml"
+	YML_EXT  = ".yml"
+	STAR_EXT = ".star"
+)
+
 func ReadRequest(root, filename string) (*model.RequestMold, error) {
 	path := filepath.Join(root, filename)
 	extension := filepath.Ext(filename)
 	var request *model.RequestMold
 
-	switch {
-	case extension == ".yaml" || extension == ".yml":
+	switch extension {
+	case YAML_EXT, YML_EXT:
 		file, err := os.ReadFile(path)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to read %s", path)
@@ -43,7 +48,7 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 			}
 		}
 
-	case extension == ".star":
+	case STAR_EXT:
 		file, err := os.ReadFile(path)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to read %s", path)
@@ -63,7 +68,7 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 
 	if request == nil {
 		log.Error().Msgf("Request could not be read %s", path)
-		return nil, errors.New(fmt.Sprintf("failed to read request %s", path))
+		return nil, fmt.Errorf("failed to read request %s", path)
 	}
 
 	return request, nil
@@ -84,7 +89,7 @@ func ReadRequests(root string) ([]*model.RequestMold, error) {
 		filename := info.Name()
 
 		extension := filepath.Ext(filename)
-		if extension == ".yaml" || extension == ".yml" || extension == ".star" {
+		if extension == YAML_EXT || extension == YML_EXT || extension == STAR_EXT {
 			log.Debug().Msgf("Walk crossed a file %s", filename)
 
 			requestMold, err := ReadRequest(root, filename)

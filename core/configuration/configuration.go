@@ -20,12 +20,18 @@ func NewWithRequestOptions(options map[string]interface{}) *Configuration {
 }
 
 // TODO: rename this func
-func (c *Configuration) GetStringOrDefault(key string) string {
-	value, has := c.requestOptions[key]
-	if has {
-		return value.(string)
+func (c *Configuration) GetStringOrDefault(key ...string) string {
+	for _, k := range key {
+		value, has := c.requestOptions[k]
+		if has {
+			return value.(string)
+		}
+		value = viper.GetString(k)
+		if value != "" {
+			return value.(string)
+		}
 	}
-	return viper.GetString(key)
+	return ""
 }
 
 func (c *Configuration) GetString(key string) (string, bool) {
@@ -110,18 +116,21 @@ func (c *Configuration) GetInt(key string) (int, bool) {
 	return -1, false
 }
 
-func (c *Configuration) GetBool(key string) bool {
-	value, has := c.requestOptions[key]
-	log.Debug().Msgf("GetBool %s, has %v value from request options %v", key, has, value)
-	if has {
-		return value.(bool)
+func (c *Configuration) GetBool(key ...string) bool {
+	for _, k := range key {
+		value, has := c.requestOptions[k]
+		if has {
+			return value.(bool)
+		}
+		if viper.IsSet(k) {
+			return viper.GetBool(k)
+		}
 	}
-	return viper.GetBool(key)
+	return false
 }
 
 func (c *Configuration) GetBoolWithDefault(key string, dflt bool) bool {
 	value, has := c.requestOptions[key]
-	log.Debug().Msgf("GetBool %s, has %v value from request options %v", key, has, value)
 	if has {
 		return value.(bool)
 	}

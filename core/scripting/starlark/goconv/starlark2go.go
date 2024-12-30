@@ -3,10 +3,11 @@ package goconv
 import (
 	"errors"
 	"fmt"
+
 	"go.starlark.net/starlark"
 )
 
-var mustNotBeNil = errors.New("value must not be nil")
+var errMustNotBeNil = errors.New("value must not be nil")
 
 func ConvertValue(v starlark.Value) (interface{}, error) {
 	var converters = []interface{}{
@@ -36,7 +37,7 @@ func ConvertValue(v starlark.Value) (interface{}, error) {
 
 func ConvertDict(v starlark.Value) (interface{}, bool, error) {
 	if v == nil {
-		return map[string]interface{}{}, false, mustNotBeNil
+		return map[string]interface{}{}, false, errMustNotBeNil
 	}
 	if v.Type() != "dict" {
 		return map[string]interface{}{}, false, nil
@@ -58,7 +59,7 @@ func ConvertDict(v starlark.Value) (interface{}, bool, error) {
 
 func ConvertString(v starlark.Value) (interface{}, bool, error) {
 	if v == nil {
-		return "", false, mustNotBeNil
+		return "", false, errMustNotBeNil
 	}
 	if v.Type() != "string" {
 		return "", false, nil
@@ -69,7 +70,7 @@ func ConvertString(v starlark.Value) (interface{}, bool, error) {
 
 func ConvertNoneType(v starlark.Value) (interface{}, bool, error) {
 	if v == nil {
-		return "", false, mustNotBeNil
+		return "", false, errMustNotBeNil
 	}
 	if v.Type() != "NoneType" {
 		return "", false, nil
@@ -80,7 +81,7 @@ func ConvertNoneType(v starlark.Value) (interface{}, bool, error) {
 
 func ConvertBool(v starlark.Value) (interface{}, bool, error) {
 	if v == nil {
-		return false, false, mustNotBeNil
+		return false, false, errMustNotBeNil
 	}
 	if v.Type() != "bool" {
 		return false, false, nil
@@ -94,7 +95,7 @@ func ConvertBool(v starlark.Value) (interface{}, bool, error) {
 
 func ConvertFloat(v starlark.Value) (interface{}, bool, error) {
 	if v == nil {
-		return 0, false, mustNotBeNil
+		return 0, false, errMustNotBeNil
 	}
 	if v.Type() != "float" {
 		return 0, false, nil
@@ -108,7 +109,7 @@ func ConvertFloat(v starlark.Value) (interface{}, bool, error) {
 
 func ConvertInt(v starlark.Value) (interface{}, bool, error) {
 	if v == nil {
-		return 0, false, mustNotBeNil
+		return 0, false, errMustNotBeNil
 	}
 	if v.Type() != "int" {
 		return 0, false, nil
@@ -122,7 +123,7 @@ func ConvertInt(v starlark.Value) (interface{}, bool, error) {
 
 func ConvertBytes(v starlark.Value) (interface{}, bool, error) {
 	if v == nil {
-		return "", false, mustNotBeNil
+		return "", false, errMustNotBeNil
 	}
 	if v.Type() != "bytes" {
 		return "", false, nil
@@ -133,7 +134,7 @@ func ConvertBytes(v starlark.Value) (interface{}, bool, error) {
 
 func ConvertList(v starlark.Value) (interface{}, bool, error) {
 	if v == nil {
-		return []interface{}{}, false, mustNotBeNil
+		return []interface{}{}, false, errMustNotBeNil
 	}
 	if v.Type() != "list" {
 		return []interface{}{}, false, nil

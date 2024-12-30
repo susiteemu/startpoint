@@ -3,11 +3,11 @@ package builder
 import (
 	b64 "encoding/base64"
 	"fmt"
-	"reflect"
 	"startpoint/core/configuration"
 	"startpoint/core/model"
 	starlarkng "startpoint/core/scripting/starlark"
 	"startpoint/core/templating/templateng"
+	"startpoint/core/tools/conv"
 
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -86,8 +86,7 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 		if auth.Basic != (model.BasicAuth{}) {
 			if auth.Basic.User != "" && auth.Basic.Password != "" {
 				userPwd := fmt.Sprintf("%s:%s", auth.Basic.User, auth.Basic.Password)
-				userPwdBytes := []byte(userPwd)
-				base64encoded := b64.StdEncoding.EncodeToString(userPwdBytes)
+				base64encoded := b64.StdEncoding.EncodeToString([]byte(userPwd))
 				if yamlRequest.Headers == nil {
 					yamlRequest.Headers = model.Headers{}
 				}
@@ -95,6 +94,9 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 			}
 
 		} else if auth.Bearer != "" {
+			if yamlRequest.Headers == nil {
+				yamlRequest.Headers = model.Headers{}
+			}
 			yamlRequest.Headers[model.HEADER_NAME_AUTHORIZATION] = model.HeaderValues{fmt.Sprintf("%s %s", model.HEADER_VALUE_BEARER_AUTH, auth.Bearer)}
 		}
 	}
@@ -133,12 +135,11 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 	headers := make(map[string][]string)
 	if has {
 		for k, headerVal := range headersResult.(map[string]interface{}) {
-			t := reflect.TypeOf(headerVal)
-			if t.String() == "string" {
-				headers[k] = []string{headerVal.(string)}
-			} else if t.String() == "[]interface {}" {
+			if asStr, ok := headerVal.(string); ok {
+				headers[k] = []string{asStr}
+			} else if asInterfaceArr, ok := headerVal.([]interface{}); ok {
 				var l []string
-				for _, singleHeaderVal := range headerVal.([]interface{}) {
+				for _, singleHeaderVal := range asInterfaceArr {
 					l = append(l, singleHeaderVal.(string))
 				}
 				headers[k] = l
@@ -148,17 +149,19 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 
 	authResult, has := res["auth"]
 	if has {
-		t := reflect.TypeOf(authResult)
-		if t.String() == "map[string]interface {}" {
-			basicAuth, has := authResult.(map[string]interface{})["basic_auth"]
+		if authMap, ok := authResult.(map[string]interface{}); ok {
+			basicAuth, has := authMap["basic_auth"]
 			if has {
-				username, hasUser := basicAuth.(map[string]interface{})["username"]
-				password, hasPwd := basicAuth.(map[string]interface{})["password"]
-				if hasUser && hasPwd {
-					userPwd := fmt.Sprintf("%s:%s", username, password)
-					userPwdBytes := []byte(userPwd)
-					base64encoded := b64.StdEncoding.EncodeToString(userPwdBytes)
-					headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("%s %s", model.HEADER_VALUE_BASIC_AUTH, base64encoded)}
+				basicAuthMap, ok := basicAuth.(map[string]interface{})
+				if ok {
+					username, hasUser := basicAuthMap["username"]
+					password, hasPwd := basicAuthMap["password"]
+					if hasUser && hasPwd {
+						userPwd := fmt.Sprintf("%s:%s", username, password)
+						userPwdBytes := []byte(userPwd)
+						base64encoded := b64.StdEncoding.EncodeToString(userPwdBytes)
+						headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("%s %s", model.HEADER_VALUE_BASIC_AUTH, base64encoded)}
+					}
 				}
 			} else {
 				bearerToken, has := authResult.(map[string]interface{})["bearer_token"]
@@ -167,7 +170,7 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 				}
 			}
 		} else {
-			log.Warn().Msgf("Auth %v is in invalid format %s", authResult, t.String())
+			log.Warn().Msgf("Auth %v is in invalid format %T", authResult, authResult)
 		}
 	}
 
@@ -188,12 +191,24 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 		output = requestMold.Output()
 	}
 
-	// FIXME: add checks
+	url, err := conv.AssertAndConvert[string](res, "url")
+	if err != nil {
+		return model.Request{}, true, err
+	}
+	method, err := conv.AssertAndConvert[string](res, "method")
+	if err != nil {
+		return model.Request{}, true, err
+	}
+	body, err := conv.AssertAndConvert[interface{}](res, "body")
+	if err != nil {
+		return model.Request{}, true, err
+	}
+
 	req := model.Request{
-		Url:     res["url"].(string),
-		Method:  res["method"].(string),
+		Url:     url,
+		Method:  method,
 		Headers: new(model.Headers).FromMap(headers),
-		Body:    res["body"],
+		Body:    body,
 		Options: options,
 		Output:  output,
 	}

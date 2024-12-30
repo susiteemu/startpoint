@@ -21,7 +21,6 @@ func resolvePreviousReq(prevReqName string, all []*model.RequestMold) []*model.R
 			break
 		}
 	}
-
 	prevReqs := []*model.RequestMold{}
 	if prevReq != nil {
 		ascendants := resolvePreviousReq(prevReq.PreviousReq(), all)

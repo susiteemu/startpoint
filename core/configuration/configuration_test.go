@@ -42,6 +42,7 @@ func TestBuildRequestYaml(t *testing.T) {
 
 	key = "nested.deeper"
 	gotNested, ok := dest[key].([]map[string]string)
+
 	if !ok {
 		t.Errorf("with key %s got %v which is not a []map[string]string\n", key, got)
 	} else {

@@ -41,12 +41,17 @@ func DoRequest(request model.Request) (*model.Response, error) {
 
 	// NOTE: creating new client for each request to simplify configuring it
 	// (no need to reset to default values after request)
-	var client *resty.Client = resty.New().SetLogger(newLogger(&log.Logger))
+	var client = resty.New().SetLogger(newLogger(&log.Logger))
 
 	config := configuration.NewWithRequestOptions(request.Options)
 
-	debug := config.GetBool("httpClient.debug")
-	client.SetDebug(debug)
+	debug := config.GetBool("debug")
+	if debug {
+		client.SetDebug(debug)
+	} else {
+		debug := config.GetBool("httpClient.debug")
+		client.SetDebug(debug)
+	}
 
 	timeoutSeconds, set := config.GetInt("httpClient.timeoutSeconds")
 	if set && timeoutSeconds >= 0 {
@@ -165,6 +170,24 @@ func DoRequest(request model.Request) (*model.Response, error) {
 		body = resp.Body()
 	}
 
+	req := resp.Request
+	requestBody := req.Body
+	if requestBody == nil && req.FormData != nil {
+		urlValues := req.FormData
+		bodyAsMap := make(map[string][]string)
+		for k, v := range urlValues {
+			bodyAsMap[k] = v
+		}
+		requestBody = bodyAsMap
+	}
+
+	respReq := model.Request{
+		Url:     req.URL,
+		Method:  req.Method,
+		Body:    requestBody,
+		Headers: new(model.Headers).FromMap(req.Header),
+	}
+
 	response := model.Response{
 		Headers:    new(model.Headers).FromMap(resp.Header()),
 		Body:       body,
@@ -176,6 +199,7 @@ func DoRequest(request model.Request) (*model.Response, error) {
 		Time:       resp.Time(),
 		TraceInfo:  traceInfo,
 		Options:    request.Options,
+		Request:    respReq,
 	}
 
 	log.Debug().Msgf("TraceInfo: %v", traceInfo)

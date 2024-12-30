@@ -23,7 +23,6 @@ func RunRequestChain(reqs []*model.RequestMold, profile *model.Profile, interimR
 	log.Debug().Msgf("About to run request chain of length %d with profile %v", len(reqs), profile)
 
 	var responses []*model.Response
-
 	var prevResponse *model.Response
 	for _, r := range reqs {
 		log.Debug().Msgf("Building request %v", r)
@@ -45,6 +44,7 @@ func RunRequestChain(reqs []*model.RequestMold, profile *model.Profile, interimR
 			log.Error().Err(err).Msgf("Request failed with %v", request)
 			return responses, err
 		}
+		response.RequestName = r.Name
 
 		interimResultCb(response.Time, response.StatusCode)
 

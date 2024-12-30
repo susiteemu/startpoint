@@ -40,8 +40,7 @@ theme:
     headerFgColor: '#89b4fa'
 printer:
   pretty: true
-  response:
-    formatter: terminal16m
+  formatter: terminal16m
 editor: /opt/homebrew/bin/nvim
 httpClient:
   debug: true

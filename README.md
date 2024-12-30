@@ -1,13 +1,12 @@
-# A cli tool for managing and scripting http/restful requests: startpoint
+# A CLI tool for managing and scripting http/restful requests: startpoint
 
-With Catppuccin Mocha (FTW!) |
-:-------------------------:|
-![Dark mode FTW!](https://vhs.charm.sh/vhs-4QCyBGCkuYBKuAk7Wz4C9D.gif)
+| With Catppuccin Mocha (FTW!) |
+|-------------------------|
+| ![Dark mode FTW!](https://vhs.charm.sh/vhs-4QCyBGCkuYBKuAk7Wz4C9D.gif) |
 
-
-Works with light mode too (Catppuccin Latte) |
-:-------------------------:|
-![It can have a light mode too!](https://vhs.charm.sh/vhs-2k75iICDoW522csX8Cc3dv.gif)
+| Works with light mode too (Catppuccin Latte) |
+|-------------------------|
+| ![It can have a light mode too!](https://vhs.charm.sh/vhs-2k75iICDoW522csX8Cc3dv.gif) |
 
 <!-- toc -->
 
@@ -36,6 +35,7 @@ Works with light mode too (Catppuccin Latte) |
     + [Chaining Requests](#chaining-requests)
     + [Templating Requests](#templating-requests)
   * [Profiles](#profiles)
+  * [Importing](#importing)
   * [Configuration](#configuration)
   * [Examples](#examples)
 - [TODO](#todo)
@@ -44,9 +44,7 @@ Works with light mode too (Catppuccin Latte) |
 
 ## TL;DR Tell Me What and How
 
-
 `startpoint` is a terminal-based application for managing and executing HTTP requests. It allows you to chain requests, use responses from previous requests, and automate complex workflows directly from the terminal.
-
 
 To install `startpoint` see [Installation](#installation).
 
@@ -92,6 +90,7 @@ My plan and is to keep `startpoint` offline, cloud-free, subscription-free, ad-f
 How do I see `startpoint`? In addition to what I mentioned above, I want it to be kind of fast, lightweight, pretty (I like my eyecandy), rather than constraining me to use its set of editors or other tools it would support me choosing my own, scriptable and extensible. I want to use standards and formats I and other people already know or if not, learning them should be beneficial outside of using this tool too.
 
 As a more concrete list, at this point of time I have plans or have implemented:
+
 - dotenv based profile support
 - using yaml as request definitions
 - using Starlark as scriptable request definitions
@@ -100,9 +99,9 @@ As a more concrete list, at this point of time I have plans or have implemented:
 - TUI for managing both requests and profiles
 - TUI for activating wanted profile and running requests
 - printing requests pretty-formatted and colorized
+- importing from OpenAPI specifications
 
 ## Manual
-
 
 ### Installation
 
@@ -111,20 +110,23 @@ There are several ways of installing `startpoint`.
 #### On macOS
 
 To install using Homebrew:
+
 ```bash
 brew tap susiteemu/tap
 brew install startpoint
 ```
+
 To update using Homebrew:
+
 ```bash
 brew update
 brew upgrade startpoint
 ```
 
-
 To install manually:
-* Download tar.gz file from release
-* Uncompress and either move to a location that is in your `$PATH` or run as a standalone from your desired location.
+
+- Download tar.gz file from release
+- Uncompress and either move to a location that is in your `$PATH` or run as a standalone from your desired location.
 
 ### Commands
 
@@ -212,9 +214,10 @@ Requests TUI app has functionalities to add, edit, copy, remove, rename, preview
 
 ![Help](https://vhs.charm.sh/vhs-2h1wK683LjjPPSWkdrGVEt.gif)
 
-TUI has two distinct _modes_: *SELECT* and *EDIT* modes.
-* In *SELECT* mode you can change active profile, preview and run requests.
-* In *EDIT* mode you can manage requests by adding, editing, copying, removing and renaming them. You can also preview them.
+TUI has two distinct *modes*: *SELECT* and *EDIT* modes.
+
+- In *SELECT* mode you can change active profile, preview and run requests.
+- In *EDIT* mode you can manage requests by adding, editing, copying, removing and renaming them. You can also preview them.
 
 These are the keymappings for the *SELECT* mode:
 
@@ -271,20 +274,20 @@ Currently there is no direct theming support, excluding syntax coloring which co
 
 ### Profiles TUI
 
-
 ### Request Definitions
 
 `startpoint` has different kinds of requests for varying needs: simple and more complex ones. Simple ones are defined with `yaml`, can be templated and run as a part of a request chain, but they can't use values from a previous request's response. Complex ones are scripted with `starlark`, can use values from both profile and previous request's response and use the bells and whistles of a programming language.
 
 A request regardless of type has:
-* *required* a name, which must be unique within the workspace. This is derived from the file name without extension.
-* *required* an url to the resource
-* *required* a request method: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
-* *optional* the name of the previous request
-* *optional* a list of headers
-* *optional* a body
-* *optional* a output path to response body (e.g. downloading a binary file)
-* *optional* options defining things such as proxies, certificates e.g.
+
+- *required* a name, which must be unique within the workspace. This is derived from the file name without extension.
+- *required* an url to the resource
+- *required* a request method: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+- *optional* the name of the previous request
+- *optional* a list of headers
+- *optional* a body
+- *optional* a output path to response body (e.g. downloading a binary file)
+- *optional* options defining things such as proxies, certificates e.g.
 
 In addition there are some properties related to authentication which can be used as a shorthand.
 
@@ -295,11 +298,13 @@ A very simple example of request would be:
 url: https://httpbin.org/anything
 method: GET
 ```
+
 ```python
 # A request.star
 url = "https://httpbin.org/anything"
 method = "GET"
 ```
+
 Both of these would perform a HTTP GET request url `https://httpbin.org/anything` and print the response.
 
 To add some headers, you would do:
@@ -312,6 +317,7 @@ headers:
   Accept: "application/json"
   X-Custom-Header: "Some custom value"
 ```
+
 ```python
 # A request with headers.star
 url = "https://httpbin.org/anything"
@@ -321,6 +327,7 @@ headers = {
   "X-Custom-Header": "Some custom value"
 }
 ```
+
 And to add a body, you would do:
 
 ```yaml
@@ -337,6 +344,7 @@ body: >
    "name": "Jane"
  }
 ```
+
 ```python
 # A request with body.star
 url = "https://httpbin.org/anything"
@@ -355,14 +363,17 @@ body = {
 ##### A Note About Starlark and Runtime
 
 Since `starlark` is executable, values might be only resolved during runtime. This poses a challenge for cases when the app needs to know values for certain properties before running the script. These are:
+
 - Requests TUI app displays request url and method in the listing. This is mainly to help you remember and know which request is which so it has only documentation purpose.
 - When building request chain, previous request needs to be known before-hand.
 
 For the first case, there are two possibilities:
+
 - If your url and/or method is static (i.e. it does not change during runtime) you can just define it as is and the app will parse the value and show it.
 - If your url and/or method changes during runtime, you can define a "multi-line comment block"* and add a "static version" there. Although what you see on the TUI would differ from what is the actual value when running the request, it could still be beneficial to see e.g. that your `method` is `GET or POST` instead of seeing `<blank>`.
 
 *) An example of multi-line comment block
+
 ```python
 """
 doc:url: http://localhost:8000/api/foo
@@ -371,6 +382,7 @@ doc:method: GET or POST
 ```
 
 For the second case, similar to the first one, you would also use the multi-line comment block:
+
 ```python
 """
 prev_req: Some other request
@@ -378,7 +390,6 @@ prev_req: Some other request
 ```
 
 #### Different Requests
-
 
 ##### JSON
 
@@ -391,6 +402,7 @@ body: '{"id": 1, "name": "Jane"}'
 ```
 
 Or with "folded block scalar" (`>`):
+
 ```yaml
 # ... other attributes...
 body: >
@@ -410,12 +422,14 @@ headers:
 In `starlark` based requests you can either define the json body as a string or as a dict. Which you choose depends on your needs: it is probably more convenient to use dictionaries when appending items dynamically.
 
 As a string you would do:
+
 ```python
 # ... other attributes...
 body = '{"id": 1, "name": "Jane"}'
 ```
 
 And as a dict you would do:
+
 ```python
 # ... other attributes...
 body = {
@@ -425,18 +439,19 @@ body = {
 ```
 
 As with `yaml` requests, you probably want to add appropriate header:
+
 ```python
 headers = {
   "Content-Type": "application/json"
 }
 ```
 
-
 ##### Plain text
 
 Plain text is plain and simple: pass it to all requests as a string. You also probably want to add appropriate headers.
 
 With `yaml` based requests:
+
 ```yaml
 headers:
   Content-Type: "text/plain"
@@ -444,6 +459,7 @@ body: "Plain text body"
 ```
 
 And with `starlark` based requests:
+
 ```python
 headers = {
   "Content-Type": "text/plain"
@@ -547,12 +563,10 @@ When you want to download the response instead of printing it, which would be se
 
 With `yaml` based requests you would do:
 
-
 ```yaml
 url: "http://localhost:8000/download"
 output: "/path/to/some/file.png"
 ```
-
 
 With `starlark` based requests you would do:
 
@@ -594,12 +608,14 @@ url = "http://localhost:8000/some-path-var/123"
 At times it is useful to run a request before another, e.g. when using a API that has a authentication scheme requiring to pass a token. Each request, regardless of being "simple" or "complex" has a property `prev_req` that can be used to point to a another request. When used with "simple" (`yaml` based) requests you can't use values from the previous response but you can nevertheless chain them if need be. The real benefit comes when using "complex" (`starlark` based) requests: you can take values from previous response's headers and body, build logic upon them and pass them to the current request.
 
 With `yaml` based requests you can define previous request like so:
+
 ```yaml
 # ... other attributes...
 prev_req: Some other request
 ```
 
 With `starlark` based requests you can do it like so:
+
 ```python
 """
 prev_req: Some other request
@@ -635,15 +651,15 @@ body:
   grant_type: 'password'
 ```
 
-
 #### Templating Requests
 
 It is possible and often useful to template request values: this way you can use the same request definition in different profiles/environments.
 
 To template a value, just use `{value_name}` syntax. The `value_name` refers to variable defined in the profile file. You can template:
-* the url of the request
-* header names and/or header values
-* parts of body
+
+- the url of the request
+- header names and/or header values
+- parts of body
 
 An example: you want to perform a `GET` request to an endpoint `/foo`. You have multiple environments you want to ultimately test/try. You define the request as follows:
 
@@ -652,6 +668,7 @@ An example: you want to perform a `GET` request to an endpoint `/foo`. You have 
 url: {domain}/foo
 method: GET
 ```
+
 ```python
 # Using templates.star
 url = "{domain}/foo"
@@ -664,10 +681,12 @@ Your profiles files could then look like this:
 # .env
 domain=http://localhost:8000
 ```
+
 ```bash
 # .env.test
 domain=https://yourtestdomain.com
 ```
+
 ```bash
 # .env.prod
 domain=https://yourdomain.com
@@ -675,24 +694,46 @@ domain=https://yourdomain.com
 
 Now, when you run your request in the `default` (`.env`) profile, your url would be `http://localhost:8000/foo`. In `test` it would be `https://yourtestdmain.com/foo` and in `prod` `https://yourdomain.com/foo`.
 
-
 ### Profiles
 
 Profiles are a way to run requests with different groups of variables. You can e.g. have one profile for your local environment holding request urls such as `http://localhost:8080` etc and one for your prod environment having its own urls. When you define profiles and variables inside them, you can use these variables in requests allowing you to avoid hard-coding values and reusing same request definitions on different situations and needs.
 
 Profiles are based on dotenv, meaning you can define a "default" profile by creating a file called `.env` and filling it with variables like:
+
 ```bash
 domain=http://localhost:8080
 ```
+
 To create different profiles, you would add more files: `.env.test`, `.env.prod` etc.
 
 Profiles are merged and the priority goes (from lowest to highest):
-* `.env`
-* `.env.local`
-* `.env.<selected profile>`
-* `.env.<selected profile>.local`
+
+- `.env`
+- `.env.local`
+- `.env.<selected profile>`
+- `.env.<selected profile>.local`
 
 Profiles with suffix `.local` are meant to hold sensitive values such as passwords. Whereas you can put other files to version control, it is recommended that you keep `.local` files out of it.
+
+### Importing
+
+You can import requests and profiles (a workspace) from OpenAPI specifications. Currently only version 3 is supported. To import, you can use the `import` command:
+
+```
+❯ startpoint import --help
+Import workspace from OpenAPI Spec v3
+
+Usage:
+  startpoint import [flags]
+
+Flags:
+  -p, --path string   OpenAPI Spec v3 location (filepath or url)
+
+Global Flags:
+      --config string      config file (default is a merge of $HOME/.startpoint.yaml and <workspace>/.startpoint.yaml)
+      --help               Displays help
+  -w, --workspace string   Workspace directory (default is current dir)
+```
 
 ### Configuration
 
@@ -701,84 +742,87 @@ Not to confuse with profiles, which are used to define variables to requests, th
 The configuration allows you to customize the look of the ui, set some properties for the HTTP client (e.g. proxy settings), change logging levels, define whether a response parts will print etc.
 
 Configuration can come from multiple sources:
-* from a config file in user home directory
-* from a config file in the used workspace
-* from an explicitly defined config file
-* from environment variables
-* from the request that is being run
+
+- from a config file in user home directory
+- from a config file in the used workspace
+- from an explicitly defined config file
+- from environment variables
+- from the request that is being run
 
 Whenever there are more than one configuration source, the final effective configuration will be a merge of all of them, the base being the one with broadest scope.
 
 If you do not explicitly define a config file, the lookup and merge order will be:
-* take base from the config file in user home directory (if exists)
-* merge with configuration coming from the config file in workspace (if exists)
-* merge with configuration coming from environment variables
-* when running a request, merge with configuration coming from this request
+
+- take base from the config file in user home directory (if exists)
+- merge with configuration coming from the config file in workspace (if exists)
+- merge with configuration coming from environment variables
+- when running a request, merge with configuration coming from this request
 
 If you explicitly define a config file, the corresponding order will be:
-* take base from defined config file
-* merge with configuration coming from environment variables
-* when running a request, merge with configuration coming the this request
+
+- take base from defined config file
+- merge with configuration coming from environment variables
+- when running a request, merge with configuration coming this request
 
 The configuration is given in `yaml` format (excluding those coming from environment). An example of configuration file is [here](./samples/.startpoint-all-configurations.yaml).
 
 All configuration values are:
 
-
-| Key | Default Value | Description |
-| ------------- | -------------- | -------------- |
-| theme.syntax | catppuccin-mocha | Sets syntax coloring for [Chroma](https://github.com/alecthomas/chroma). See [all available styles](https://github.com/alecthomas/chroma/tree/master/styles). |
-| theme.bgColor | ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e` | Background color for the TUI apps |
-| theme.primaryTextFgColor | ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Primary text foreground color |
-| theme.secondaryTextFgColor | ![#bac2de](https://via.placeholder.com/15/bac2de/000000.png?text=+) `#bac2de`  | Secondary text foreground color |
-| theme.titleFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | App title foreground color |
-| theme.titleBgColor | ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`  | App title background color |
-| theme.borderFgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Border foreground color |
-| theme.whitespaceFgColor | ![#313244](https://via.placeholder.com/15/313244/000000.png?text=+) `#313244`  | Foreground color for the whitespace (shown as a background for dialogs/prompts) |
-| theme.errorFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`  | Foreground color for errors |
-| theme.statusbar.primaryBgColor | ![#11111b](https://via.placeholder.com/15/11111b/000000.png?text=+) `#11111b`   | Background color for the primary section of the statusbar (e.g. that displays messages) |
-| theme.statusbar.primaryFgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4`  | Foreground color for the primary section of the statusbar (e.g. that displays messages) |
-| theme.statusbar.secondaryFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | Foreground color for "secondary" content such as other, colored, sections |
-| theme.statusbar.modePrimaryBgColor | ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`   | Background color for the "primary" (e.g. in requests TUI the *SELECT*) mode section of the statusbar|
-| theme.statusbar.modeSecondaryBgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | Background color for the "secondary" (e.g. in requests TUI the *EDIT*) mode section of the statusbar|
-| theme.statusbar.thirdColBgColor | ![#94e2d5](https://via.placeholder.com/15/94e2d5/000000.png?text=+) `#94e2d5` | Background color for the third section of the statusbar |
-| theme.statusbar.fourthColBgColor | ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`  | Background color for the fourth section of the statusbar |
-| theme.httpMethods.textFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | In list items, the foreground color for the label showing request's http method |
-| theme.httpMethods.defaultBgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4`  | In list items, the default background color for the label showing request's http method |
-| theme.httpMethods.getBgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | In list items, the background color for the label showing request's http method when the method is `GET` |
-| theme.httpMethods.postBgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | In list items, the background color for the label showing request's http method when the method is `POST` |
-| theme.httpMethods.putBgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | In list items, the background color for the label showing request's http method when the method is `PUT` |
-| theme.httpMethods.deleteBgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | In list items, the background color for the label showing request's http method when the method is `DELETE` |
-| theme.httpMethods.patchBgColor | ![#94e2d5](https://via.placeholder.com/15/94e2d5/000000.png?text=+) `#94e2d5`  | In list items, the background color for the label showing request's http method when the method is `PATCH` |
-| theme.httpMethods.optionsBgColor |  | In list items, the background color for the label showing request's http method when the method is `OPTIONS` |
-| theme.urlFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | In list items, the foreground color for request's URL |
-| theme.urlBgColor |  |  In list items, the background color for request's URL |
-| theme.urlTemplatedSectionFgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | In list items, the foreground color for the templated section of the request's URL |
-| theme.urlTemplatedSectionBgColor |  | In list items, the background color for the templated section of the request's URL |
-| theme.urlUnfilledTemplatedSectionFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   |In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable |
-| theme.urlUnfilledTemplatedSectionBgColor |  |  In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable |
-| theme.response.status200FgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | Foreground color for the response's 2xx status |
-| theme.response.status300FgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | Foreground color for the response's 3xx status |
-| theme.response.status400FgColor |  ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | Foreground color for the response's 4xx status |
-| theme.response.status500FgColor |  ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | Foreground color for the response's 5xx status |
-| theme.response.protoFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's proto part |
-| theme.response.headerFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's header names |
-| printer.pretty | `true` | Pretty print responses |
-| printer.response.formatter | terminal16m | Which formatter to use with Chroma |
-| editor | | Which editor to use for creating/editing requests and profiles |
-| httpClient.debug | `false` | Enable debug logging for the http client |
-| httpClient.enableTraceInfo | `false` | Include and print traceinfo with the response |
-| httpClient.insecure | `false` | Disable security check for https |
-| httpClient.proxyUrl | | Set proxy |
-| httpClient.timeoutSeconds | | Set timeout in seconds |
-| httpClient.clientCertificates[].certFile | | Array of certFile and keyFile pairs; certFile contains path to the public key file |
-| httpClient.clientCertificates[].keyFile | |  Array of certFile and keyFile pairs; keyFile contains path to the private key file |
-| httpClient.rootCertificates[] | | Array of paths to custom root certificates |
-
+| Key | Default Value | Description | Scope |
+| ------------- | -------------- | -------------- | -------------- |
+| theme.syntax | catppuccin-mocha | Sets syntax coloring for [Chroma](https://github.com/alecthomas/chroma). See [all available styles](https://github.com/alecthomas/chroma/tree/master/styles). | Global |
+| theme.bgColor | ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e` | Background color for the TUI apps | Global |
+| theme.primaryTextFgColor | ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Primary text foreground color | Global |
+| theme.secondaryTextFgColor | ![#bac2de](https://via.placeholder.com/15/bac2de/000000.png?text=+) `#bac2de`  | Secondary text foreground color | Global |
+| theme.titleFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | App title foreground color | Global |
+| theme.titleBgColor | ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`  | App title background color | Global |
+| theme.borderFgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Border foreground color | Global |
+| theme.whitespaceFgColor | ![#313244](https://via.placeholder.com/15/313244/000000.png?text=+) `#313244`  | Foreground color for the whitespace (shown as a background for dialogs/prompts) | Global |
+| theme.errorFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`  | Foreground color for errors | Global |
+| theme.statusbar.primaryBgColor | ![#11111b](https://via.placeholder.com/15/11111b/000000.png?text=+) `#11111b`   | Background color for the primary section of the statusbar (e.g. that displays messages) | Global |
+| theme.statusbar.primaryFgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4`  | Foreground color for the primary section of the statusbar (e.g. that displays messages) | Global |
+| theme.statusbar.secondaryFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | Foreground color for "secondary" content such as other, colored, sections | Global |
+| theme.statusbar.modePrimaryBgColor | ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`   | Background color for the "primary" (e.g. in requests TUI the *SELECT*) mode section of the statusbar| Global |
+| theme.statusbar.modeSecondaryBgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | Background color for the "secondary" (e.g. in requests TUI the *EDIT*) mode section of the statusbar| Global |
+| theme.statusbar.thirdColBgColor | ![#94e2d5](https://via.placeholder.com/15/94e2d5/000000.png?text=+) `#94e2d5` | Background color for the third section of the statusbar | Global |
+| theme.statusbar.fourthColBgColor | ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`  | Background color for the fourth section of the statusbar | Global |
+| theme.httpMethods.textFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | In list items, the foreground color for the label showing request's http method | Global |
+| theme.httpMethods.defaultBgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4`  | In list items, the default background color for the label showing request's http method | Global |
+| theme.httpMethods.getBgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | In list items, the background color for the label showing request's http method when the method is `GET` | Global |
+| theme.httpMethods.postBgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | In list items, the background color for the label showing request's http method when the method is `POST` | Global |
+| theme.httpMethods.putBgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | In list items, the background color for the label showing request's http method when the method is `PUT` | Global |
+| theme.httpMethods.deleteBgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | In list items, the background color for the label showing request's http method when the method is `DELETE` | Global |
+| theme.httpMethods.patchBgColor | ![#94e2d5](https://via.placeholder.com/15/94e2d5/000000.png?text=+) `#94e2d5`  | In list items, the background color for the label showing request's http method when the method is `PATCH` | Global |
+| theme.httpMethods.optionsBgColor |  | In list items, the background color for the label showing request's http method when the method is `OPTIONS` | Global |
+| theme.urlFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | In list items, the foreground color for request's URL | Global |
+| theme.urlBgColor |  |  In list items, the background color for request's URL | Global |
+| theme.urlTemplatedSectionFgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | In list items, the foreground color for the templated section of the request's URL | Global |
+| theme.urlTemplatedSectionBgColor |  | In list items, the background color for the templated section of the request's URL | Global |
+| theme.urlUnfilledTemplatedSectionFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   |In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable | Global |
+| theme.urlUnfilledTemplatedSectionBgColor |  |  In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable | Global |
+| theme.response.status200FgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | Foreground color for the response's 2xx status | Global |
+| theme.response.status300FgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | Foreground color for the response's 3xx status | Global |
+| theme.response.status400FgColor |  ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | Foreground color for the response's 4xx status | Global |
+| theme.response.status500FgColor |  ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | Foreground color for the response's 5xx status | Global |
+| theme.response.protoFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's proto part | Global |
+| theme.response.headerFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's header names | Global |
+| printer.pretty | `true`| Pretty print responses | Global, request |
+| printer.formatter | terminal16m | Which formatter to use with Chroma | Global |
+| editor | `$EDITOR` | Which editor to use for creating/editing requests and profiles | Global |
+| debug | `false` | Enable debug logging | Global |
+| httpClient.debug | `false` | Enable debug logging for the http client | Global, request |
+| httpClient.enableTraceInfo | `false` | Include and print traceinfo with the response | Global, request |
+| httpClient.insecure | `false` | Disable security check for https | Global, request |
+| httpClient.proxyUrl | | Set proxy | Global, request |
+| httpClient.timeoutSeconds | | Set timeout in seconds | Global, request |
+| httpClient.clientCertificates[].certFile | | Array of certFile and keyFile pairs; certFile contains path to the public key file | Global, request |
+| httpClient.clientCertificates[].keyFile | | Array of certFile and keyFile pairs; keyFile contains path to the private key file | Global, request |
+| httpClient.rootCertificates[] | | Array of paths to custom root certificates | Global, request |
 
 ### Examples
 
 Request without body or headers:
+
 ```yaml
 # Yaml
 url: https://httpbin.org/anything
@@ -786,6 +830,7 @@ method: GET
 ```
 
 Request with body and headers:
+
 ```yaml
 # Yaml
 url: https://httpbin.org/anything
@@ -800,6 +845,7 @@ body: >
 ```
 
 Request with formdata:
+
 ```yaml
 # Yaml
 url: https://httpbin.org/anything
@@ -812,18 +858,20 @@ body:
   field3: val3
 ```
 
-Request with basic auth (NOTE: not implemented yet):
+Request with basic auth:
+
 ```yaml
 # Yaml
 url: https://httpbin.org/basic-auth/someuser/somepassword
 method: GET
 auth:
-  basic:
+  basic_auth:
     user: someuser
     password: somepassword
 ```
 
-Request with bearer token (NOTE: not implemented yet):
+Request with bearer token:
+
 ```yaml
 # Yaml
 url: https://example.com/auth-with-bearer-token
@@ -833,6 +881,7 @@ auth:
 ```
 
 Request with file output:
+
 ```yaml
 # Yaml
 url: https://example.com/somefile.pdf
@@ -841,6 +890,7 @@ output: ./somefile.pdf
 ```
 
 Request with options:
+
 ```yaml
 # Yaml
 url: https://example.com/somefile.pdf
@@ -849,15 +899,11 @@ options:
   print: false
   debug: true
   enableTrace: true
+  printRequest: false
 ```
 
 ## TODO
 
 There are things still in progress and planned for some later date.
 
-- [x] Import from openspec v.1.1: https://github.com/pb33f/libopenapi
-- [x] Shell completions: https://github.com/spf13/cobra/blob/main/site/content/completions/_index.md v.1.1
-- [ ] Add basicAuth and authToken so no need to include them into headers? v.1.1
-- [ ] Add print request? v.1.1
-- [ ] Add continueOnPrevRequestStatus etc v.1.1
 - [ ] Add Lua based requests v.1.2

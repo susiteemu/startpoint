@@ -94,6 +94,23 @@ func GetTheme() *Theme {
 	return theme
 }
 
+func (t *Theme) HttpMethodBgColor(method string) lipgloss.Color {
+	switch method {
+	case "GET":
+		return theme.HttpMethodGetBgColor
+	case "POST":
+		return theme.HttpMethodPostBgColor
+	case "PUT":
+		return theme.HttpMethodPutBgColor
+	case "DELETE":
+		return theme.HttpMethodDeleteBgColor
+	case "PATCH":
+		return theme.HttpMethodPatchBgColor
+	default:
+		return theme.HttpMethodDefaultBgColor
+	}
+}
+
 type CommonStyle struct {
 	HelpPaneStyle      lipgloss.Style
 	HelpKeyStyle       lipgloss.Style

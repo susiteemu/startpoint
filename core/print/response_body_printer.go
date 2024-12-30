@@ -13,22 +13,24 @@ import (
 	"github.com/yosssi/gohtml"
 )
 
-func SprintBody(resp *model.Response, pretty bool) (string, error) {
+func SprintBody(size int64, body []byte, headers model.Headers, pretty bool) (string, error) {
 	respBodyStr := ""
-	if resp.Size > 0 {
-		respBody := resp.Body
-
+	if size > 0 {
 		dispatcher := NewBodyFormatter(&JsonContentTypeBodyHandler{}, &XmlContentTypeBodyHandler{}, &HtmlContentTypeBodyHandler{}, &DefaultContentTypeBodyHandler{})
 
-		contentType, err := getContentType(resp.Headers)
+		contentType, err := headers.ContentType()
 		if err != nil {
-			respBodyStr = string(respBody[:])
+			log.Warn().Err(err).Msg("Failed to get content type")
+			respBodyStr = string(body)
 		} else {
-			respBodyStr, _ = dispatcher.Format(contentType, respBody)
+			respBodyStr, err = dispatcher.Format(contentType, body)
+			if err != nil {
+				log.Warn().Err(err).Msg("Failed to format body")
+				respBodyStr = string(body)
+			}
 		}
-
 		if pretty && len(respBodyStr) > 0 {
-			respBodyStr, err = prettyPrintBody(respBodyStr, resp)
+			respBodyStr, err = prettyPrintBody(respBodyStr, headers)
 			if err != nil {
 				return "", err
 			}
@@ -38,9 +40,9 @@ func SprintBody(resp *model.Response, pretty bool) (string, error) {
 	return respBodyStr, nil
 }
 
-func prettyPrintBody(respBodyStr string, resp *model.Response) (string, error) {
+func prettyPrintBody(respBodyStr string, headers model.Headers) (string, error) {
 	buf := new(bytes.Buffer)
-	lexer := resolveBodyLexer(resp)
+	lexer := resolveBodyLexer(headers)
 	style := resolveStyle()
 	formatter := resolveFormatter()
 	iterator, err := lexer.Tokenise(nil, respBodyStr)
@@ -55,14 +57,14 @@ func prettyPrintBody(respBodyStr string, resp *model.Response) (string, error) {
 	return buf.String(), nil
 }
 
-func resolveBodyLexer(resp *model.Response) chroma.Lexer {
+func resolveBodyLexer(headers model.Headers) chroma.Lexer {
 	var lexer chroma.Lexer
-	contentType, err := getContentType(resp.Headers)
+	contentType, err := headers.ContentType()
 	if err != nil {
 		lexer = lexers.Fallback
 		log.Warn().Err(err).Msgf("Failed to get content type: using fallback lexer %v", lexer)
 	} else {
-		if contentType == "text/plain" {
+		if contentType == model.CONTENT_TYPE_PLAINTEXT {
 			lexer = lexers.Get("plaintext")
 		} else {
 			lexer = lexers.MatchMimeType(contentType)
@@ -87,22 +89,23 @@ type BodyFormatHandler interface {
 type JsonContentTypeBodyHandler struct{}
 
 func (h *JsonContentTypeBodyHandler) Supports(contentType string) bool {
-	return strings.HasPrefix(strings.ToLower(contentType), "application/json")
+	return strings.HasPrefix(strings.ToLower(contentType), model.CONTENT_TYPE_APPLICATION_JSON)
 }
 
 func (h *JsonContentTypeBodyHandler) Handle(body []byte) (string, error) {
 	var prettyJson bytes.Buffer
-	err := json.Indent(&prettyJson, body[:], "", "  ")
+	err := json.Indent(&prettyJson, body, "", "  ")
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to indent json")
 		return "", err
 	}
-	return string(prettyJson.Bytes()), nil
+	return prettyJson.String(), nil
 }
 
 type XmlContentTypeBodyHandler struct{}
 
 func (h *XmlContentTypeBodyHandler) Supports(contentType string) bool {
-	return strings.HasPrefix(strings.ToLower(contentType), "application/xml")
+	return strings.HasPrefix(strings.ToLower(contentType), model.CONTENT_TYPE_APPLICATION_XML)
 }
 
 func (h *XmlContentTypeBodyHandler) Handle(body []byte) (string, error) {
@@ -113,7 +116,7 @@ func (h *XmlContentTypeBodyHandler) Handle(body []byte) (string, error) {
 type HtmlContentTypeBodyHandler struct{}
 
 func (h *HtmlContentTypeBodyHandler) Supports(contentType string) bool {
-	return strings.HasPrefix(strings.ToLower(contentType), "text/html")
+	return strings.HasPrefix(strings.ToLower(contentType), model.CONTENT_TYPE_TEXT_HTML)
 }
 
 func (h *HtmlContentTypeBodyHandler) Handle(body []byte) (string, error) {

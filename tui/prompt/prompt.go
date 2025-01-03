@@ -47,13 +47,14 @@ var keys = keyMap{
 }
 
 type Model struct {
-	nameInput textinput.Model
-	context   PromptContext
-	label     string
-	keys      keyMap
-	help      help.Model
-	width     int
-	validator func(s string) error
+	nameInput    textinput.Model
+	initialValue string
+	context      PromptContext
+	label        string
+	keys         keyMap
+	help         help.Model
+	width        int
+	validator    func(s string) error
 }
 
 func (m Model) Init() tea.Cmd {
@@ -83,14 +84,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				})
 			}
 		}
-		// other keys
 		cmds = append(cmds, tea.Cmd(func() tea.Msg {
 			return promptTyped(msg.String())
 		}))
 	case promptTyped:
-		err := m.validator(m.nameInput.Value())
-		log.Debug().Msgf("Validation result %v", err)
-		m.nameInput.Err = err
+		if m.nameInput.Value() != m.initialValue {
+			err := m.validator(m.nameInput.Value())
+			log.Debug().Msgf("Validation result %v", err)
+			m.nameInput.Err = err
+		}
 	}
 
 	var cmd tea.Cmd
@@ -139,11 +141,6 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	nameInput.Width = min(64, w-2)
 	nameInput.SetValue(initialValue)
 	nameInput.Prompt = ""
-	if validator != nil {
-		// validator blocks writing on invalid input; there is a fix for this, but it is not released yet
-		// for now going with custom implementation (see promptTyped)
-		//nameInput.Validate = validator
-	}
 
 	help := help.New()
 	help.Styles.FullKey = commonStyles.HelpKeyStyle
@@ -156,13 +153,14 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	help.FullSeparator = "  "
 
 	return Model{
-		context:   context,
-		nameInput: nameInput,
-		label:     label,
-		keys:      keys,
-		help:      help,
-		width:     min(64, w),
-		validator: validator,
+		context:      context,
+		nameInput:    nameInput,
+		initialValue: initialValue,
+		label:        label,
+		keys:         keys,
+		help:         help,
+		width:        min(64, w),
+		validator:    validator,
 	}
 }
 

@@ -2,11 +2,11 @@
 
 | With Catppuccin Mocha (FTW!) |
 |-------------------------|
-| ![Dark mode FTW!](https://vhs.charm.sh/vhs-4QCyBGCkuYBKuAk7Wz4C9D.gif) |
+| ![Dark mode FTW!](https://vhs.charm.sh/vhs-3bec3YTcoyTaYYZpcHAFMc.gif)|
 
 | Works with light mode too (Catppuccin Latte) |
 |-------------------------|
-| ![It can have a light mode too!](https://vhs.charm.sh/vhs-2k75iICDoW522csX8Cc3dv.gif) |
+| ![It can have a light mode too!](https://vhs.charm.sh/vhs-3haBLauZOxEF5mhNHC3asZ.gif) |
 
 <!-- toc -->
 
@@ -212,7 +212,7 @@ Global Flags:
 
 Requests TUI app has functionalities to add, edit, copy, remove, rename, preview and run requests and select active profile.
 
-![Help](https://vhs.charm.sh/vhs-2h1wK683LjjPPSWkdrGVEt.gif)
+![Help](https://vhs.charm.sh/vhs-63g0JEnEYDko7BYmpGqsrR.gif)
 
 TUI has two distinct *modes*: *SELECT* and *EDIT* modes.
 
@@ -248,7 +248,7 @@ You can quit the app with `q` or `ctrl+c`.
 
 You can either *add* requests with `requests` TUI app or by creating `yaml` or `starlark` files directly with your favorite editor: it doesn't matter which way they are created. The app does not have any metadata mumbo-jumbo files to consider. At least in the beginning it is recommended to use the TUI app since it creates a template for you to use. To add a request with TUI app, press `a` when in *EDIT* mode. The app will ask if you want to add a `yaml` or `starlark` request. After this it will open your cup of editor (`$EDITOR`) and you can write the definition for it. After quitting the editor you can continue with the app.
 
-![Adding a request](https://vhs.charm.sh/vhs-4iURqd0C5mbNHs6lXNoVyS.gif)
+![Adding a request](https://vhs.charm.sh/vhs-29X25Aapm8YNtzhz9ZNUEm.gif)
 
 *Editing* works the same: you can either do it directly by opening the request file with an editor or by opening the TUI app and starting the editing there.
 
@@ -907,3 +907,7 @@ options:
 There are things still in progress and planned for some later date.
 
 - [ ] Add Lua based requests v.1.2
+- [ ] Preview profile in requests
+- [ ] Delete request prompt could contain name of the request to delete
+- [ ] Preview, when a profile is selected, could auto-fill variables (but also show there's a variable; nvim "virtualtext" like?)
+- [ ] Would it make sense to combine requests and profiles, allowing seemless transition between them? Visually it could look like: topbar with | Requests | Profiles | Workspace: ~/some

@@ -3,7 +3,7 @@ Source config.tape
 Output startpoint-latte.gif
 Sleep 0s
 Hide
-Type "startpoint requests -w ~/demo/ --config samples/.startpoint-catppuccin-latte.yaml"
+Type "startpoint requests -w ~/demo/ --config ~/demo/.startpoint-catppuccin-latte.yaml"
 Escape
 Type "[C"
 Sleep 500ms

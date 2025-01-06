@@ -6,6 +6,7 @@ import (
 	"startpoint/core/model"
 	"startpoint/core/print"
 	messages "startpoint/tui/messages"
+	"startpoint/tui/overlay"
 	preview "startpoint/tui/preview"
 	prompt "startpoint/tui/prompt"
 	statusbar "startpoint/tui/statusbar"
@@ -82,15 +83,17 @@ func (i Profile) Description() string { return fmt.Sprintf("Vars: %d", i.Variabl
 func (i Profile) FilterValue() string { return i.Name }
 
 type Model struct {
-	list      list.Model
-	prompt    prompt.Model
-	help      help.Model
-	statusbar statusbar.Model
-	preview   preview.Model
-	active    ActiveView
-	mode      Mode
-	width     int
-	height    int
+	list          list.Model
+	prompt        prompt.Model
+	help          help.Model
+	statusbar     statusbar.Model
+	preview       preview.Model
+	active        ActiveView
+	mode          Mode
+	width         int
+	height        int
+	widthPercent  float64
+	heightPercent float64
 }
 
 func (m Model) Init() tea.Cmd {
@@ -102,15 +105,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.list.SetWidth(msg.Width)
+		width := int(float64(m.width) * m.widthPercent)
+		m.list.SetWidth(width)
 		if m.mode == Normal {
-			m.statusbar.SetWidth(msg.Width)
-			m.help.Width = msg.Width
+			m.statusbar.SetWidth(width)
+			m.help.Width = width
 			listHeight := calculateListHeight(m)
 			m.list.SetHeight(listHeight)
 			updateStatusbar(&m, "")
 		} else {
-			m.list.SetHeight(m.height - 2)
+			height := int(float64(m.height) * m.heightPercent)
+			m.list.SetHeight(height)
 		}
 
 	case tea.KeyMsg:
@@ -217,6 +222,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to edit profile %s", oldProfile.Title()))
 	case PreviewProfileMsg:
+		log.Debug().Msgf("Preview Profile, %v", m)
 		if m.active == List {
 			m.active = Preview
 			selected := msg.Profile.ProfileModel
@@ -226,13 +232,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				formatted = selected.Raw
 			}
 
-			log.Debug().Msgf("RAW: %s", selected.Raw)
-
 			// NOTE: cannot give correct height before preview is created
 			// and we can calculate vertical margin height
 			m.preview = preview.New(selected.Filename, formatted)
-			height := m.height - m.preview.VerticalMarginHeight()
-			m.preview.SetSize(m.width, height)
+			height := m.height
+			m.preview.SetSize(int(float64(m.width)*0.8), int(float64(height)*0.8))
 
 			return m, nil
 		}
@@ -302,7 +306,7 @@ func (m Model) View() string {
 	case Prompt:
 		return renderPrompt(m)
 	case Preview:
-		return m.preview.View()
+		return renderPreview(m)
 	default:
 		return renderList(m)
 	}
@@ -346,24 +350,33 @@ func calculateListHeight(m Model) int {
 	return listHeight
 }
 
-func renderPrompt(m Model) string {
-	return lipgloss.Place(
-		m.width,
-		m.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		m.prompt.View())
+func renderPreview(m Model) string {
+	w := m.width
+	h := m.height
+	return renderModal(renderList(m), m.preview.View(), w, h)
 }
 
-func NewEmbedded(loadedProfiles []*model.Profile, width, height int) Model {
-	return newModel(loadedProfiles, true, width, height)
+func renderPrompt(m Model) string {
+	w := m.width
+	h := m.height
+	return renderModal(renderList(m), m.prompt.View(), w, h)
+}
+
+func renderModal(bg string, modal string, w, h int) string {
+	x := (w / 2) - (lipgloss.Width(modal) / 2)
+	y := (h / 2) - (lipgloss.Height(modal) / 2)
+	return overlay.PlaceOverlay(x, y, modal, bg)
+}
+
+func NewEmbedded(loadedProfiles []*model.Profile, winWidth, winHeight int, wPercent, hPercent float64) Model {
+	return newModel(loadedProfiles, true, winWidth, winHeight, wPercent, hPercent)
 }
 
 func New(loadedProfiles []*model.Profile) Model {
-	return newModel(loadedProfiles, false, 0, 0)
+	return newModel(loadedProfiles, false, 0, 0, 1.0, 1.0)
 }
 
-func newModel(loadedProfiles []*model.Profile, embedded bool, width, height int) Model {
+func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeight int, wPercent, hPercent float64) Model {
 	var profiles []list.Item
 
 	theme := styles.GetTheme()
@@ -382,10 +395,9 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, width, height int)
 	title := "Profiles"
 	d := newNormalDelegate()
 	if embedded {
-		title = "Select Profile"
 		d = newEmbeddedDelegate()
 	}
-	profileList := list.New(profiles, d, width, max(0, height-2))
+	profileList := list.New(profiles, d, int(float64(winWidth)*wPercent), max(0, int(float64(winHeight)*hPercent)-2))
 	profileList.Title = title
 	profileList.Styles.Title = style.listTitleStyle
 	profileList.SetShowHelp(false)
@@ -416,5 +428,5 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, width, height int)
 		mode = Embedded
 	}
 
-	return Model{list: profileList, active: List, mode: mode, width: width, height: height, help: help, statusbar: sb}
+	return Model{list: profileList, active: List, mode: mode, width: winWidth, height: winHeight, help: help, statusbar: sb, widthPercent: wPercent, heightPercent: hPercent}
 }

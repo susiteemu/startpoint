@@ -14,6 +14,7 @@ import (
 	"os"
 	keyprompt "startpoint/tui/keyprompt"
 	messages "startpoint/tui/messages"
+	"startpoint/tui/overlay"
 	preview "startpoint/tui/preview"
 	profiles "startpoint/tui/profile"
 	prompt "startpoint/tui/prompt"
@@ -385,8 +386,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// NOTE: cannot give correct height before preview is created
 			// and we can calculate vertical margin height
 			m.preview = preview.New(selected.Filename, formatted)
-			height := m.height - m.preview.VerticalMarginHeight()
-			m.preview.SetSize(m.width, height)
+			height := m.height
+			m.preview.SetSize(int(float64(m.width)*0.8), int(float64(height)*0.8))
 
 			return m, nil
 		}
@@ -483,7 +484,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ActivateProfile:
 		if m.mode == Select && m.active == List {
 			m.active = Profiles
-			m.profileui = profiles.NewEmbedded(allProfiles, m.width, m.height)
+			m.profileui = profiles.NewEmbedded(allProfiles, m.width, m.height, 0.5, 0.8)
 		}
 
 	case profiles.ProfileSelectedMsg:
@@ -574,21 +575,11 @@ func (m Model) View() string {
 	case Keyprompt:
 		return renderKeyprompt(m)
 	case Preview:
-		return m.preview.View()
+		return renderPreview(m)
 	case Stopwatch:
-		return lipgloss.Place(
-			m.width, m.height,
-			lipgloss.Center, lipgloss.Center,
-			style.stopwatchStyle.Render("Running request\n\n"+m.stopwatch.View()),
-			lipgloss.WithWhitespaceChars("\u28FF"),
-			lipgloss.WithWhitespaceForeground(style.whitespaceFg))
+		return renderStopwatch(m)
 	case Profiles:
-		return lipgloss.Place(
-			m.width,
-			m.height,
-			lipgloss.Center,
-			lipgloss.Center,
-			m.profileui.View())
+		return renderProfiles(m)
 	default:
 		return renderList(m)
 	}
@@ -622,26 +613,40 @@ func calculateListHeight(m Model) int {
 	return listHeight
 }
 
+func renderModal(bg string, modal string, w, h int) string {
+	x := (w / 2) - (lipgloss.Width(modal) / 2)
+	y := (h / 2) - (lipgloss.Height(modal) / 2)
+	return overlay.PlaceOverlay(x, y, modal, bg)
+}
+
+func renderStopwatch(m Model) string {
+	w := m.width
+	h := m.height
+	return renderModal(renderList(m), style.stopwatchStyle.Render("Running request\n\n"+m.stopwatch.View()), w, h)
+}
+
+func renderPreview(m Model) string {
+	w := m.width
+	h := m.height
+	return renderModal(renderList(m), m.preview.View(), w, h)
+}
+
+func renderProfiles(m Model) string {
+	w := m.width
+	h := m.height
+	return renderModal(renderList(m), lipgloss.NewStyle().Padding(0, 1, 1, 1).Border(lipgloss.RoundedBorder(), true, true).Render(m.profileui.View()), w, h)
+}
+
 func renderPrompt(m Model) string {
-	return lipgloss.Place(
-		m.width,
-		m.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		m.prompt.View(),
-		lipgloss.WithWhitespaceChars("\u28FF"),
-		lipgloss.WithWhitespaceForeground(style.whitespaceFg))
+	w := m.width
+	h := m.height
+	return renderModal(renderList(m), m.prompt.View(), w, h)
 }
 
 func renderKeyprompt(m Model) string {
-	return lipgloss.Place(
-		m.width,
-		m.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		m.keyprompt.View(),
-		lipgloss.WithWhitespaceChars("\u28FF"),
-		lipgloss.WithWhitespaceForeground(style.whitespaceFg))
+	w := m.width
+	h := m.height
+	return renderModal(renderList(m), m.keyprompt.View(), w, h)
 }
 
 func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile) {

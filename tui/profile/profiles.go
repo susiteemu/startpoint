@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"startpoint/core/model"
 	"startpoint/core/print"
+	"startpoint/core/tools/paths"
 	messages "startpoint/tui/messages"
 	"startpoint/tui/overlay"
 	preview "startpoint/tui/preview"
@@ -86,6 +87,7 @@ type Model struct {
 	list          list.Model
 	prompt        prompt.Model
 	help          help.Model
+	topbar        statusbar.Model
 	statusbar     statusbar.Model
 	preview       preview.Model
 	active        ActiveView
@@ -109,12 +111,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.list.SetWidth(width)
 		if m.mode == Normal {
 			m.statusbar.SetWidth(width)
+			m.topbar.SetWidth(width)
 			m.help.Width = width
 			listHeight := calculateListHeight(m)
 			m.list.SetHeight(listHeight)
 			updateStatusbar(&m, "")
 		} else {
-			height := int(float64(m.height) * m.heightPercent)
+			capHeight := len(m.list.Items())*3 + 2
+			height := min(capHeight, int(float64(m.height)*m.heightPercent))
 			m.list.SetHeight(height)
 		}
 
@@ -126,17 +130,19 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, nil
 			}
 		case "ctrl+c":
-			return m, tea.Quit
+			if m.mode == Normal {
+				return m, tea.Quit
+			}
 		case "q":
 			if m.active == Preview {
 				m.active = List
 				return m, nil
 			}
-			if m.active == List {
+			if m.active == List && m.mode == Normal {
 				return m, tea.Quit
 			}
 		case "?":
-			if m.active == List {
+			if m.active == List && m.mode == Normal {
 				m.help.ShowAll = !m.help.ShowAll
 				listHeight := calculateListHeight(m)
 				m.list.SetHeight(listHeight)
@@ -326,12 +332,14 @@ func renderList(m Model) string {
 	var views []string
 	if m.help.ShowAll {
 		listHeight := calculateListHeight(m)
-		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
+		views = append(views, m.topbar.View())
+		views = append(views, lipgloss.NewStyle().Height(listHeight).Padding(1, 0, 0, 0).Render(m.list.View()))
 		views = append(views, m.statusbar.View())
 		views = append(views, style.helpPaneStyle.Render(m.help.View(m.list)))
 	} else {
 		listHeight := calculateListHeight(m)
-		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
+		views = append(views, m.topbar.View())
+		views = append(views, lipgloss.NewStyle().Height(listHeight).Padding(1, 0, 0, 0).Render(m.list.View()))
 		views = append(views, m.statusbar.View())
 	}
 
@@ -342,7 +350,7 @@ func renderList(m Model) string {
 }
 
 func calculateListHeight(m Model) int {
-	listHeight := m.height - statusbar.Height
+	listHeight := m.height - statusbar.Height*3
 	if m.help.ShowAll {
 		helpHeight := lipgloss.Height(style.helpPaneStyle.Render(m.help.View(m.list)))
 		listHeight -= helpHeight
@@ -369,14 +377,14 @@ func renderModal(bg string, modal string, w, h int) string {
 }
 
 func NewEmbedded(loadedProfiles []*model.Profile, winWidth, winHeight int, wPercent, hPercent float64) Model {
-	return newModel(loadedProfiles, true, winWidth, winHeight, wPercent, hPercent)
+	return newModel(loadedProfiles, true, winWidth, winHeight, wPercent, hPercent, "")
 }
 
-func New(loadedProfiles []*model.Profile) Model {
-	return newModel(loadedProfiles, false, 0, 0, 1.0, 1.0)
+func New(loadedProfiles []*model.Profile, workspace string) Model {
+	return newModel(loadedProfiles, false, 0, 0, 1.0, 1.0, workspace)
 }
 
-func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeight int, wPercent, hPercent float64) Model {
+func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeight int, wPercent, hPercent float64, workspace string) Model {
 	var profiles []list.Item
 
 	theme := styles.GetTheme()
@@ -392,17 +400,23 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 		profiles = append(profiles, r)
 	}
 
-	title := "Profiles"
 	d := newNormalDelegate()
 	if embedded {
 		d = newEmbeddedDelegate()
 	}
-	profileList := list.New(profiles, d, int(float64(winWidth)*wPercent), max(0, int(float64(winHeight)*hPercent)-2))
-	profileList.Title = title
-	profileList.Styles.Title = style.listTitleStyle
-	profileList.SetShowHelp(false)
 
-	var sb statusbar.Model
+	width := int(float64(winWidth) * wPercent)
+	height := int(float64(winHeight) * hPercent)
+	if embedded {
+		capHeight := len(loadedProfiles)*3 + 2
+		height = min(capHeight, int(float64(winHeight)*hPercent))
+	}
+
+	profileList := list.New(profiles, d, width, height)
+	profileList.SetShowHelp(false)
+	profileList.SetShowTitle(false)
+
+	var sb, tb statusbar.Model
 	help := help.New()
 	help.Styles.ShortKey = style.helpKeyStyle
 	help.Styles.ShortDesc = style.helpDescStyle
@@ -411,11 +425,17 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 	help.ShortSeparator = "  "
 
 	if !embedded {
+		topbarItems := []statusbar.StatusbarItem{
+			{Text: "Profiles", BackgroundColor: theme.TitleBgColor, ForegroundColor: theme.TitleFgColor},
+			{Text: "", BackgroundColor: theme.StatusbarPrimaryBgColor, ForegroundColor: theme.StatusbarPrimaryFgColor},
+			{Text: fmt.Sprintf("Workspace: %s", paths.ShortenPath(workspace)), BackgroundColor: theme.StatusbarFourthColBgColor, ForegroundColor: theme.StatusbarSecondaryFgColor},
+		}
 		statusbarItems := []statusbar.StatusbarItem{
 			{Text: "", BackgroundColor: style.statusbarFirstColBg, ForegroundColor: style.statusbarFirstColFg},
 			{Text: "? Help", BackgroundColor: style.statusbarSecondColBg, ForegroundColor: style.statusbarSecondColFg},
 		}
 
+		tb = statusbar.New(topbarItems, 1, 0)
 		sb = statusbar.New(statusbarItems, 0, 0)
 	}
 
@@ -428,5 +448,5 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 		mode = Embedded
 	}
 
-	return Model{list: profileList, active: List, mode: mode, width: winWidth, height: winHeight, help: help, statusbar: sb, widthPercent: wPercent, heightPercent: hPercent}
+	return Model{list: profileList, active: List, mode: mode, width: winWidth, height: winHeight, help: help, statusbar: sb, topbar: tb, widthPercent: wPercent, heightPercent: hPercent}
 }

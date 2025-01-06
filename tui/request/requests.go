@@ -8,6 +8,7 @@ import (
 	"startpoint/core/loader"
 	"startpoint/core/model"
 	"startpoint/core/print"
+	"startpoint/core/tools/paths"
 	"strings"
 	"time"
 
@@ -134,6 +135,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.statusbar.SetWidth(msg.Width)
+		m.topbar.SetWidth(msg.Width)
 		m.list.SetWidth(msg.Width)
 		m.help.Width = msg.Width
 		listHeight := calculateListHeight(m)
@@ -484,7 +486,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ActivateProfile:
 		if m.mode == Select && m.active == List {
 			m.active = Profiles
-			m.profileui = profiles.NewEmbedded(allProfiles, m.width, m.height, 0.5, 0.8)
+			m.profileui = profiles.NewEmbedded(allProfiles, m.width, m.height, 0.5, 0.6)
 		}
 
 	case profiles.ProfileSelectedMsg:
@@ -589,11 +591,13 @@ func renderList(m Model) string {
 	var views []string
 	if m.help.ShowAll {
 		listHeight := calculateListHeight(m)
+		views = append(views, m.topbar.View())
 		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
 		views = append(views, m.statusbar.View())
 		views = append(views, style.helpPaneStyle.Render(m.help.View(m.list)))
 	} else {
 		listHeight := calculateListHeight(m)
+		views = append(views, m.topbar.View())
 		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
 		views = append(views, m.statusbar.View())
 	}
@@ -605,7 +609,7 @@ func renderList(m Model) string {
 }
 
 func calculateListHeight(m Model) int {
-	listHeight := m.height - statusbar.Height
+	listHeight := m.height - statusbar.Height*2
 	if m.help.ShowAll {
 		helpHeight := lipgloss.Height(style.helpPaneStyle.Render(m.help.View(m.list)))
 		listHeight -= helpHeight
@@ -634,7 +638,7 @@ func renderPreview(m Model) string {
 func renderProfiles(m Model) string {
 	w := m.width
 	h := m.height
-	return renderModal(renderList(m), lipgloss.NewStyle().Padding(0, 1, 1, 1).Border(lipgloss.RoundedBorder(), true, true).Render(m.profileui.View()), w, h)
+	return renderModal(renderList(m), lipgloss.NewStyle().Padding(1, 1, 1, 1).Border(lipgloss.RoundedBorder(), true, true).Render(m.profileui.View()), w, h)
 }
 
 func renderPrompt(m Model) string {
@@ -649,7 +653,7 @@ func renderKeyprompt(m Model) string {
 	return renderModal(renderList(m), m.keyprompt.View(), w, h)
 }
 
-func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile) {
+func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile, workspace string) {
 	log.Info().Msgf("Starting up manage TUI with %d loaded requests and %d profiles", len(loadedRequests), len(loadedProfiles))
 
 	theme := styles.GetTheme()
@@ -698,14 +702,14 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	}
 
 	requestList := list.New(requests, d, 0, 0)
-	requestList.Title = "Requests"
-	requestList.Styles.Title = style.listTitleStyle
 	requestList.Styles.StatusBar = lipgloss.NewStyle().Foreground(style.listStatusbarFg).Padding(0, 1, 1, 1)
 	requestList.Styles.StatusBarFilterCount = requestList.Styles.StatusBar.Copy().UnsetPadding().Faint(true)
 	requestList.Styles.StatusEmpty = requestList.Styles.StatusBar.Copy().UnsetPadding()
 	requestList.Styles.NoItems = requestList.Styles.StatusBar.Copy()
 	requestList.Styles.FilterPrompt = requestList.Styles.FilterPrompt.Foreground(style.listFilterPromptFg).Padding(1, 0, 0, 0)
 	requestList.Styles.FilterCursor = requestList.Styles.FilterCursor.Foreground(style.listFilterCursorFg)
+
+	requestList.SetShowStatusBar(false)
 
 	// NOTE: removing few default keybindings so that pressing our own keys (e.g. 'd') would not have any side-effects
 	requestList.KeyMap.PrevPage = key.NewBinding(
@@ -717,7 +721,14 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 		key.WithHelp("→/l/pgdn", "next page"),
 	)
 
+	requestList.SetShowTitle(false)
 	requestList.SetShowHelp(false)
+
+	topbarItems := []statusbar.StatusbarItem{
+		{Text: "Requests", BackgroundColor: theme.TitleBgColor, ForegroundColor: theme.TitleFgColor},
+		{Text: "", BackgroundColor: style.statusbarPrimaryBg, ForegroundColor: style.statusbarPrimaryFg},
+		{Text: fmt.Sprintf("Workspace: %s", paths.ShortenPath(workspace)), BackgroundColor: theme.StatusbarFourthColBgColor, ForegroundColor: style.statusbarSecondaryFg},
+	}
 
 	statusbarItems := []statusbar.StatusbarItem{
 		{Text: modeStr(mode), BackgroundColor: modeColor, ForegroundColor: style.statusbarSecondaryFg},
@@ -733,11 +744,13 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	help.Styles.FullDesc = style.helpDescStyle
 
 	sb := statusbar.New(statusbarItems, 1, 0)
+	tb := statusbar.New(topbarItems, 1, 0)
 	m := Model{
 		list:         requestList,
 		active:       List,
 		mode:         mode,
 		stopwatch:    stopwatch.NewWithInterval(time.Millisecond * 100),
+		topbar:       tb,
 		statusbar:    sb,
 		help:         help,
 		requestMolds: loadedRequests,
@@ -746,10 +759,6 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	output := termenv.DefaultOutput()
-	//originalBackground := termenv.DefaultOutput().BackgroundColor()
-	// termenv.DefaultOutput().SetBackgroundColor(termenv.RGBColor(theme.BgColor))
-
-	log.Debug().Msgf("Got background color for terminal %s", output.BackgroundColor())
 
 	originalBackground := output.BackgroundColor()
 	output.SetBackgroundColor(termenv.RGBColor(theme.BgColor))

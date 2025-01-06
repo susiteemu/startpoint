@@ -6,15 +6,16 @@ import (
 	"startpoint/core/print"
 	"startpoint/core/templating/templateng"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/stopwatch"
-	"github.com/charmbracelet/lipgloss"
 	keyprompt "startpoint/tui/keyprompt"
 	preview "startpoint/tui/preview"
 	profiles "startpoint/tui/profile"
 	prompt "startpoint/tui/prompt"
 	statusbar "startpoint/tui/statusbar"
+
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/stopwatch"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type ActiveView int
@@ -75,6 +76,7 @@ type Model struct {
 	prompt       prompt.Model
 	keyprompt    keyprompt.Model
 	stopwatch    stopwatch.Model
+	topbar       statusbar.Model
 	statusbar    statusbar.Model
 	profileui    profiles.Model
 	help         help.Model

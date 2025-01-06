@@ -31,9 +31,9 @@ func (m Model) View() string {
 	return m.profiles.View()
 }
 
-func Start(loadedProfiles []*model.Profile) {
+func Start(loadedProfiles []*model.Profile, workspace string) {
 	m := Model{
-		profiles: profiles.New(loadedProfiles),
+		profiles: profiles.New(loadedProfiles, workspace),
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

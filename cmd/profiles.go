@@ -29,7 +29,7 @@ var manageProfilesCmd = &cobra.Command{
 		}
 		log.Info().Msgf("Loaded %d profiles", len(loadedProfiles))
 		log.Info().Msg("Starting up ui...")
-		profileUI.Start(loadedProfiles)
+		profileUI.Start(loadedProfiles, workspace)
 	},
 }
 

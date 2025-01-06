@@ -35,7 +35,7 @@ var manageCmd = &cobra.Command{
 		}
 		log.Info().Msgf("Loaded %d requests and %d profiles", len(loadedRequests), len(loadedProfiles))
 		log.Info().Msg("Starting up ui...")
-		requestUI.Start(loadedRequests, loadedProfiles)
+		requestUI.Start(loadedRequests, loadedProfiles, workspace)
 	},
 }
 

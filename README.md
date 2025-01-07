@@ -212,7 +212,7 @@ Global Flags:
 
 Requests TUI app has functionalities to add, edit, copy, remove, rename, preview and run requests and select active profile.
 
-![Help](https://vhs.charm.sh/vhs-63g0JEnEYDko7BYmpGqsrR.gif)
+![Help](https://vhs.charm.sh/vhs-5HoJFf5O64LTLSXrz6dRYF.gif)
 
 TUI has two distinct *modes*: *SELECT* and *EDIT* modes.
 

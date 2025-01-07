@@ -330,47 +330,44 @@ func renderList(m Model) string {
 
 	}
 	var views []string
-	if m.help.ShowAll {
-		listHeight := calculateListHeight(m)
-		views = append(views, m.topbar.View())
-		views = append(views, lipgloss.NewStyle().Height(listHeight).Padding(1, 0, 0, 0).Render(m.list.View()))
-		views = append(views, m.statusbar.View())
-		views = append(views, style.helpPaneStyle.Render(m.help.View(m.list)))
-	} else {
-		listHeight := calculateListHeight(m)
-		views = append(views, m.topbar.View())
-		views = append(views, lipgloss.NewStyle().Height(listHeight).Padding(1, 0, 0, 0).Render(m.list.View()))
-		views = append(views, m.statusbar.View())
-	}
+	listHeight := calculateListHeight(m)
+	views = append(views, m.topbar.View())
+	views = append(views, lipgloss.NewStyle().Height(listHeight).Padding(1, 0, 0, 0).Render(m.list.View()))
+	views = append(views, m.statusbar.View())
 
-	return lipgloss.JoinVertical(
+	joined := lipgloss.JoinVertical(
 		lipgloss.Top,
 		views...,
 	)
+
+	if m.help.ShowAll {
+		helpModal := style.helpPaneStyle.Render(m.help.View(m.list))
+		// position at the bottom
+		x := (m.width / 2) - (lipgloss.Width(helpModal) / 2)
+		y := m.height - lipgloss.Height(helpModal) - 1
+		joined = overlay.PlaceOverlay(x, y, helpModal, joined)
+	}
+	return joined
 }
 
 func calculateListHeight(m Model) int {
 	listHeight := m.height - statusbar.Height*3
-	if m.help.ShowAll {
-		helpHeight := lipgloss.Height(style.helpPaneStyle.Render(m.help.View(m.list)))
-		listHeight -= helpHeight
-	}
 	return listHeight
 }
 
 func renderPreview(m Model) string {
 	w := m.width
 	h := m.height
-	return renderModal(renderList(m), m.preview.View(), w, h)
+	return renderModalAtCenter(renderList(m), m.preview.View(), w, h)
 }
 
 func renderPrompt(m Model) string {
 	w := m.width
 	h := m.height
-	return renderModal(renderList(m), m.prompt.View(), w, h)
+	return renderModalAtCenter(renderList(m), m.prompt.View(), w, h)
 }
 
-func renderModal(bg string, modal string, w, h int) string {
+func renderModalAtCenter(bg string, modal string, w, h int) string {
 	x := (w / 2) - (lipgloss.Width(modal) / 2)
 	y := (h / 2) - (lipgloss.Height(modal) / 2)
 	return overlay.PlaceOverlay(x, y, modal, bg)

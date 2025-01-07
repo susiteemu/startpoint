@@ -123,7 +123,7 @@ var commonStyle *CommonStyle
 func GetCommonStyles(theme *Theme) *CommonStyle {
 	if commonStyle == nil {
 		commonStyle = &CommonStyle{
-			HelpPaneStyle:      lipgloss.NewStyle().Padding(1),
+			HelpPaneStyle:      lipgloss.NewStyle().Padding(1).Border(lipgloss.RoundedBorder()),
 			HelpKeyStyle:       lipgloss.NewStyle().Foreground(theme.TextFgColor),
 			HelpDescStyle:      lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true),
 			HelpSeparatorStyle: lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true),

@@ -589,31 +589,29 @@ func (m Model) View() string {
 
 func renderList(m Model) string {
 	var views []string
-	if m.help.ShowAll {
-		listHeight := calculateListHeight(m)
-		views = append(views, m.topbar.View())
-		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
-		views = append(views, m.statusbar.View())
-		views = append(views, style.helpPaneStyle.Render(m.help.View(m.list)))
-	} else {
-		listHeight := calculateListHeight(m)
-		views = append(views, m.topbar.View())
-		views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
-		views = append(views, m.statusbar.View())
-	}
+	listHeight := calculateListHeight(m)
+	views = append(views, m.topbar.View())
+	views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
+	views = append(views, m.statusbar.View())
 
-	return lipgloss.JoinVertical(
+	joined := lipgloss.JoinVertical(
 		lipgloss.Top,
 		views...,
 	)
+
+	if m.help.ShowAll {
+		helpModal := style.helpPaneStyle.Render(m.help.View(m.list))
+		// position at the bottom
+		x := (m.width / 2) - (lipgloss.Width(helpModal) / 2)
+		y := m.height - lipgloss.Height(helpModal) - 1
+		joined = overlay.PlaceOverlay(x, y, helpModal, joined)
+	}
+
+	return joined
 }
 
 func calculateListHeight(m Model) int {
 	listHeight := m.height - statusbar.Height*2
-	if m.help.ShowAll {
-		helpHeight := lipgloss.Height(style.helpPaneStyle.Render(m.help.View(m.list)))
-		listHeight -= helpHeight
-	}
 	return listHeight
 }
 
@@ -702,12 +700,13 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile,
 	}
 
 	requestList := list.New(requests, d, 0, 0)
+	requestList.Styles.Title = style.listTitleStyle
 	requestList.Styles.StatusBar = lipgloss.NewStyle().Foreground(style.listStatusbarFg).Padding(0, 1, 1, 1)
 	requestList.Styles.StatusBarFilterCount = requestList.Styles.StatusBar.Copy().UnsetPadding().Faint(true)
 	requestList.Styles.StatusEmpty = requestList.Styles.StatusBar.Copy().UnsetPadding()
 	requestList.Styles.NoItems = requestList.Styles.StatusBar.Copy()
-	requestList.Styles.FilterPrompt = requestList.Styles.FilterPrompt.Foreground(style.listFilterPromptFg).Padding(1, 0, 0, 0)
-	requestList.Styles.FilterCursor = requestList.Styles.FilterCursor.Foreground(style.listFilterCursorFg)
+	requestList.FilterInput.PromptStyle = lipgloss.NewStyle().Foreground(style.listFilterPromptFg).Padding(1, 0, 0, 0)
+	requestList.FilterInput.Cursor.Style = lipgloss.NewStyle().Foreground(style.listFilterCursorFg)
 
 	requestList.SetShowStatusBar(false)
 

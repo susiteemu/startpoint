@@ -96,10 +96,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case tea.KeyCtrlC.String():
 			return m, tea.Quit
-		case "q":
-			if !m.runningRequest {
-				return m, tea.Quit
-			}
 		case "ctrl+n":
 			if !m.runningRequest {
 				switch m.active {

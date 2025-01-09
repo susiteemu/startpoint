@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"os/exec"
 	"slices"
-	"startpoint/core/loader"
 	"startpoint/core/model"
 	"startpoint/core/print"
-	"startpoint/core/tools/paths"
 	"strings"
 	"time"
 
-	"os"
 	keyprompt "startpoint/tui/keyprompt"
 	messages "startpoint/tui/messages"
 	"startpoint/tui/overlay"
@@ -28,7 +25,6 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
 	"github.com/rs/zerolog/log"
 )
 
@@ -125,22 +121,24 @@ func updateStatusbar(m *Model, msg string) {
 	m.statusbar.SetItem(profileItem, 2)
 }
 
+func (m *Model) SetSize(w, h int) {
+	m.width = w
+	m.height = h
+	m.statusbar.SetWidth(w)
+	m.topbar.SetWidth(w)
+	m.list.SetWidth(w)
+	m.help.Width = w
+	listHeight := calculateListHeight(*m)
+	m.list.SetHeight(listHeight)
+	updateStatusbar(m, "")
+}
+
 func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		m.statusbar.SetWidth(msg.Width)
-		m.topbar.SetWidth(msg.Width)
-		m.list.SetWidth(msg.Width)
-		m.help.Width = msg.Width
-		listHeight := calculateListHeight(m)
-		m.list.SetHeight(listHeight)
-		updateStatusbar(&m, "")
 	case tea.KeyMsg:
 		// if we are filtering, it gets all the input
 		if m.active == List && m.list.SettingFilter() {
@@ -154,16 +152,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch keypress := msg.String(); keypress {
-		case tea.KeyCtrlC.String():
-			return m, tea.Quit
-		case "q":
-			if m.active == Preview {
-				m.active = List
-				return m, nil
-			}
-			if m.active == List {
-				return m, tea.Quit
-			}
 		case tea.KeyEsc.String():
 			if m.active == Preview || m.active == Prompt || m.active == Profiles || m.active == Keyprompt {
 				m.active = List
@@ -303,7 +291,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Request.Title()))
 			}
 
-			label := "Are you sure you want to delete this request?"
+			label := fmt.Sprintf("You are about to delete '%s'.\n\n", requestMold.Name)
+			label += "Are you sure you want to delete this request?"
 			if isUsedAsPrevReq(requestMold.Name, m.requestMolds) {
 				label += " It is used by other requests."
 			}
@@ -590,7 +579,6 @@ func (m Model) View() string {
 func renderList(m Model) string {
 	var views []string
 	listHeight := calculateListHeight(m)
-	views = append(views, m.topbar.View())
 	views = append(views, lipgloss.NewStyle().Height(listHeight).Render(m.list.View()))
 	views = append(views, m.statusbar.View())
 
@@ -611,7 +599,7 @@ func renderList(m Model) string {
 }
 
 func calculateListHeight(m Model) int {
-	listHeight := m.height - statusbar.Height*2
+	listHeight := m.height - statusbar.Height
 	return listHeight
 }
 
@@ -651,7 +639,7 @@ func renderKeyprompt(m Model) string {
 	return renderModal(renderList(m), m.keyprompt.View(), w, h)
 }
 
-func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile, workspace string) {
+func New(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile, workspace string) Model {
 	log.Info().Msgf("Starting up manage TUI with %d loaded requests and %d profiles", len(loadedRequests), len(loadedProfiles))
 
 	theme := styles.GetTheme()
@@ -668,17 +656,7 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile,
 		requests = append(requests, r)
 	}
 
-	envVars := os.Environ()
-	for _, p := range loadedProfiles {
-		profile := &model.Profile{
-			Name:      p.Name,
-			Variables: loader.GetProfileValues(p, loadedProfiles, envVars),
-		}
-		if profile.Name == "default" {
-			activeProfile = profile
-		}
-		allProfiles = append(allProfiles, profile)
-	}
+	RefreshProfiles(loadedProfiles)
 
 	mode := Select
 	if len(requests) == 0 {
@@ -708,8 +686,6 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile,
 	requestList.FilterInput.PromptStyle = lipgloss.NewStyle().Foreground(style.listFilterPromptFg).Padding(1, 0, 0, 0)
 	requestList.FilterInput.Cursor.Style = lipgloss.NewStyle().Foreground(style.listFilterCursorFg)
 
-	requestList.SetShowStatusBar(false)
-
 	// NOTE: removing few default keybindings so that pressing our own keys (e.g. 'd') would not have any side-effects
 	requestList.KeyMap.PrevPage = key.NewBinding(
 		key.WithKeys("left", "h", "pgup", "b"),
@@ -720,14 +696,9 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile,
 		key.WithHelp("→/l/pgdn", "next page"),
 	)
 
+	requestList.SetShowStatusBar(false)
 	requestList.SetShowTitle(false)
 	requestList.SetShowHelp(false)
-
-	topbarItems := []statusbar.StatusbarItem{
-		{Text: "Requests", BackgroundColor: theme.TitleBgColor, ForegroundColor: theme.TitleFgColor},
-		{Text: "", BackgroundColor: style.statusbarPrimaryBg, ForegroundColor: style.statusbarPrimaryFg},
-		{Text: fmt.Sprintf("Workspace: %s", paths.ShortenPath(workspace)), BackgroundColor: theme.StatusbarFourthColBgColor, ForegroundColor: style.statusbarSecondaryFg},
-	}
 
 	statusbarItems := []statusbar.StatusbarItem{
 		{Text: modeStr(mode), BackgroundColor: modeColor, ForegroundColor: style.statusbarSecondaryFg},
@@ -743,34 +714,14 @@ func Start(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile,
 	help.Styles.FullDesc = style.helpDescStyle
 
 	sb := statusbar.New(statusbarItems, 1, 0)
-	tb := statusbar.New(topbarItems, 1, 0)
-	m := Model{
+	return Model{
 		list:         requestList,
 		active:       List,
 		mode:         mode,
 		stopwatch:    stopwatch.NewWithInterval(time.Millisecond * 100),
-		topbar:       tb,
 		statusbar:    sb,
 		help:         help,
 		requestMolds: loadedRequests,
 	}
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
-
-	output := termenv.DefaultOutput()
-
-	originalBackground := output.BackgroundColor()
-	output.SetBackgroundColor(termenv.RGBColor(theme.BgColor))
-
-	r, err := p.Run()
-	output.SetBackgroundColor(originalBackground)
-	output.Reset()
-	if err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-	}
-
-	if m, ok := r.(Model); ok {
-		handlePostAction(m)
-	}
 }

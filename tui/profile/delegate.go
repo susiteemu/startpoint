@@ -49,6 +49,10 @@ var editKeys = []key.Binding{
 		key.WithKeys("p"),
 		key.WithHelp("p", "preview"),
 	),
+	key.NewBinding(
+		key.WithKeys("ctrl+n"),
+		key.WithHelp("ctrl+n", "switch to Requests"),
+	),
 }
 
 func newBaseDelegate() list.DefaultDelegate {

@@ -1,5 +1,7 @@
 package profileui
 
+import tea "github.com/charmbracelet/bubbletea"
+
 type ProfileSelectedMsg struct {
 	Profile Profile
 }
@@ -37,4 +39,12 @@ type EditProfileFinishedMsg struct {
 
 type PreviewProfileMsg struct {
 	Profile Profile
+}
+
+type ProfilesChangedMsg struct{}
+
+func CreateChangeCmd() tea.Cmd {
+	return tea.Cmd(func() tea.Msg {
+		return ProfilesChangedMsg{}
+	})
 }

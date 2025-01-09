@@ -48,7 +48,7 @@
 
 To install `startpoint` see [Installation](#installation).
 
-After installing you can run it with `startpoint requests`. This opens a ui to add/edit/manage requests. Add your own* and run. Done.
+After installing you can run it with `startpoint`. This opens a TUI app to add/edit/manage requests. Add your own* and run. Done.
 
 *)
 You can test e.g. with this:

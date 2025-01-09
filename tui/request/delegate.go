@@ -25,6 +25,10 @@ var selectModeKeys = []key.Binding{
 		key.WithKeys("a"),
 		key.WithHelp("a", "activate profile"),
 	),
+	key.NewBinding(
+		key.WithKeys("ctrl+n"),
+		key.WithHelp("ctrl+n", "switch to Profiles"),
+	),
 }
 
 var editModeKeys = []key.Binding{
@@ -55,6 +59,10 @@ var editModeKeys = []key.Binding{
 	key.NewBinding(
 		key.WithKeys(tea.KeyEsc.String()),
 		key.WithHelp(tea.KeyEsc.String(), "view mode"),
+	),
+	key.NewBinding(
+		key.WithKeys("ctrl+n"),
+		key.WithHelp("ctrl+n", "switch to Profiles"),
 	),
 }
 

@@ -76,13 +76,13 @@ func interimResult(took time.Duration, statusCode int) {
 	log.Debug().Msgf("Request with statuscode %d took %s", statusCode, took.String())
 }
 
-func handlePostAction(m Model) {
+func (m Model) HandlePostAction() {
 	switch m.postAction.Type {
 	case PrintFailedRequest:
-		fmt.Fprintf(os.Stderr, m.postAction.Payload.(string)+"\n")
+		fmt.Fprint(os.Stderr, m.postAction.Payload.(string)+"\n")
 		os.Exit(1)
 	case PrintRequest:
-		fmt.Printf(m.postAction.Payload.(string) + "\n")
+		fmt.Print(m.postAction.Payload.(string) + "\n")
 	}
 }
 
@@ -266,4 +266,20 @@ func readRequest(root, filename string) (Request, *model.RequestMold, bool) {
 		Url:    mold.Url(),
 	}
 	return request, mold, true
+}
+
+func RefreshProfiles(loadedProfiles []*model.Profile) {
+	envVars := os.Environ()
+	allProfiles = []*model.Profile{}
+	for _, p := range loadedProfiles {
+		profile := &model.Profile{
+			Name:      p.Name,
+			Variables: loader.GetProfileValues(p, loadedProfiles, envVars),
+		}
+		if profile.Name == "default" {
+			activeProfile = profile
+		}
+		allProfiles = append(allProfiles, profile)
+	}
+
 }

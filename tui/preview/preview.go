@@ -13,6 +13,7 @@ import (
 
 type Model struct {
 	title    string
+	content  string
 	Viewport viewport.Model
 }
 
@@ -31,6 +32,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Viewport.Width = int(float64(msg.Width) * 0.8)
 		m.Viewport.Height = int(float64(msg.Height) * 0.8)
+		m.Viewport.SetContent(lipgloss.NewStyle().Width(m.Viewport.Width).Render(renderLines(m.content)))
 	}
 
 	// Handle keyboard and mouse events in the viewport
@@ -49,8 +51,7 @@ func (m *Model) SetSize(width int, height int) {
 	m.Viewport.Height = height
 }
 
-func New(title, content string) Model {
-
+func renderLines(content string) string {
 	theme := styles.GetTheme()
 
 	content = strings.ReplaceAll(content, "\r\n", "\n")
@@ -66,12 +67,18 @@ func New(title, content string) Model {
 		linesWithLineNrs = append(linesWithLineNrs, line)
 	}
 
+	return strings.Join(linesWithLineNrs, "\n")
+}
+
+func New(title, content string) Model {
+
 	v := viewport.New(0, 0)
-	v.SetContent(strings.Join(linesWithLineNrs, "\n"))
+	v.SetContent(renderLines(content))
 	v.Style = v.Style.Padding(0, 0)
 
 	m := Model{
 		title:    title,
+		content:  content,
 		Viewport: v,
 	}
 	return m

@@ -5,7 +5,6 @@ import (
 	"os/exec"
 	"startpoint/core/model"
 	"startpoint/core/print"
-	"startpoint/core/tools/paths"
 	messages "startpoint/tui/messages"
 	"startpoint/tui/overlay"
 	preview "startpoint/tui/preview"
@@ -87,7 +86,6 @@ type Model struct {
 	list          list.Model
 	prompt        prompt.Model
 	help          help.Model
-	topbar        statusbar.Model
 	statusbar     statusbar.Model
 	preview       preview.Model
 	active        ActiveView
@@ -98,6 +96,24 @@ type Model struct {
 	heightPercent float64
 }
 
+func (m *Model) SetSize(w, h int) {
+	m.width = w
+	m.height = h
+	width := int(float64(m.width) * m.widthPercent)
+	m.list.SetWidth(width)
+	if m.mode == Normal {
+		m.statusbar.SetWidth(width)
+		m.help.Width = width
+		listHeight := calculateListHeight(*m)
+		m.list.SetHeight(listHeight)
+		updateStatusbar(m, "")
+	} else {
+		capHeight := len(m.list.Items())*3 + 2
+		height := min(capHeight, int(float64(m.height)*m.heightPercent))
+		m.list.SetHeight(height)
+	}
+}
+
 func (m Model) Init() tea.Cmd {
 	return nil
 }
@@ -105,42 +121,16 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		width := int(float64(m.width) * m.widthPercent)
-		m.list.SetWidth(width)
-		if m.mode == Normal {
-			m.statusbar.SetWidth(width)
-			m.topbar.SetWidth(width)
-			m.help.Width = width
-			listHeight := calculateListHeight(m)
-			m.list.SetHeight(listHeight)
-			updateStatusbar(&m, "")
-		} else {
-			capHeight := len(m.list.Items())*3 + 2
-			height := min(capHeight, int(float64(m.height)*m.heightPercent))
-			m.list.SetHeight(height)
+		if m.mode == Embedded {
+			m.SetSize(msg.Width, msg.Height)
 		}
-
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case tea.KeyEsc.String():
 			if m.active == Preview || m.active == Prompt {
 				m.active = List
-				return m, nil
 			}
-		case "ctrl+c":
-			if m.mode == Normal {
-				return m, tea.Quit
-			}
-		case "q":
-			if m.active == Preview {
-				m.active = List
-				return m, nil
-			}
-			if m.active == List && m.mode == Normal {
-				return m, tea.Quit
-			}
+			return m, nil
 		case "?":
 			if m.active == List && m.mode == Normal {
 				m.help.ShowAll = !m.help.ShowAll
@@ -149,8 +139,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, nil
 			}
 		}
-	case ProfileSelectedMsg:
-		return m, tea.Quit
 	case CreateProfileMsg:
 		if m.mode == Normal && m.active == List {
 			log.Debug().Msg("Creating profile")
@@ -168,7 +156,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if ok {
 				setCmd := m.list.InsertItem(m.list.Index()+1, newProfile)
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Created profile %s", newProfile.Title()))
-				return m, tea.Batch(setCmd, statusCmd)
+				changeCmd := CreateChangeCmd()
+				return m, tea.Batch(setCmd, statusCmd, changeCmd)
 			}
 		}
 		return m, messages.CreateStatusMsg("Failed to create profile")
@@ -196,7 +185,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if deleted {
 				index := m.list.Index()
 				m.list.RemoveItem(index)
-				return m, messages.CreateStatusMsg(fmt.Sprintf("Deleted %s", msg.Profile.Name))
+				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Deleted %s", msg.Profile.Name))
+				changeCmd := CreateChangeCmd()
+				return m, tea.Batch(statusCmd, changeCmd)
 			} else {
 				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to delete %s", msg.Profile.Name))
 			}
@@ -223,7 +214,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if ok {
 				setCmd := m.list.SetItem(m.list.Index(), editedProfile)
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Edited profile %s", oldProfile.Title()))
-				return m, tea.Batch(setCmd, statusCmd)
+				changeCmd := CreateChangeCmd()
+				return m, tea.Batch(setCmd, statusCmd, changeCmd)
 			}
 		}
 		return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to edit profile %s", oldProfile.Title()))
@@ -254,7 +246,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if ok {
 				setCmd := m.list.SetItem(m.list.Index(), renamedProfile)
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Renamed profile to %s", renamedProfile.Title()))
-				return m, tea.Batch(setCmd, statusCmd)
+				changeCmd := CreateChangeCmd()
+				return m, tea.Batch(setCmd, statusCmd, changeCmd)
 			} else {
 				return m, messages.CreateStatusMsg("Failed to rename profile")
 			}
@@ -264,7 +257,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if ok {
 				setCmd := m.list.InsertItem(m.list.Index()+1, copiedProfile)
 				statusCmd := messages.CreateStatusMsg(fmt.Sprintf("Copied profile to %s", copiedProfile.Title()))
-				return m, tea.Batch(setCmd, statusCmd)
+				changeCmd := CreateChangeCmd()
+				return m, tea.Batch(setCmd, statusCmd, changeCmd)
 			} else {
 				return m, messages.CreateStatusMsg("Failed to copy profile")
 			}
@@ -331,7 +325,6 @@ func renderList(m Model) string {
 	}
 	var views []string
 	listHeight := calculateListHeight(m)
-	views = append(views, m.topbar.View())
 	views = append(views, lipgloss.NewStyle().Height(listHeight).Padding(1, 0, 0, 0).Render(m.list.View()))
 	views = append(views, m.statusbar.View())
 
@@ -351,7 +344,7 @@ func renderList(m Model) string {
 }
 
 func calculateListHeight(m Model) int {
-	listHeight := m.height - statusbar.Height*3
+	listHeight := m.height - statusbar.Height*2
 	return listHeight
 }
 
@@ -413,7 +406,7 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 	profileList.SetShowHelp(false)
 	profileList.SetShowTitle(false)
 
-	var sb, tb statusbar.Model
+	var sb statusbar.Model
 	help := help.New()
 	help.Styles.ShortKey = style.helpKeyStyle
 	help.Styles.ShortDesc = style.helpDescStyle
@@ -422,17 +415,11 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 	help.ShortSeparator = "  "
 
 	if !embedded {
-		topbarItems := []statusbar.StatusbarItem{
-			{Text: "Profiles", BackgroundColor: theme.TitleBgColor, ForegroundColor: theme.TitleFgColor},
-			{Text: "", BackgroundColor: theme.StatusbarPrimaryBgColor, ForegroundColor: theme.StatusbarPrimaryFgColor},
-			{Text: fmt.Sprintf("Workspace: %s", paths.ShortenPath(workspace)), BackgroundColor: theme.StatusbarFourthColBgColor, ForegroundColor: theme.StatusbarSecondaryFgColor},
-		}
 		statusbarItems := []statusbar.StatusbarItem{
 			{Text: "", BackgroundColor: style.statusbarFirstColBg, ForegroundColor: style.statusbarFirstColFg},
 			{Text: "? Help", BackgroundColor: style.statusbarSecondColBg, ForegroundColor: style.statusbarSecondColFg},
 		}
 
-		tb = statusbar.New(topbarItems, 1, 0)
 		sb = statusbar.New(statusbarItems, 0, 0)
 	}
 
@@ -445,5 +432,5 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 		mode = Embedded
 	}
 
-	return Model{list: profileList, active: List, mode: mode, width: winWidth, height: winHeight, help: help, statusbar: sb, topbar: tb, widthPercent: wPercent, heightPercent: hPercent}
+	return Model{list: profileList, active: List, mode: mode, width: winWidth, height: winHeight, help: help, statusbar: sb, widthPercent: wPercent, heightPercent: hPercent}
 }

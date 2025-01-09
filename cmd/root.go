@@ -10,6 +10,8 @@ import (
 	"startpoint/core/writer"
 	"strings"
 
+	mainview "startpoint/tui"
+
 	"embed"
 
 	"github.com/rs/zerolog"
@@ -36,6 +38,8 @@ var rootCmd = &cobra.Command{
 	Long: `Startpoint is a tui app with which you can manage and run HTTP requests from your terminal. It offers a way for flexible chaining and scripting requests as well as defining them in a simple format.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		workspace := viper.GetString("workspace")
+		mainview.Start(workspace, mainview.Requests)
 	},
 }
 

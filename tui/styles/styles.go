@@ -9,7 +9,9 @@ import (
 
 type Theme struct {
 	BgColor                            lipgloss.Color
+	BgColorStr                         string
 	TextFgColor                        lipgloss.Color
+	TextFgColorStr                     string
 	SubtextFgColor                     lipgloss.Color
 	TitleFgColor                       lipgloss.Color
 	TitleBgColor                       lipgloss.Color
@@ -55,7 +57,9 @@ func GetTheme() *Theme {
 		getColor := config.GetStringOrDefault
 		theme = &Theme{
 			BgColor:                            lipgloss.Color(getColor("theme.bgColor")),
+			BgColorStr:                         getColor("theme.bgColor"),
 			TextFgColor:                        lipgloss.Color(getColor("theme.primaryTextFgColor")),
+			TextFgColorStr:                     getColor("theme.primaryTextFgColor"),
 			SubtextFgColor:                     lipgloss.Color(getColor("theme.secondaryTextFgColor")),
 			TitleFgColor:                       lipgloss.Color(getColor("theme.titleFgColor")),
 			TitleBgColor:                       lipgloss.Color(getColor("theme.titleBgColor")),
@@ -123,7 +127,7 @@ var commonStyle *CommonStyle
 func GetCommonStyles(theme *Theme) *CommonStyle {
 	if commonStyle == nil {
 		commonStyle = &CommonStyle{
-			HelpPaneStyle:      lipgloss.NewStyle().Padding(1).Border(lipgloss.RoundedBorder()),
+			HelpPaneStyle:      lipgloss.NewStyle().Foreground(theme.TextFgColor).BorderForeground(theme.BorderFgColor).Padding(1).Border(lipgloss.RoundedBorder()),
 			HelpKeyStyle:       lipgloss.NewStyle().Foreground(theme.TextFgColor),
 			HelpDescStyle:      lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true),
 			HelpSeparatorStyle: lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true),

@@ -38,6 +38,3 @@ theme:
     status500FgColor: '#d20f39'
     protoFgColor: '#1e66f5'
     headerFgColor: '#1e66f5'
-printer:
-  response:
-    formatter: terminal16m

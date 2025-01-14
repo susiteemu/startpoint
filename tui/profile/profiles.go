@@ -50,9 +50,11 @@ const (
 )
 
 type Profile struct {
-	Name         string
-	Variables    int
-	ProfileModel *model.Profile
+	Name             string
+	Variables        int
+	PrivateVariables int
+	OsEnvVariables   int
+	ProfileModel     *model.Profile
 }
 
 /*
@@ -67,7 +69,7 @@ func (k embeddedKeyMap) ShortHelp() []key.Binding {
 
 func (k embeddedKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Cancel, k.Cancel},
+		{k.Select, k.Cancel},
 	}
 }
 
@@ -108,7 +110,7 @@ func (m *Model) SetSize(w, h int) {
 		m.list.SetHeight(listHeight)
 		updateStatusbar(m, "")
 	} else {
-		capHeight := len(m.list.Items())*3 + 2
+		capHeight := len(m.list.Items())*2 + 2
 		height := min(capHeight, int(float64(m.height)*m.heightPercent))
 		m.list.SetHeight(height)
 	}
@@ -232,9 +234,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 			// NOTE: cannot give correct height before preview is created
 			// and we can calculate vertical margin height
-			m.preview = preview.New(selected.Filename, formatted)
-			height := m.height
-			m.preview.SetSize(int(float64(m.width)*0.8), int(float64(height)*0.8))
+			w := int(float64(m.width) * 0.8)
+			h := int(float64(m.height) * 0.8)
+			m.preview = preview.New(selected.Filename, formatted, w, h)
 
 			return m, nil
 		}
@@ -314,14 +316,14 @@ func (m Model) View() string {
 
 func renderList(m Model) string {
 	if m.mode == Embedded {
-		helpView := m.help.View(embeddedKeys)
+		m.help.Width = m.list.Width()
+		helpView := lipgloss.NewStyle().PaddingLeft(4).Render(m.help.View(embeddedKeys))
 
 		views := []string{}
 		views = append(views, m.list.View())
 		views = append(views, helpView)
 
 		return lipgloss.JoinVertical(lipgloss.Center, views...)
-
 	}
 	var views []string
 	listHeight := calculateListHeight(m)
@@ -344,7 +346,7 @@ func renderList(m Model) string {
 }
 
 func calculateListHeight(m Model) int {
-	listHeight := m.height - statusbar.Height*2
+	listHeight := m.height - statusbar.Height - 1 // -1 for top padding
 	return listHeight
 }
 
@@ -367,14 +369,14 @@ func renderModalAtCenter(bg string, modal string, w, h int) string {
 }
 
 func NewEmbedded(loadedProfiles []*model.Profile, winWidth, winHeight int, wPercent, hPercent float64) Model {
-	return newModel(loadedProfiles, true, winWidth, winHeight, wPercent, hPercent, "")
+	return newModel(loadedProfiles, true, winWidth, winHeight, wPercent, hPercent)
 }
 
-func New(loadedProfiles []*model.Profile, workspace string) Model {
-	return newModel(loadedProfiles, false, 0, 0, 1.0, 1.0, workspace)
+func New(loadedProfiles []*model.Profile) Model {
+	return newModel(loadedProfiles, false, 0, 0, 1.0, 1.0)
 }
 
-func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeight int, wPercent, hPercent float64, workspace string) Model {
+func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeight int, wPercent, hPercent float64) Model {
 	var profiles []list.Item
 
 	theme := styles.GetTheme()
@@ -398,7 +400,7 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 	width := int(float64(winWidth) * wPercent)
 	height := int(float64(winHeight) * hPercent)
 	if embedded {
-		capHeight := len(loadedProfiles)*3 + 2
+		capHeight := len(loadedProfiles)*2 + 2
 		height = min(capHeight, int(float64(winHeight)*hPercent))
 	}
 
@@ -428,6 +430,7 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 
 	mode := Normal
 	if embedded {
+		help.ShowAll = true
 		profileList.DisableQuitKeybindings()
 		mode = Embedded
 	}

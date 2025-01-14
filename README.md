@@ -907,5 +907,4 @@ options:
 There are things still in progress and planned for some later date.
 
 - [ ] Add Lua based requests v.1.2
-- [ ] Preview profile in requests
 - [ ] Preview, when a profile is selected, could auto-fill variables (but also show there's a variable; nvim "virtualtext" like?)

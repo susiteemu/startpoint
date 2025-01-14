@@ -49,13 +49,13 @@ func getTopbarColors(activeView ActiveView) topbarColors {
 	case Requests:
 		requestsBg = theme.TitleBgColor
 		requestsFg = theme.TitleFgColor
-		profilesBg = theme.BgColor
-		profilesFg = theme.TextFgColor
+		profilesBg = theme.StatusbarPrimaryBgColor
+		profilesFg = theme.StatusbarPrimaryFgColor
 	case Profiles:
 		profilesBg = theme.TitleBgColor
 		profilesFg = theme.TitleFgColor
-		requestsBg = theme.BgColor
-		requestsFg = theme.TextFgColor
+		requestsBg = theme.StatusbarPrimaryBgColor
+		requestsFg = theme.StatusbarPrimaryFgColor
 	}
 	return topbarColors{
 		requestsBg: requestsBg,
@@ -203,21 +203,23 @@ func Start(workspace string, activeView ActiveView) {
 
 	m := Model{
 		active:    activeView,
-		requests:  requestUI.New(loadedRequests, loadedProfiles, workspace),
-		profiles:  profileUI.New(loadedProfiles, workspace),
+		requests:  requestUI.New(loadedRequests, loadedProfiles),
+		profiles:  profileUI.New(loadedProfiles),
 		topbar:    tb,
 		workspace: workspace,
 	}
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
-
-	output := termenv.DefaultOutput()
-
+	output := termenv.NewOutput(os.Stdout)
 	originalBackground := output.BackgroundColor()
-	output.SetBackgroundColor(termenv.RGBColor(theme.BgColor))
+	originalForeground := output.ForegroundColor()
 
+	output.SetBackgroundColor(output.Color(theme.BgColorStr))
+	output.SetForegroundColor(output.Color(theme.TextFgColorStr))
+
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	r, err := p.Run()
 	output.SetBackgroundColor(originalBackground)
+	output.SetForegroundColor(originalForeground)
 	output.Reset()
 	if err != nil {
 		fmt.Println("Error running program:", err)

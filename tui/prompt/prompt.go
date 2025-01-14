@@ -131,9 +131,9 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	theme := styles.GetTheme()
 	commonStyles := styles.GetCommonStyles(theme)
 
-	promptStyle = promptStyle.BorderForeground(theme.BorderFgColor)
-	inputStyle = inputStyle.BorderForeground(theme.BorderFgColor)
-	errInputStyle = errInputStyle.BorderForeground(theme.ErrorFgColor)
+	promptStyle = promptStyle.Foreground(theme.TextFgColor).BorderForeground(theme.BorderFgColor)
+	inputStyle = inputStyle.Foreground(theme.TextFgColor).BorderForeground(theme.BorderFgColor)
+	errInputStyle = errInputStyle.Foreground(theme.TextFgColor).BorderForeground(theme.ErrorFgColor)
 
 	nameInput := textinput.New()
 	nameInput.Focus()

@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"startpoint/core/model"
 	"startpoint/core/templating/templateng"
 	"strings"
@@ -24,9 +25,13 @@ func ReadProfile(root, filename string) (*model.Profile, error) {
 	if err != nil {
 		return nil, err
 	}
-	profileName := "default"
-	splits := strings.Split(filename, ".")
-	if len(splits) > 2 {
+	profileName := ""
+	if filename == ".env" {
+		profileName = "default"
+	} else if filename == ".env.local" {
+		profileName = "default.local"
+	} else {
+		splits := strings.Split(filename, ".")
 		profileName = strings.Join(splits[2:], ".")
 	}
 
@@ -38,6 +43,11 @@ func ReadProfile(root, filename string) (*model.Profile, error) {
 		Filename:  filename,
 	}
 	return &profile, nil
+}
+
+type groupedProfile struct {
+	public  *model.Profile
+	private *model.Profile
 }
 
 func ReadProfiles(root string) ([]*model.Profile, error) {
@@ -68,6 +78,76 @@ func ReadProfiles(root string) ([]*model.Profile, error) {
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	groupedProfiles := []groupedProfile{}
+	for _, v := range profileSlice {
+		if v.IsPrivateProfile() {
+			hasPublicProfile := false
+			for _, vv := range profileSlice {
+				if !vv.IsPrivateProfile() && strings.TrimSuffix(v.Name, ".local") == vv.Name {
+					hasPublicProfile = true
+					break
+				}
+			}
+			if !hasPublicProfile {
+				groupedProfiles = append(groupedProfiles, groupedProfile{
+					public:  nil,
+					private: v,
+				})
+			}
+		} else {
+			var privateProfile *model.Profile
+			for _, vv := range profileSlice {
+				if vv.IsPrivateProfile() && strings.TrimSuffix(vv.Name, ".local") == v.Name {
+					privateProfile = vv
+					break
+				}
+			}
+			groupedProfiles = append(groupedProfiles, groupedProfile{
+				public:  v,
+				private: privateProfile,
+			})
+
+		}
+	}
+	slices.SortFunc(groupedProfiles, func(a, b groupedProfile) int {
+		nameA := ""
+		nameB := ""
+		if a.public != nil {
+			nameA = a.public.Name
+		} else if a.private != nil {
+			nameA = a.private.Name
+		}
+		if b.public != nil {
+			nameB = b.public.Name
+		} else if b.private != nil {
+			nameB = b.private.Name
+		}
+		// make comparison case insensitive
+		nameA = strings.ToLower(nameA)
+		nameB = strings.ToLower(nameB)
+		if nameA < nameB {
+			return -1
+		}
+		if nameA > nameB {
+			return 1
+		}
+		return 0
+	})
+
+	profileSlice = []*model.Profile{}
+	for _, v := range groupedProfiles {
+		if v.public != nil {
+			v.public.HasPublicProfile = true
+			v.public.HasPrivateProfile = v.private != nil
+			profileSlice = append(profileSlice, v.public)
+		}
+		if v.private != nil {
+			v.private.HasPrivateProfile = true
+			v.private.HasPublicProfile = v.public != nil
+			profileSlice = append(profileSlice, v.private)
+		}
 	}
 
 	return profileSlice, nil

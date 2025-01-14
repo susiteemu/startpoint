@@ -39,6 +39,8 @@ type Styles struct {
 	urlTemplatedSectionBg         lipgloss.Color
 	urlUnfilledTemplatedSectionFg lipgloss.Color
 	urlUnfilledTemplatedSectionBg lipgloss.Color
+
+	profilesStyle lipgloss.Style
 }
 
 var style *Styles
@@ -71,9 +73,9 @@ func InitStyle(theme *styles.Theme, commonStyles *styles.CommonStyle) {
 			"PATCH":  theme.HttpMethodPatchBgColor,
 			// TODO etc
 		},
-		helpPaneStyle: commonStyles.HelpPaneStyle.Copy(),
-		helpKeyStyle:  commonStyles.HelpKeyStyle.Copy(),
-		helpDescStyle: commonStyles.HelpDescStyle.Copy(),
+		helpPaneStyle: commonStyles.HelpPaneStyle,
+		helpKeyStyle:  commonStyles.HelpKeyStyle,
+		helpDescStyle: commonStyles.HelpDescStyle,
 
 		whitespaceFg: theme.WhitespaceFgColor,
 
@@ -83,5 +85,7 @@ func InitStyle(theme *styles.Theme, commonStyles *styles.CommonStyle) {
 		urlTemplatedSectionBg:         theme.UrlTemplatedSectionBgColor,
 		urlUnfilledTemplatedSectionFg: theme.UrlUnfilledTemplatedSectionFgColor,
 		urlUnfilledTemplatedSectionBg: theme.UrlUnfilledTemplatedSectionBgColor,
+
+		profilesStyle: lipgloss.NewStyle().BorderForeground(theme.BorderFgColor).Padding(1, 1, 1, 1).Border(lipgloss.RoundedBorder(), true, true),
 	}
 }

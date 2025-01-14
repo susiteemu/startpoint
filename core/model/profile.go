@@ -10,11 +10,13 @@ import (
 )
 
 type Profile struct {
-	Name      string
-	Variables map[string]string
-	Raw       string
-	Root      string
-	Filename  string
+	Name              string
+	Variables         map[string]string
+	Raw               string
+	Root              string
+	Filename          string
+	HasPublicProfile  bool
+	HasPrivateProfile bool
 }
 
 func (p *Profile) DeleteFromFS() bool {
@@ -41,4 +43,24 @@ func (p *Profile) AsDotEnv() string {
 	}
 
 	return strings.Join(contents, "\n")
+}
+
+func (p *Profile) IsPrivateProfile() bool {
+	if p == nil {
+		return false
+	}
+	return strings.HasSuffix(p.Filename, ".local")
+}
+
+func (p *Profile) IsDefaultProfile() bool {
+	if p == nil {
+		return false
+	}
+	return p.Name == "default"
+}
+func (p *Profile) IsDefaultPrivateProfile() bool {
+	if p == nil {
+		return false
+	}
+	return p.IsPrivateProfile() && p.Name == "default.local"
 }

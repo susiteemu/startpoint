@@ -2,6 +2,7 @@ package previewui
 
 import (
 	"fmt"
+	"startpoint/core/ansi"
 	"startpoint/tui/styles"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/wordwrap"
 )
 
 type Model struct {
@@ -32,7 +34,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Viewport.Width = int(float64(msg.Width) * 0.8)
 		m.Viewport.Height = int(float64(msg.Height) * 0.8)
-		m.Viewport.SetContent(lipgloss.NewStyle().Width(m.Viewport.Width).Render(renderLines(m.content)))
+		m.Viewport.SetContent(renderLines(m.content, m.Viewport.Width-4))
 	}
 
 	// Handle keyboard and mouse events in the viewport
@@ -43,7 +45,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return lipgloss.NewStyle().Border(lipgloss.RoundedBorder(), true, true).Render(contentStyle.Render(m.Viewport.View()))
+	return lipgloss.NewStyle().BorderForeground(styles.GetTheme().BorderFgColor).Border(lipgloss.RoundedBorder(), true, true).Render(contentStyle.Render(m.Viewport.View()))
 }
 
 func (m *Model) SetSize(width int, height int) {
@@ -51,7 +53,7 @@ func (m *Model) SetSize(width int, height int) {
 	m.Viewport.Height = height
 }
 
-func renderLines(content string) string {
+func renderLines(content string, width int) string {
 	theme := styles.GetTheme()
 
 	content = strings.ReplaceAll(content, "\r\n", "\n")
@@ -64,16 +66,22 @@ func renderLines(content string) string {
 		lineNr := i + 1
 		lineNrSection := lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true).Render(fmt.Sprintf(lineNrFmt, lineNr))
 		line = fmt.Sprintf("%s  %s", lineNrSection, line)
+		if lipgloss.Width(line) >= width {
+			line = wordwrap.String(line, width)
+			colorState, _ := ansi.ParseANSI(line, width)
+			line = strings.ReplaceAll(line, "\n", "\u001b[0m\n"+colorState.State)
+		}
+
 		linesWithLineNrs = append(linesWithLineNrs, line)
 	}
 
 	return strings.Join(linesWithLineNrs, "\n")
 }
 
-func New(title, content string) Model {
+func New(title, content string, w, h int) Model {
 
-	v := viewport.New(0, 0)
-	v.SetContent(renderLines(content))
+	v := viewport.New(w, h)
+	v.SetContent(renderLines(content, w-4))
 	v.Style = v.Style.Padding(0, 0)
 
 	m := Model{

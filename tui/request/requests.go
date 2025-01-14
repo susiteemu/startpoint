@@ -376,9 +376,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 			// NOTE: cannot give correct height before preview is created
 			// and we can calculate vertical margin height
-			m.preview = preview.New(selected.Filename, formatted)
-			height := m.height
-			m.preview.SetSize(int(float64(m.width)*0.8), int(float64(height)*0.8))
+			w := int(float64(m.width) * 0.8)
+			h := int(float64(m.height) * 0.8)
+			m.preview = preview.New(selected.Filename, formatted, w, h)
 
 			return m, nil
 		}
@@ -475,7 +475,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case ActivateProfile:
 		if m.mode == Select && m.active == List {
 			m.active = Profiles
-			m.profileui = profiles.NewEmbedded(allProfiles, m.width, m.height, 0.5, 0.6)
+			m.profileui = profiles.NewEmbedded(allProfiles, m.width, m.height, 0.5, 0.8)
 		}
 
 	case profiles.ProfileSelectedMsg:
@@ -624,7 +624,8 @@ func renderPreview(m Model) string {
 func renderProfiles(m Model) string {
 	w := m.width
 	h := m.height
-	return renderModal(renderList(m), lipgloss.NewStyle().Padding(1, 1, 1, 1).Border(lipgloss.RoundedBorder(), true, true).Render(m.profileui.View()), w, h)
+	log.Debug().Msgf("ProfileUi width: %d", lipgloss.Width(m.profileui.View()))
+	return renderModal(renderList(m), style.profilesStyle.Render(m.profileui.View()), w, h)
 }
 
 func renderPrompt(m Model) string {
@@ -639,7 +640,7 @@ func renderKeyprompt(m Model) string {
 	return renderModal(renderList(m), m.keyprompt.View(), w, h)
 }
 
-func New(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile, workspace string) Model {
+func New(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile) Model {
 	log.Info().Msgf("Starting up manage TUI with %d loaded requests and %d profiles", len(loadedRequests), len(loadedProfiles))
 
 	theme := styles.GetTheme()

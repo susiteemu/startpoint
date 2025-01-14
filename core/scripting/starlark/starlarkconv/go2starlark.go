@@ -168,7 +168,6 @@ func ConvertDict(v interface{}) (starlark.Value, bool, error) {
 	log.Debug().Msgf("Convert dict %v", v)
 	d := starlark.Dict{}
 	for _, key := range val.MapKeys() {
-		log.Debug().Msgf(">> Key %v", key)
 		mapValue := val.MapIndex(key)
 		convertedKey, err := Convert(key.Interface())
 		if err != nil {

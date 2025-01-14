@@ -272,6 +272,9 @@ func RefreshProfiles(loadedProfiles []*model.Profile) {
 	envVars := os.Environ()
 	allProfiles = []*model.Profile{}
 	for _, p := range loadedProfiles {
+		if p.IsPrivateProfile() && p.HasPublicProfile {
+			continue
+		}
 		profile := &model.Profile{
 			Name:      p.Name,
 			Variables: loader.GetProfileValues(p, loadedProfiles, envVars),

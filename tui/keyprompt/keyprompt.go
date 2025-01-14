@@ -90,7 +90,7 @@ func (m Model) View() string {
 	inputViews = append(inputViews, "")
 
 	separator := strings.Repeat(" ", 1+maxKeyLen-len(escKey.Key))
-	inputViews = append(inputViews, fmt.Sprintf("%s%s%s", escKey.Key, separator, entryTextStyle.Render(escKey.Text)))
+	inputViews = append(inputViews, fmt.Sprintf("%s%s%s", entryKeyStyle.Render(escKey.Key), separator, entryTextStyle.Render(escKey.Text)))
 
 	return promptStyle.Width(m.width).Render(lipgloss.JoinVertical(lipgloss.Left, inputViews...))
 }
@@ -101,9 +101,9 @@ func New(label string, entries []KeypromptEntry, promptType string, payload inte
 	commonStyles := styles.GetCommonStyles(theme)
 
 	promptStyle = lipgloss.NewStyle().BorderForeground(theme.BorderFgColor).BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2)
-	descriptionStyle = lipgloss.NewStyle().PaddingBottom(1)
-	entryKeyStyle = commonStyles.HelpKeyStyle.Copy()
-	entryTextStyle = commonStyles.HelpKeyStyle.Copy().Faint(true)
+	descriptionStyle = lipgloss.NewStyle().Foreground(theme.TextFgColor).PaddingBottom(1)
+	entryKeyStyle = commonStyles.HelpKeyStyle
+	entryTextStyle = commonStyles.HelpKeyStyle.Faint(true)
 
 	var keys []string
 	for _, v := range entries {

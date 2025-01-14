@@ -10,6 +10,7 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,10 +37,28 @@ func resolveStyle() *chroma.Style {
 }
 
 func resolveFormatter() chroma.Formatter {
-	formatter := formatters.Get(config.GetStringOrDefault("printer.formatter", "printer.response.formatter"))
-	if formatter == nil {
+	colorProfile := termenv.EnvColorProfile()
+
+	var colorProfileName string
+	var formatter chroma.Formatter
+	switch colorProfile {
+	case termenv.Ascii:
+		colorProfileName = "Ascii (no colors)"
+		formatter = formatters.NoOp
+	case termenv.ANSI:
+		colorProfileName = "ANSI"
+		formatter = formatters.TTY16
+	case termenv.ANSI256:
+		colorProfileName = "ANSI256"
+		formatter = formatters.TTY256
+	case termenv.TrueColor:
+		colorProfileName = "TrueColor"
+		formatter = formatters.TTY16m
+	default:
+		colorProfileName = "Unknown"
 		formatter = formatters.Fallback
 	}
+	log.Debug().Msgf("Detected color profile: %s", colorProfileName)
 	return formatter
 }
 

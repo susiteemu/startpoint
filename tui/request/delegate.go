@@ -70,13 +70,13 @@ func newBaseDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
 
 	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Foreground(style.listItemTitleColor).BorderLeftForeground(style.listItemTitleColor)
-	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(style.listItemDescColor).BorderLeftForeground(style.listItemDescColor)
+	d.Styles.SelectedDesc = d.Styles.SelectedTitle.Foreground(style.listItemDescColor).BorderLeftForeground(style.listItemTitleColor)
 
-	d.Styles.NormalTitle = d.Styles.NormalTitle.Foreground(style.listItemTitleColor)
-	d.Styles.NormalDesc = d.Styles.NormalTitle.Foreground(style.listItemDescColor)
+	d.Styles.NormalTitle = d.Styles.NormalTitle.Foreground(style.listItemTitleColor).BorderLeftForeground(style.listItemTitleColor)
+	d.Styles.NormalDesc = d.Styles.NormalTitle.Foreground(style.listItemDescColor).BorderLeftForeground(style.listItemTitleColor)
 
-	d.Styles.DimmedTitle = d.Styles.DimmedTitle.Foreground(style.listItemTitleColor)
-	d.Styles.DimmedDesc = d.Styles.DimmedTitle.Foreground(style.listItemDescColor)
+	d.Styles.DimmedTitle = d.Styles.DimmedTitle.Foreground(style.listItemTitleColor).BorderLeftForeground(style.listItemTitleColor)
+	d.Styles.DimmedDesc = d.Styles.DimmedTitle.Foreground(style.listItemDescColor).BorderLeftForeground(style.listItemTitleColor)
 
 	return d
 }

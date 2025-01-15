@@ -1,46 +1,4 @@
-theme:
-  syntax: catppuccin-mocha
-  bgColor: '#1e1e2e'
-  primaryTextFgColor: '#cdd6f4'
-  secondaryTextFgColor: '#bac2de'
-  titleFgColor: '#1e1e2e'
-  titleBgColor: '#a6e3a1'
-  borderFgColor: '#cdd6f4'
-  whitespaceFgColor: '#313244'
-  errorFgColor: '#f38ba8'
-  statusbar:
-    primaryBgColor: '#11111b'
-    primaryFgColor: '#cdd6f4'
-    secondaryFgColor: '#1e1e2e'
-    modePrimaryBgColor: '#f9e2af'
-    modeSecondaryBgColor: '#a6e3a1'
-    thirdColBgColor: '#94e2d5'
-    fourthColBgColor: '#89b4fa'
-  httpMethods:
-    textFgColor: '#1e1e2e'
-    defaultBgColor: '#cdd6f4'
-    getBgColor: '#89b4fa'
-    postBgColor: '#a6e3a1'
-    putBgColor: '#f9e2af'
-    deleteBgColor: '#f38ba8'
-    patchBgColor: '#94e2d5'
-    optionsBgColor: ''
-  urlFgColor: '#89b4fa'
-  urlBgColor: ''
-  urlTemplatedSectionFgColor: '#f9e2af'
-  urlTemplatedSectionBgColor: ''
-  urlUnfilledTemplatedSectionFgColor: '#f38ba8'
-  urlUnfilledTemplatedSectionBgColor: ''
-  response:
-    status200FgColor: '#a6e3a1'
-    status300FgColor: '#f9e2af'
-    status400FgColor: '#f38ba8'
-    status500FgColor: '#f38ba8'
-    protoFgColor: '#89b4fa'
-    headerFgColor: '#89b4fa'
-printer:
-  response:
-    formatter: terminal16m
+themeName: 'catppuccin-mocha'
 httpClient:
   debug: false
   enableTraceInfo: false

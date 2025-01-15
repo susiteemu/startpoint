@@ -141,6 +141,7 @@ func New(context PromptContext, initialValue string, label string, validator fun
 	nameInput.Width = min(64, w-2)
 	nameInput.SetValue(initialValue)
 	nameInput.Prompt = ""
+	nameInput.Cursor.Style = lipgloss.NewStyle().Foreground(theme.CursorFgColor).Background(theme.CursorBgColor)
 
 	help := help.New()
 	help.Styles.FullKey = commonStyles.HelpKeyStyle

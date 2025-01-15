@@ -1,12 +1,12 @@
 # A CLI tool for managing and scripting http/restful requests: startpoint
 
-| With Catppuccin Mocha (FTW!) |
-|-------------------------|
-| ![Dark mode FTW!](https://vhs.charm.sh/vhs-4a8Vw6refUQKYrVytUqSVi.gif)|
+Startpoint is a lightweight, open-source CLI and TUI tool for managing and scripting HTTP/RESTful requests. It supports YAML-based request definitions, response chaining, and scripting with Starlark (Lua planned). Designed for offline use, it's ad-free, tracking-free, and highly customizable, making it a fast and efficient solution for developers.
 
-| Works with light mode too (Catppuccin Latte) |
-|-------------------------|
-| ![It can have a light mode too!](https://vhs.charm.sh/vhs-3mdLYEOUrLF39ADJ7WW9zZ.gif) |
+![Catppuccin Mocha](docs/images/startpoint-catppuccin-mocha.png)
+
+It comes with many beautiful themes and supports you adding your own too!
+
+![Themes](docs/images/theme-collection.png)
 
 <!-- toc -->
 
@@ -36,6 +36,7 @@
     + [Templating Requests](#templating-requests)
   * [Profiles](#profiles)
   * [Importing](#importing)
+  * [Themes](#themes-1)
   * [Configuration](#configuration)
   * [Examples](#examples)
 - [TODO](#todo)
@@ -212,7 +213,7 @@ Global Flags:
 
 Requests TUI app has functionalities to add, edit, copy, remove, rename, preview and run requests and select active profile.
 
-![Help](https://vhs.charm.sh/vhs-12avTKjVVhRTUyx8RIJaf3.gif)
+![Help](https://vhs.charm.sh/vhs-3GXGO5KljXfWCxzYetzZzX.gif)
 
 TUI has two distinct *modes*: *SELECT* and *EDIT* modes.
 
@@ -248,7 +249,7 @@ You can quit the app with `q` or `ctrl+c`.
 
 You can either *add* requests with `requests` TUI app or by creating `yaml` or `starlark` files directly with your favorite editor: it doesn't matter which way they are created. The app does not have any metadata mumbo-jumbo files to consider. At least in the beginning it is recommended to use the TUI app since it creates a template for you to use. To add a request with TUI app, press `a` when in *EDIT* mode. The app will ask if you want to add a `yaml` or `starlark` request. After this it will open your cup of editor (`$EDITOR`) and you can write the definition for it. After quitting the editor you can continue with the app.
 
-![Adding a request](https://vhs.charm.sh/vhs-YBSuC3B9QKbyFVu5Q7Voa.gif)
+![Adding a request](https://vhs.charm.sh/vhs-48xF0Zxju6fCbT2LRzu1er.gif)
 
 *Editing* works the same: you can either do it directly by opening the request file with an editor or by opening the TUI app and starting the editing there.
 
@@ -735,6 +736,14 @@ Global Flags:
   -w, --workspace string   Workspace directory (default is current dir)
 ```
 
+### Themes
+
+You can change the colors of this application by either defining a theme in a separate `yaml` file or by including color definition attributes directly into your configuration file. Either way, the color configuration attributes to define can be seen from the configuration table section below or by checking some of the samples in the [samples](samples) directory.
+
+If you choose to use a separate theme file, you just have to set `themeName` attribute in your configuration file and make sure your theme `yaml` file is either in your workspace or in your home directory.
+
+The application also comes with a number of embedded themes. These themes can be found in [themes](tui/styles/themes) directory. To use them, just set `themeName` attribute in your configuration file to one of the embedded themes.
+
 ### Configuration
 
 Not to confuse with profiles, which are used to define variables to requests, the configuration is metadata used to change the look and behaviour of the application.
@@ -770,13 +779,16 @@ All configuration values are:
 
 | Key | Default Value | Description | Scope |
 | ------------- | -------------- | -------------- | -------------- |
+| themeName | catppuccin-mocha | Name of the theme to use. If set, looks for theme file in yaml format (defined below with `theme.*` attributes) first in workspace, then in $HOME and lastly from embedded themes. If none found or this attribute is not set, uses `theme.*` attributes configured inside configuration file | Global |
 | theme.syntax | catppuccin-mocha | Sets syntax coloring for [Chroma](https://github.com/alecthomas/chroma). See [all available styles](https://github.com/alecthomas/chroma/tree/master/styles). | Global |
 | theme.bgColor | ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e` | Background color for the TUI apps | Global |
 | theme.primaryTextFgColor | ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Primary text foreground color | Global |
 | theme.secondaryTextFgColor | ![#bac2de](https://via.placeholder.com/15/bac2de/000000.png?text=+) `#bac2de`  | Secondary text foreground color | Global |
 | theme.titleFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | App title foreground color | Global |
 | theme.titleBgColor | ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`  | App title background color | Global |
-| theme.borderFgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Border foreground color | Global |
+| theme.cursorFgColor | ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | Cursor foreground color | Global |
+| theme.cursorBgColor | ![#f5e0dc](https://via.placeholder.com/15/f5e0dc/000000.png?text=+) `#f5e0dc`  | Cursor background color | Global |
+| theme.borderFgColor |  ![#11111b](https://via.placeholder.com/15/11111b/000000.png?text=+) `#11111b` | Border foreground color | Global |
 | theme.whitespaceFgColor | ![#313244](https://via.placeholder.com/15/313244/000000.png?text=+) `#313244`  | Foreground color for the whitespace (shown as a background for dialogs/prompts) | Global |
 | theme.errorFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`  | Foreground color for errors | Global |
 | theme.statusbar.primaryBgColor | ![#11111b](https://via.placeholder.com/15/11111b/000000.png?text=+) `#11111b`   | Background color for the primary section of the statusbar (e.g. that displays messages) | Global |
@@ -807,7 +819,6 @@ All configuration values are:
 | theme.response.protoFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's proto part | Global |
 | theme.response.headerFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's header names | Global |
 | printer.pretty | `true`| Pretty print responses | Global, request |
-| printer.formatter | terminal16m | Which formatter to use with Chroma | Global |
 | editor | `$EDITOR` | Which editor to use for creating/editing requests and profiles | Global |
 | debug | `false` | Enable debug logging | Global |
 | httpClient.debug | `false` | Enable debug logging for the http client | Global, request |
@@ -908,3 +919,4 @@ There are things still in progress and planned for some later date.
 
 - [ ] Add Lua based requests v.1.2
 - [ ] Preview, when a profile is selected, could auto-fill variables (but also show there's a variable; nvim "virtualtext" like?)
+- [ ] Theme support

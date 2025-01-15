@@ -199,10 +199,7 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 	if err != nil {
 		return model.Request{}, true, err
 	}
-	body, err := conv.AssertAndConvert[interface{}](res, "body")
-	if err != nil {
-		return model.Request{}, true, err
-	}
+	body, _ := conv.AssertAndConvert[interface{}](res, "body")
 
 	req := model.Request{
 		Url:     url,

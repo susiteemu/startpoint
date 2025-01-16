@@ -1,0 +1,10 @@
+Set WindowBar Colorful
+Set Margin 10
+Set BorderRadius 10
+Set Shell fish
+Set FontFamily "Hack"
+Set FontSize 16
+Set MarginFill "#D3DBD8"
+Set Padding 4
+Set Width 800
+Set Height 600

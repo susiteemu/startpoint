@@ -3,3 +3,5 @@ goful
 tmp
 debug.log
 dist/
+startpoint
+.DS_Store

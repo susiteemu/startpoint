@@ -1,0 +1,5 @@
+themeName: 'catppuccin-mocha'
+httpClient:
+  debug: false
+  enableTraceInfo: false
+printRequest: false

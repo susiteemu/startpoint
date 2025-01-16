@@ -1,0 +1,11 @@
+url: http://localhost:8000/auth/oauth2/token
+method: POST
+headers:
+  Content-Type: 'application/x-www-form-urlencoded'
+  Accept: 'application/x-www-form-urlencoded, application/json'
+body:
+  username: 'johndoe'
+  password: 'secret'
+  grant_type: 'password'
+options:
+  print: false

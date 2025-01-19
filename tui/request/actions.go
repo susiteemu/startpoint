@@ -111,34 +111,6 @@ func createRequestFileCmd(name string, requestType string) (string, string, *exe
 	return workspace, filename, cmd, err
 }
 
-func createComplexRequestFileCmd(name string) (string, string, *exec.Cmd, error) {
-	if len(name) == 0 {
-		return "", "", nil, errors.New("name must not be empty")
-	}
-
-	filename := fmt.Sprintf("%s.star", name)
-	// TODO read from template
-	content := `"""
-prev_req: <call other request before this>
-doc:url: <your url for display>
-doc:method: GET
-"""
-# insert contents of your script here, for more see https://github.com/google/starlark-go/blob/master/doc/spec.md
-# Request url
-url = ""
-# HTTP method
-method = "GET"
-# HTTP headers, e.g. { "X-Foo": "bar", "X-Foos": [ "Bar1", "Bar2" ] }
-headers = {}
-# Request body, e.g. { "id": 1, "people": [ {"name": "Joe"}, {"name": "Jane"}, ] }
-body = {}
-`
-
-	workspace := viper.GetString("workspace")
-	cmd, err := createFileAndReturnOpenToEditorCmd(workspace, filename, content)
-	return workspace, filename, cmd, err
-}
-
 func createFileAndReturnOpenToEditorCmd(root, filename, content string) (*exec.Cmd, error) {
 	if len(root) <= 0 {
 		return nil, errors.New("root must not be empty")

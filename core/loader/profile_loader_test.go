@@ -1,11 +1,9 @@
 package loader
 
 import (
-	"fmt"
 	"startpoint/core/model"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,15 +18,17 @@ func TestReadProfiles(t *testing.T) {
 
 	assert.Equal(t, 2, len(profiles))
 
-	wantedProfiles := []model.Profile{
+	wantedProfiles := []*model.Profile{
 		{
 			Name: "default",
 			Variables: map[string]string{
 				"domain": "foobar.com",
 				"foo":    "bar",
 			},
-			Root:     "testdata",
-			Filename: ".env",
+			Root:              "testdata",
+			Filename:          ".env",
+			HasPublicProfile:  true,
+			HasPrivateProfile: false,
 			Raw: `domain=foobar.com
 foo=bar`,
 		},
@@ -38,25 +38,16 @@ foo=bar`,
 				"domain": "foobarprod.com",
 				"foo":    "bar2",
 			},
-			Root:     "testdata",
-			Filename: ".env.production",
+			Root:              "testdata",
+			Filename:          ".env.production",
+			HasPublicProfile:  true,
+			HasPrivateProfile: false,
 			Raw: `domain=foobarprod.com
 foo=bar2`,
 		},
 	}
 
-	for _, w := range wantedProfiles {
-		found := false
-		for _, p := range profiles {
-			if cmp.Equal(*p, w) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Error(fmt.Sprintf("wanted %v but not found in %v", w, profiles))
-		}
-	}
+	assert.Equal(t, profiles, wantedProfiles)
 
 }
 

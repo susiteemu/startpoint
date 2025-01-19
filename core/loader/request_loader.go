@@ -16,6 +16,7 @@ const (
 	YAML_EXT = ".yaml"
 	YML_EXT  = ".yml"
 	STAR_EXT = ".star"
+	LUA_EXT  = ".lua"
 )
 
 func ReadRequest(root, filename string) (*model.RequestMold, error) {
@@ -40,11 +41,11 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 		// TODO: how to filter out yaml files that are not requests?
 		if yamlRequest.Url != "" || yamlRequest.Method != "" {
 			request = &model.RequestMold{
-				Yaml:        yamlRequest,
-				ContentType: model.CONTENT_TYPE_YAML,
-				Root:        root,
-				Filename:    filename,
-				Name:        strings.TrimSuffix(filename, extension),
+				Yaml:     yamlRequest,
+				Type:     model.CONTENT_TYPE_YAML,
+				Root:     root,
+				Filename: filename,
+				Name:     strings.TrimSuffix(filename, extension),
 			}
 		}
 
@@ -54,15 +55,32 @@ func ReadRequest(root, filename string) (*model.RequestMold, error) {
 			log.Error().Err(err).Msgf("Failed to read %s", path)
 			return nil, err
 		}
-		starlarkRequest := &model.StarlarkRequest{
+		starlarkRequest := &model.ScriptableRequest{
 			Script: strings.TrimSuffix(string(file), "\n"),
 		}
 		request = &model.RequestMold{
-			Starlark:    starlarkRequest,
-			ContentType: model.CONTENT_TYPE_STARLARK,
-			Root:        root,
-			Filename:    filename,
-			Name:        strings.TrimSuffix(filename, extension),
+			Scriptable: starlarkRequest,
+			Type:       model.CONTENT_TYPE_STARLARK,
+			Root:       root,
+			Filename:   filename,
+			Name:       strings.TrimSuffix(filename, extension),
+		}
+
+	case LUA_EXT:
+		file, err := os.ReadFile(path)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to read %s", path)
+			return nil, err
+		}
+		luaRequest := &model.ScriptableRequest{
+			Script: strings.TrimSuffix(string(file), "\n"),
+		}
+		request = &model.RequestMold{
+			Scriptable: luaRequest,
+			Type:       model.CONTENT_TYPE_LUA,
+			Root:       root,
+			Filename:   filename,
+			Name:       strings.TrimSuffix(filename, extension),
 		}
 	}
 
@@ -89,7 +107,7 @@ func ReadRequests(root string) ([]*model.RequestMold, error) {
 		filename := info.Name()
 
 		extension := filepath.Ext(filename)
-		if extension == YAML_EXT || extension == YML_EXT || extension == STAR_EXT {
+		if extension == YAML_EXT || extension == YML_EXT || extension == STAR_EXT || extension == LUA_EXT {
 			log.Debug().Msgf("Walk crossed a file %s", filename)
 
 			requestMold, err := ReadRequest(root, filename)

@@ -86,28 +86,25 @@ func (m Model) HandlePostAction() {
 	}
 }
 
-func createSimpleRequestFileCmd(name string) (string, string, *exec.Cmd, error) {
+func createRequestFileCmd(name string, requestType string) (string, string, *exec.Cmd, error) {
 	if len(name) == 0 {
 		return "", "", nil, errors.New("name must not be empty")
 	}
+	var filename, content string
 
-	filename := fmt.Sprintf("%s.yaml", name)
-	// TODO read from a template file
-	content := `# Possible request to call _before_ this one
-prev_req:
-# Request url, may contain template variables in a form of {var}
-url:
-# HTTP method
-method: GET
-# HTTP headers as key-val list, e.g. X-Foo-Bar: SomeValue
-headers:
-# Request body, e.g.
-# {
-#    "id": 1,
-#    "name": "Jane">
-# }
-body: >
-`
+	switch requestType {
+	case model.CONTENT_TYPE_YAML:
+		filename = fmt.Sprintf("%s.yaml", name)
+		content = YamlTemplate
+	case model.CONTENT_TYPE_STARLARK:
+		filename = fmt.Sprintf("%s.star", name)
+		content = StarlarkTemplate
+	case model.CONTENT_TYPE_LUA:
+		filename = fmt.Sprintf("%s.lua", name)
+		content = LuaTemplate
+	default:
+		return "", "", nil, errors.New("unsupported request type")
+	}
 
 	workspace := viper.GetString("workspace")
 	cmd, err := createFileAndReturnOpenToEditorCmd(workspace, filename, content)
@@ -244,13 +241,8 @@ func copyRequest(name string, r Request, mold model.RequestMold) (Request, *mode
 }
 
 func changeMoldName(name string, m *model.RequestMold) {
-	if m.Yaml != nil {
-		m.Filename = fmt.Sprintf("%s.yaml", name)
-		m.Name = name
-	} else if m.Starlark != nil {
-		m.Filename = fmt.Sprintf("%s.star", name)
-		m.Name = name
-	}
+	m.Filename = fmt.Sprintf("%s.%s", name, m.Type)
+	m.Name = name
 }
 
 // TODO: refactor from bool to error

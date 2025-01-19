@@ -33,13 +33,13 @@ body = { "id": 1474, "prev": prev, "bar": [
 ] }`
 
 	starlarkRequest := model.RequestMold{
-		Starlark: &model.StarlarkRequest{
+		Scriptable: &model.ScriptableRequest{
 			Script: script,
 		},
-		ContentType: "star",
-		Root:        "testdata",
-		Filename:    "starlark_request.star",
-		Name:        "starlark_request",
+		Type:     "star",
+		Root:     "testdata",
+		Filename: "starlark_request.star",
+		Name:     "starlark_request",
 	}
 
 	wantedRequests = append(wantedRequests, starlarkRequest)
@@ -64,10 +64,10 @@ body: >
     "name": "Jane"
   }`,
 		},
-		Root:        "testdata",
-		ContentType: "yaml",
-		Filename:    "yaml_request.yaml",
-		Name:        "yaml_request",
+		Root:     "testdata",
+		Type:     "yaml",
+		Filename: "yaml_request.yaml",
+		Name:     "yaml_request",
 	}
 
 	yamlRequestWithBasicAuth := model.RequestMold{
@@ -94,10 +94,10 @@ body: >
     "name": "Jane"
   }`,
 		},
-		Root:        "testdata",
-		ContentType: "yaml",
-		Filename:    "yaml_request_with_basic_auth.yaml",
-		Name:        "yaml_request_with_basic_auth",
+		Root:     "testdata",
+		Type:     "yaml",
+		Filename: "yaml_request_with_basic_auth.yaml",
+		Name:     "yaml_request_with_basic_auth",
 	}
 
 	wantedRequests = append(wantedRequests, yamlRequest)
@@ -113,12 +113,12 @@ body: >
 			w := wantedRequest.Yaml
 			assert.Equal(t, w, r)
 		}
-		if request.Starlark != nil {
-			r := request.Starlark
-			w := wantedRequest.Starlark
+		if request.Scriptable != nil {
+			r := request.Scriptable
+			w := wantedRequest.Scriptable
 			assert.Equal(t, w, r)
 		}
-		assert.Equal(t, wantedRequest.ContentType, request.ContentType)
+		assert.Equal(t, wantedRequest.Type, request.Type)
 		assert.Equal(t, wantedRequest.Root, request.Root)
 		assert.Equal(t, wantedRequest.Filename, request.Filename)
 		assert.Equal(t, wantedRequest.Name, request.Name)

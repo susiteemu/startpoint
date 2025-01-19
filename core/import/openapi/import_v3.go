@@ -132,11 +132,11 @@ func ImportOpenAPIV3(document libopenapi.Document, workspace string) ([]model.Re
 			filename := fmt.Sprintf("%s.yaml", sanitizeFileName(requestName))
 
 			requestMold := model.RequestMold{
-				Root:        workspace,
-				Filename:    filename,
-				ContentType: model.CONTENT_TYPE_YAML,
-				Name:        requestName,
-				Yaml:        &yamlRequest,
+				Root:     workspace,
+				Filename: filename,
+				Type:     model.CONTENT_TYPE_YAML,
+				Name:     requestName,
+				Yaml:     &yamlRequest,
 			}
 
 			requests = append(requests, requestMold)

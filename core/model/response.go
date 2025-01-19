@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -40,4 +41,10 @@ func (r *Response) HeadersAsMapString() map[string][]string {
 		headers[k] = v
 	}
 	return headers
+}
+
+func (r *Response) BodyAsMap() (map[string]interface{}, error) {
+	var bodyAsMap map[string]interface{}
+	err := json.Unmarshal(r.Body, &bodyAsMap)
+	return bodyAsMap, err
 }

@@ -53,12 +53,12 @@ type Request struct {
 }
 
 type RequestMold struct {
-	Yaml        *YamlRequest
-	Starlark    *StarlarkRequest
-	ContentType string
-	Root        string
-	Name        string
-	Filename    string
+	Yaml       *YamlRequest
+	Scriptable *ScriptableRequest
+	Type       string
+	Root       string
+	Name       string
+	Filename   string
 }
 
 type YamlRequest struct {
@@ -73,7 +73,7 @@ type YamlRequest struct {
 	Auth    Auth                   `yaml:"auth,omitempty"`
 }
 
-type StarlarkRequest struct {
+type ScriptableRequest struct {
 	Script string
 }
 
@@ -82,7 +82,7 @@ func (r *Request) IsForm() bool {
 	if !ok {
 		return false
 	}
-	return strings.ToLower(contentType) == "application/x-www-form-urlencoded"
+	return strings.ToLower(contentType) == CONTENT_TYPE_FORM_URLENCODED
 }
 
 func (r *Request) IsMultipartForm() bool {
@@ -90,7 +90,7 @@ func (r *Request) IsMultipartForm() bool {
 	if !ok {
 		return false
 	}
-	return strings.ToLower(strings.TrimSpace(contentType)) == "multipart/form-data"
+	return strings.ToLower(strings.TrimSpace(contentType)) == CONTENT_TYPE_MULTIPART_FORM
 }
 
 func (r *Request) HasBodyAsMap() bool {
@@ -109,7 +109,7 @@ func (r *Request) HasBodyAsMap() bool {
 }
 
 func (r *Request) ContentType() (string, bool) {
-	contentType, ok := r.Headers["Content-Type"]
+	contentType, ok := r.Headers[HEADER_NAME_CONTENT_TYPE]
 	if !ok {
 		return "", false
 	}
@@ -160,8 +160,11 @@ func (r *Request) BodyAsMap() (map[string]string, bool) {
 func (r *RequestMold) Url() string {
 	if r.Yaml != nil {
 		return r.Yaml.Url
-	} else if r.Starlark != nil {
-		return extractValueFromAlternativeFieldNames(r.Starlark.Script, starlarkUrlFields)
+	} else if r.Scriptable != nil {
+		switch r.Type {
+		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
+			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, starlarkUrlFields)
+		}
 	}
 	return ""
 }
@@ -169,8 +172,11 @@ func (r *RequestMold) Url() string {
 func (r *RequestMold) Method() string {
 	if r.Yaml != nil {
 		return r.Yaml.Method
-	} else if r.Starlark != nil {
-		return extractValueFromAlternativeFieldNames(r.Starlark.Script, starlarkMethodFields)
+	} else if r.Scriptable != nil {
+		switch r.Type {
+		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
+			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, starlarkMethodFields)
+		}
 	}
 	return ""
 }
@@ -186,8 +192,8 @@ func (r *RequestMold) Raw() string {
 			}
 		}
 		return r.Yaml.Raw
-	} else if r.Starlark != nil {
-		return r.Starlark.Script
+	} else if r.Scriptable != nil {
+		return r.Scriptable.Script
 	}
 	return ""
 }
@@ -195,8 +201,11 @@ func (r *RequestMold) Raw() string {
 func (r *RequestMold) PreviousReq() string {
 	if r.Yaml != nil {
 		return r.Yaml.PrevReq
-	} else if r.Starlark != nil {
-		return extractValueFromAlternativeFieldNames(r.Starlark.Script, starlarkPrevReqFields)
+	} else if r.Scriptable != nil {
+		switch r.Type {
+		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
+			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, starlarkPrevReqFields)
+		}
 	}
 	return ""
 }
@@ -210,18 +219,24 @@ func (r *RequestMold) ChangePreviousReq(prevReq string) {
 		pattern := regexp.MustCompile(`(?mU)^prev_req:(.*)$`)
 		changed := pattern.ReplaceAllString(r.Yaml.Raw, fmt.Sprintf("prev_req: \"%s\"", prevReq))
 		r.Yaml.Raw = changed
-	} else if r.Starlark != nil {
-		pattern := regexp.MustCompile(`(?mU)^prev_req:(.*)$`)
-		changed := pattern.ReplaceAllString(r.Starlark.Script, fmt.Sprintf("prev_req: %s", prevReq))
-		r.Starlark.Script = changed
+	} else if r.Scriptable != nil {
+		switch r.Type {
+		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
+			pattern := regexp.MustCompile(`(?mU)^prev_req:(.*)$`)
+			changed := pattern.ReplaceAllString(r.Scriptable.Script, fmt.Sprintf("prev_req: %s", prevReq))
+			r.Scriptable.Script = changed
+		}
 	}
 }
 
 func (r *RequestMold) Output() string {
 	if r.Yaml != nil {
 		return r.Yaml.Output
-	} else if r.Starlark != nil {
-		return extractValueFromAlternativeFieldNames(r.Starlark.Script, starlarkOutputFields)
+	} else if r.Scriptable != nil {
+		switch r.Type {
+		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
+			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, starlarkOutputFields)
+		}
 	}
 	return ""
 }
@@ -237,10 +252,10 @@ func (r *RequestMold) DeleteFromFS() bool {
 
 func (r *RequestMold) Clone() RequestMold {
 	copy := RequestMold{
-		ContentType: r.ContentType,
-		Root:        r.Root,
-		Filename:    r.Filename,
-		Name:        r.Name,
+		Type:     r.Type,
+		Root:     r.Root,
+		Filename: r.Filename,
+		Name:     r.Name,
 	}
 
 	if r.Yaml != nil {
@@ -255,11 +270,10 @@ func (r *RequestMold) Clone() RequestMold {
 			Auth:    r.Yaml.Auth,
 		}
 		copy.Yaml = &yamlRequest
-	} else if r.Starlark != nil {
-		starlarkRequest := StarlarkRequest{
-			Script: r.Starlark.Script,
+	} else if r.Scriptable != nil {
+		copy.Scriptable = &ScriptableRequest{
+			Script: r.Scriptable.Script,
 		}
-		copy.Starlark = &starlarkRequest
 	}
 
 	return copy
@@ -281,6 +295,8 @@ func extractValueFromField(field string, str string) (string, bool) {
 		START_MATCHING_FIELD
 		START_DETECTING_ASSIGNMENT
 		ASSIGNMENT_DETECTED
+		ASSIGNMENT_START_DOUBLE_QUOTES_DETECTED
+		ASSIGNMENT_START_SINGLE_QUOTES_DETECTED
 		START_CAPTURING
 	)
 	var (
@@ -300,6 +316,8 @@ func extractValueFromField(field string, str string) (string, bool) {
 		fieldMatchIdxPos := 0
 		capture = []rune{}
 		breakLoop := false
+		assignmentHasDoubleQuotes := false
+		assignmentHasSingleQuotes := false
 		for idx, c := range line {
 			if unicode.IsSpace(c) && state == INITIAL {
 				continue
@@ -325,18 +343,39 @@ func extractValueFromField(field string, str string) (string, bool) {
 					state = ASSIGNMENT_DETECTED
 				}
 			case ASSIGNMENT_DETECTED:
-				if !unicode.IsSpace(c) {
+				if !unicode.IsSpace(c) && c != '"' && c != '\'' {
+					state = START_CAPTURING
+				} else if c == '"' {
+					state = ASSIGNMENT_START_DOUBLE_QUOTES_DETECTED
+				} else if c == '\'' {
+					state = ASSIGNMENT_START_SINGLE_QUOTES_DETECTED
+				}
+			case ASSIGNMENT_START_DOUBLE_QUOTES_DETECTED:
+				if c != '"' {
+					assignmentHasDoubleQuotes = true
 					state = START_CAPTURING
 				}
+			case ASSIGNMENT_START_SINGLE_QUOTES_DETECTED:
+				if c != '\'' {
+					assignmentHasSingleQuotes = true
+					state = START_CAPTURING
+				}
+			case START_CAPTURING:
+				if assignmentHasDoubleQuotes && c == '"' {
+					breakLoop = true
+				} else if assignmentHasSingleQuotes && c == '\'' {
+					breakLoop = true
+				}
+			}
+
+			if breakLoop {
+				break
 			}
 
 			if state == START_CAPTURING {
 				capture = append(capture, c)
 			}
 
-			if breakLoop {
-				break
-			}
 		}
 		if state == START_CAPTURING {
 			match = true

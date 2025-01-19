@@ -108,6 +108,27 @@ As a more concrete list, at this point of time I have plans or have implemented:
 
 There are several ways of installing `startpoint`.
 
+#### Install via `go install`
+
+If you have Go 1.23 or later installed, you can quickly install `startpoint` with:
+
+```bash
+go install github.com/susiteemu/startpoint@latest
+```
+
+This will download and install the binary to your Go binary directory, typically `$GOPATH/bin` or `$HOME/go/bin`
+if `$GOPATH` is not set. To ensure `startpoint` is accessible from anywhere, add this directory to your `PATH`:
+
+```bash
+export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+To confirm the installation was successful, run:
+
+```bash
+startpoint --help
+```
+
 #### On macOS
 
 To install using Homebrew:

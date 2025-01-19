@@ -2,13 +2,13 @@ package tui
 
 import (
 	"fmt"
+	"github.com/susiteemu/startpoint/core/loader"
+	"github.com/susiteemu/startpoint/core/tools/paths"
+	profileUI "github.com/susiteemu/startpoint/tui/profile"
+	requestUI "github.com/susiteemu/startpoint/tui/request"
+	statusbar "github.com/susiteemu/startpoint/tui/statusbar"
+	"github.com/susiteemu/startpoint/tui/styles"
 	"os"
-	"startpoint/core/loader"
-	"startpoint/core/tools/paths"
-	profileUI "startpoint/tui/profile"
-	requestUI "startpoint/tui/request"
-	statusbar "startpoint/tui/statusbar"
-	"startpoint/tui/styles"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"

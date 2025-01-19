@@ -2,9 +2,9 @@ package runner
 
 import (
 	"errors"
-	"startpoint/core/client"
-	"startpoint/core/client/builder"
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/client"
+	"github.com/susiteemu/startpoint/core/client/builder"
+	"github.com/susiteemu/startpoint/core/model"
 	"time"
 
 	"github.com/rs/zerolog/log"

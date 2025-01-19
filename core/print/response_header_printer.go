@@ -3,9 +3,9 @@ package print
 import (
 	"errors"
 	"fmt"
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/tui/styles"
 	"sort"
-	"startpoint/core/model"
-	"startpoint/tui/styles"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"

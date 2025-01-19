@@ -2,7 +2,7 @@ package openapi
 
 import (
 	"fmt"
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/model"
 	"strings"
 
 	"github.com/pb33f/libopenapi"

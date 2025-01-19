@@ -3,12 +3,12 @@ package openapi
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/susiteemu/startpoint/core/client/validator"
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/writer"
 	"os"
 	"path/filepath"
 	"regexp"
-	"startpoint/core/client/validator"
-	"startpoint/core/model"
-	"startpoint/core/writer"
 	"strings"
 
 	"github.com/go-resty/resty/v2"

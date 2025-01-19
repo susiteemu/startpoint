@@ -1,7 +1,7 @@
 package print
 
 import (
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/model"
 	"strings"
 )
 

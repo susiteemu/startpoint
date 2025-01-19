@@ -2,10 +2,10 @@ package loader
 
 import (
 	"fmt"
+	"github.com/susiteemu/startpoint/core/model"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"startpoint/core/model"
 	"strings"
 
 	"github.com/rs/zerolog/log"

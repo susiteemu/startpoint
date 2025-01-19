@@ -6,12 +6,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	requestchain "github.com/susiteemu/startpoint/core/chaining"
+	"github.com/susiteemu/startpoint/core/client/runner"
+	"github.com/susiteemu/startpoint/core/loader"
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/print"
 	"os"
-	requestchain "startpoint/core/chaining"
-	"startpoint/core/client/runner"
-	"startpoint/core/loader"
-	"startpoint/core/model"
-	"startpoint/core/print"
 	"strings"
 	"time"
 

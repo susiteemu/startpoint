@@ -3,11 +3,11 @@ package profileui
 import (
 	"errors"
 	"fmt"
+	"github.com/susiteemu/startpoint/core/editor"
+	"github.com/susiteemu/startpoint/core/loader"
+	"github.com/susiteemu/startpoint/core/writer"
 	"os/exec"
 	"path/filepath"
-	"startpoint/core/editor"
-	"startpoint/core/loader"
-	"startpoint/core/writer"
 	"strings"
 
 	"github.com/rs/zerolog/log"

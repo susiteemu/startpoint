@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	mainview "startpoint/tui"
+	mainview "github.com/susiteemu/startpoint/tui"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"

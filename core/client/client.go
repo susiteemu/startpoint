@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"startpoint/core/configuration"
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/configuration"
+	"github.com/susiteemu/startpoint/core/model"
 	"strings"
 	"time"
 

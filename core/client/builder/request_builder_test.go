@@ -1,8 +1,8 @@
 package builder
 
 import (
+	"github.com/susiteemu/startpoint/core/model"
 	"math/big"
-	"startpoint/core/model"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

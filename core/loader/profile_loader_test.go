@@ -2,7 +2,7 @@ package loader
 
 import (
 	"fmt"
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/model"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"

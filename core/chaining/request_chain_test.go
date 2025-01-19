@@ -1,7 +1,7 @@
 package requestchain
 
 import (
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/model"
 	"testing"
 )
 

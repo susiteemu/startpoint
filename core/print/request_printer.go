@@ -3,7 +3,7 @@ package print
 import (
 	"errors"
 	"fmt"
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/model"
 	"strings"
 
 	"github.com/rs/zerolog/log"

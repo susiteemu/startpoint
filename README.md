@@ -15,6 +15,7 @@ It comes with many beautiful themes and supports you adding your own too!
 - [My Plans for `startpoint`](#my-plans-for-startpoint)
 - [Manual](#manual)
   * [Installation](#installation)
+    + [Install via `go install`](#install-via-go-install)
     + [On macOS](#on-macos)
   * [Commands](#commands)
   * [Requests TUI](#requests-tui)
@@ -128,6 +129,9 @@ To confirm the installation was successful, run:
 ```bash
 startpoint --help
 ```
+
+> **Note**: Versions of `startpoint` released prior to `<next-version>` (e.g., `v1.2.5` or earlier)
+> may not be installable via `go install` due to a mismatch in the module path in `go.mod`.
 
 #### On macOS
 

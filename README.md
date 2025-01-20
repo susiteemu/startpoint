@@ -130,8 +130,8 @@ To confirm the installation was successful, run:
 startpoint --help
 ```
 
-> **Note**: Versions of `startpoint` released prior to `<next-version>` (e.g., `v1.2.5` or earlier)
-> may not be installable via `go install` due to a mismatch in the module path in `go.mod`.
+> **Note**: Versions of `startpoint` released prior to `v1.2.6` may not be installable via `go install`
+> due to a mismatch in the module path in `go.mod`.
 
 #### On macOS
 

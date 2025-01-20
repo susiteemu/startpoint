@@ -1,7 +1,6 @@
 package starlarkng
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/susiteemu/startpoint/core/model"
 	"github.com/susiteemu/startpoint/core/scripting/starlark/goconv"
@@ -16,7 +15,7 @@ func RunStarlarkScript(request model.RequestMold, previousResponse *model.Respon
 
 	log.Info().Msgf("Running Starlark script with request %v, previousResponse %v", request, previousResponse)
 
-	if request.Starlark == nil {
+	if request.Scriptable == nil {
 		log.Error().Msg("Starlark request is nil, aborting")
 		return nil, errors.New("starlark request must not be nil")
 	}
@@ -27,24 +26,27 @@ func RunStarlarkScript(request model.RequestMold, previousResponse *model.Respon
 		if err != nil {
 			return nil, err
 		}
+		previousResponseStarlark.SetKey(starlark.String("headers"), prevResponseHeaders)
 
 		// convert body to map if possible
-		// TODO check content-type: is application/json?
-		var bodyAsMap map[string]interface{}
-		err = json.Unmarshal(previousResponse.Body, &bodyAsMap)
-		if err != nil {
-			// TODO handle err
+		bodyAsMap, err := previousResponse.BodyAsMap()
+		if err == nil {
+			prevResponseBody, err := starlarkconv.Convert(bodyAsMap)
+			if err != nil {
+				return nil, err
+			}
+			previousResponseStarlark.SetKey(starlark.String("body"), prevResponseBody)
+			log.Debug().Msgf("previousResponseBody %v", prevResponseBody)
+		} else {
+			log.Warn().Err(err).Msgf("Could not convert body to map. Setting body as string to previous response.")
+			prevResponseBody, err := starlarkconv.Convert(string(previousResponse.Body))
+			if err != nil {
+				return nil, err
+			}
+			previousResponseStarlark.SetKey(starlark.String("body"), prevResponseBody)
+			log.Debug().Msgf("previousResponseBody %v", prevResponseBody)
 		}
 
-		prevResponseBody, err := starlarkconv.Convert(bodyAsMap)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Debug().Msgf("previousResponseBody %v", prevResponseBody)
-
-		previousResponseStarlark.SetKey(starlark.String("body"), prevResponseBody)
-		previousResponseStarlark.SetKey(starlark.String("headers"), prevResponseHeaders)
 	}
 
 	predeclared := starlark.StringDict{
@@ -63,7 +65,7 @@ func RunStarlarkScript(request model.RequestMold, previousResponse *model.Respon
 		Recursion:         true,
 	}
 
-	starlarkRequest := request.Starlark
+	starlarkRequest := request.Scriptable
 
 	globals, err := starlark.ExecFileOptions(&fileOptions, thread, request.Name, starlarkRequest.Script, predeclared)
 	if err != nil {

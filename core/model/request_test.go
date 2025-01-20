@@ -10,7 +10,8 @@ func TestStarlarkRequestDocString(t *testing.T) {
 
 	starlarkRequest := RequestMold{
 		Name: "Starlark request",
-		Starlark: &StarlarkRequest{
+		Type: "star",
+		Scriptable: &ScriptableRequest{
 			Script: `"""
 prev_req: Some previous request
 meta:output: ./output.txt
@@ -46,7 +47,8 @@ body = { "id": 1474, "prev": prev, "bar": [
 func TestStarlarkRequestDocStringMissingParts(t *testing.T) {
 
 	starlarkRequest := RequestMold{
-		Starlark: &StarlarkRequest{
+		Type: "star",
+		Scriptable: &ScriptableRequest{
 			Script: `"""
 doc:url: http://foobar.com
 doc:method: POST
@@ -81,7 +83,8 @@ body = { "id": 1474, "prev": prev, "bar": [
 func TestStarlarkRequestParseValuesFromActualCode(t *testing.T) {
 
 	starlarkRequest := RequestMold{
-		Starlark: &StarlarkRequest{
+		Type: "star",
+		Scriptable: &ScriptableRequest{
 			Script: `"""
 prev_req: Some previous request
 """
@@ -105,7 +108,8 @@ body = { "id": 1474, "prev": prev, "bar": [
 func TestChangePreviousRequest(t *testing.T) {
 
 	starlarkRequest := RequestMold{
-		Starlark: &StarlarkRequest{
+		Type: "star",
+		Scriptable: &ScriptableRequest{
 			Script: `"""
 prev_req: Some previous request
 """

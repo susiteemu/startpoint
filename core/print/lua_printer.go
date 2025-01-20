@@ -4,10 +4,10 @@ import (
 	"bytes"
 )
 
-func SprintStarlark(rawYaml string) (string, error) {
+func SprintLua(rawYaml string) (string, error) {
 	buf := new(bytes.Buffer)
 
-	lexer := resolveLexer("text/x-python2")
+	lexer := resolveLexer("text/x-lua")
 	style := resolveStyle()
 	formatter := resolveFormatter()
 	iterator, err := lexer.Tokenise(nil, rawYaml)

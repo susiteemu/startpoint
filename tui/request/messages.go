@@ -9,7 +9,7 @@ type RunRequestMsg struct {
 }
 
 type CreateRequestMsg struct {
-	Simple bool
+	Type string
 }
 
 type CreateRequestFinishedMsg struct {

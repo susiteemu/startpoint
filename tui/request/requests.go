@@ -232,15 +232,19 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Quit
 	case CreateRequestMsg:
 		if m.mode == Edit && m.active == List {
-			promptKey := CreateSimpleRequest
-			promptLabel := CreateRequestLabel
-			if !msg.Simple {
+			var promptKey, promptLabel string
+			switch msg.Type {
+			case model.CONTENT_TYPE_YAML:
+				promptKey = CreateSimpleRequest
+				promptLabel = CreateRequestLabel
+			case model.CONTENT_TYPE_STARLARK, model.CONTENT_TYPE_LUA:
 				promptKey = CreateComplexRequest
 				promptLabel = CreateRequestLabel
 			}
 			m.active = Prompt
 			m.prompt = prompt.New(prompt.PromptContext{
-				Key: promptKey,
+				Key:        promptKey,
+				Additional: msg.Type,
 			}, "", promptLabel, checkRequestWithNameDoesNotExist(m), m.width)
 			return m, nil
 		}
@@ -364,18 +368,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, messages.CreateStatusMsg(fmt.Sprintf("Failed to open %s for preview", msg.Request.Title()))
 			}
 			var formatted string
-			switch selected.ContentType {
-			case "yaml":
-				formatted, err = print.SprintYaml(selected.Raw())
-			case "star":
-				formatted, err = print.SprintStar(selected.Raw())
-			}
-
+			formatted, err = print.SprintRequestMold(selected)
 			if formatted == "" || err != nil {
 				formatted = selected.Raw()
 			}
-			// NOTE: cannot give correct height before preview is created
-			// and we can calculate vertical margin height
 			w := int(float64(m.width) * 0.8)
 			h := int(float64(m.height) * 0.8)
 			m.preview = preview.New(selected.Filename, formatted, w, h)
@@ -455,11 +451,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				cmd      *exec.Cmd
 				err      error
 			)
-			if msg.Context.Key == CreateSimpleRequest {
-				root, filepath, cmd, err = createSimpleRequestFileCmd(msg.Input)
-			} else {
-				root, filepath, cmd, err = createComplexRequestFileCmd(msg.Input)
-			}
+			requestType := msg.Context.Additional.(string)
+			root, filepath, cmd, err = createRequestFileCmd(msg.Input, requestType)
 			if err != nil {
 				return m, messages.CreateStatusMsg("Failed preparing editor")
 			}
@@ -501,16 +494,23 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case keyprompt.KeypromptAnsweredMsg:
 		m.active = List
 		if msg.Type == CreateRequest {
-			if msg.Key == "y" {
+			switch msg.Key {
+			case "y":
 				return m, tea.Cmd(func() tea.Msg {
 					return CreateRequestMsg{
-						Simple: true,
+						Type: model.CONTENT_TYPE_YAML,
 					}
 				})
-			} else if msg.Key == "s" {
+			case "s":
 				return m, tea.Cmd(func() tea.Msg {
 					return CreateRequestMsg{
-						Simple: false,
+						Type: model.CONTENT_TYPE_STARLARK,
+					}
+				})
+			case "l":
+				return m, tea.Cmd(func() tea.Msg {
+					return CreateRequestMsg{
+						Type: model.CONTENT_TYPE_LUA,
 					}
 				})
 			}

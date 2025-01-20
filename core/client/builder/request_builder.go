@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/susiteemu/startpoint/core/configuration"
 	"github.com/susiteemu/startpoint/core/model"
+	luang "github.com/susiteemu/startpoint/core/scripting/lua"
 	starlarkng "github.com/susiteemu/startpoint/core/scripting/starlark"
 	"github.com/susiteemu/startpoint/core/templating/templateng"
 	"github.com/susiteemu/startpoint/core/tools/conv"
@@ -15,7 +16,7 @@ import (
 
 var builders = []func(requestMold *model.RequestMold, previousResponse *model.Response, profile model.Profile) (model.Request, bool, error){
 	buildYamlRequest,
-	buildStarlarkRequest,
+	buildScriptableRequest,
 }
 
 func BuildRequest(requestMold *model.RequestMold, profile model.Profile) (model.Request, error) {
@@ -113,21 +114,32 @@ func buildYamlRequest(requestMold *model.RequestMold, _ *model.Response, profile
 	return request, true, nil
 }
 
-func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *model.Response, profile model.Profile) (model.Request, bool, error) {
-	if requestMold.Starlark == nil {
+func buildScriptableRequest(requestMold *model.RequestMold, previousResponse *model.Response, profile model.Profile) (model.Request, bool, error) {
+	if requestMold.Scriptable == nil {
 		return model.Request{}, false, nil
 	}
 
-	script := requestMold.Starlark.Script
+	script := requestMold.Scriptable.Script
 	if len(profile.Variables) > 0 {
 		for k, v := range profile.Variables {
 			script, _ = templateng.ProcessTemplateVariable(script, k, v)
 		}
 	}
-	requestMold.Starlark.Script = script
-	res, err := starlarkng.RunStarlarkScript(*requestMold, previousResponse)
+	requestMold.Scriptable.Script = script
+
+	var res map[string]interface{}
+	var err error
+	switch requestMold.Type {
+	case model.CONTENT_TYPE_STARLARK:
+		res, err = starlarkng.RunStarlarkScript(*requestMold, previousResponse)
+	case model.CONTENT_TYPE_LUA:
+		res, err = luang.RunLuaScript(*requestMold, previousResponse)
+	default:
+		return model.Request{}, true, fmt.Errorf("Unsupported script type %s", requestMold.Type)
+	}
+
 	if err != nil {
-		log.Error().Err(err).Msg("Running Starlark script resulted to error")
+		log.Error().Err(err).Msg("Running script resulted to error")
 		return model.Request{}, true, err
 	}
 
@@ -149,19 +161,29 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 
 	authResult, has := res["auth"]
 	if has {
+		log.Debug().Msgf("Auth %v", authResult)
 		if authMap, ok := authResult.(map[string]interface{}); ok {
 			basicAuth, has := authMap["basic_auth"]
 			if has {
-				basicAuthMap, ok := basicAuth.(map[string]interface{})
+				log.Debug().Msgf("Basic auth %T", basicAuth)
+				var username, password interface{}
+				var hasUser, hasPwd bool
+				basicAuthStringMap, ok := basicAuth.(map[string]interface{})
 				if ok {
-					username, hasUser := basicAuthMap["username"]
-					password, hasPwd := basicAuthMap["password"]
-					if hasUser && hasPwd {
-						userPwd := fmt.Sprintf("%s:%s", username, password)
-						userPwdBytes := []byte(userPwd)
-						base64encoded := b64.StdEncoding.EncodeToString(userPwdBytes)
-						headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("%s %s", model.HEADER_VALUE_BASIC_AUTH, base64encoded)}
+					username, hasUser = basicAuthStringMap["username"]
+					password, hasPwd = basicAuthStringMap["password"]
+				} else {
+					basicAuthAnyMap, ok := basicAuth.(map[interface{}]interface{})
+					if ok {
+						username, hasUser = basicAuthAnyMap["username"]
+						password, hasPwd = basicAuthAnyMap["password"]
 					}
+				}
+				if hasUser && hasPwd {
+					userPwd := fmt.Sprintf("%s:%s", username, password)
+					userPwdBytes := []byte(userPwd)
+					base64encoded := b64.StdEncoding.EncodeToString(userPwdBytes)
+					headers[model.HEADER_NAME_AUTHORIZATION] = []string{fmt.Sprintf("%s %s", model.HEADER_VALUE_BASIC_AUTH, base64encoded)}
 				}
 			} else {
 				bearerToken, has := authResult.(map[string]interface{})["bearer_token"]
@@ -199,7 +221,10 @@ func buildStarlarkRequest(requestMold *model.RequestMold, previousResponse *mode
 	if err != nil {
 		return model.Request{}, true, err
 	}
-	body, _ := conv.AssertAndConvert[interface{}](res, "body")
+	body, err := conv.AssertAndConvert[interface{}](res, "body")
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to convert body")
+	}
 
 	req := model.Request{
 		Url:     url,

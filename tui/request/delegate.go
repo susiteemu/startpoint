@@ -155,6 +155,9 @@ func newEditModeDelegate() list.DefaultDelegate {
 				keys = append(keys, keyprompt.KeypromptEntry{
 					Text: "starlark", Key: "s",
 				})
+				keys = append(keys, keyprompt.KeypromptEntry{
+					Text: "lua", Key: "l",
+				})
 
 				return tea.Cmd(func() tea.Msg {
 					return ShowKeyprompt{

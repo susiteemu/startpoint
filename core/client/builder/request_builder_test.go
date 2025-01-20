@@ -238,7 +238,8 @@ func TestBuildStarlarkRequests(t *testing.T) {
 			name: "Test with basic request",
 			mold: model.RequestMold{
 				Name: "Starlark request",
-				Starlark: &model.StarlarkRequest{
+				Type: "star",
+				Scriptable: &model.ScriptableRequest{
 					Script: `
 """
 prev_req: Some previous request
@@ -276,7 +277,8 @@ body = {
 			name: "Test with basic authentication",
 			mold: model.RequestMold{
 				Name: "Starlark request",
-				Starlark: &model.StarlarkRequest{
+				Type: "star",
+				Scriptable: &model.ScriptableRequest{
 					Script: `
 """
 prev_req: Some previous request
@@ -321,7 +323,8 @@ body = {
 			name: "Test with bearer token authentication",
 			mold: model.RequestMold{
 				Name: "Starlark request",
-				Starlark: &model.StarlarkRequest{
+				Type: "star",
+				Scriptable: &model.ScriptableRequest{
 					Script: `
 """
 prev_req: Some previous request
@@ -363,7 +366,8 @@ body = {
 			name: "Test with template variables",
 			mold: model.RequestMold{
 				Name: "Starlark request",
-				Starlark: &model.StarlarkRequest{
+				Type: "star",
+				Scriptable: &model.ScriptableRequest{
 					Script: `
 """
 prev_req: Some previous request
@@ -410,6 +414,208 @@ body = {
 			request, err := BuildRequest(&tt.mold, tt.profile)
 			assert.Nil(t, err, "did not expect error to happen")
 			assert.Equal(t, tt.expected, request, "requests should match")
+		})
+	}
+
+}
+
+func TestBuildLuaRequests(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		mold     model.RequestMold
+		profile  model.Profile
+		expected model.Request
+	}{
+
+		{
+			name: "Test with basic request",
+			mold: model.RequestMold{
+				Name: "Lua request",
+				Type: "lua",
+				Scriptable: &model.ScriptableRequest{
+					Script: `
+--[[
+prev_req: Some previous request
+doc:url: http://foobar.com
+doc:method: POST
+]]--
+return {
+	url = "http://foobar.com",
+	headers = { ["X-Foo"] = "Bar", ["X-Foos"] = { "Bar1", "Bar2" } },
+	method = "POST",
+	body = {
+		id=1,
+		amount=1.2001,
+		name="Jane"
+	}
+}`,
+				},
+			},
+			profile: model.Profile{},
+			expected: model.Request{
+				Url:    "http://foobar.com",
+				Method: "POST",
+				Headers: model.Headers{
+					"X-Foo":  {"Bar"},
+					"X-Foos": {"Bar1", "Bar2"},
+				},
+				Body: map[interface{}]interface{}{
+					"id":     float64(1),
+					"amount": 1.2001,
+					"name":   "Jane",
+				},
+				Options: make(map[string]interface{}),
+			},
+		},
+
+		{
+			name: "Test with basic authentication",
+			mold: model.RequestMold{
+				Name: "Lua request",
+				Type: "lua",
+				Scriptable: &model.ScriptableRequest{
+					Script: `
+--[[
+prev_req: Some previous request
+doc:url: http://foobar.com
+doc:method: POST
+]]--
+return {
+	url = "http://foobar.com",
+	headers = { ["X-Foo"]="Bar", ["X-Foos"]={ "Bar1", "Bar2" } },
+	method = "POST",
+	auth = {
+		basic_auth={
+			username="jane",
+			password="doe"
+		}
+	},
+	body = {
+		id=1,
+		amount=1.2001,
+		name="Jane"
+	}
+}`,
+				},
+			},
+			profile: model.Profile{},
+			expected: model.Request{
+				Url:    "http://foobar.com",
+				Method: "POST",
+				Headers: model.Headers{
+					"X-Foo":         {"Bar"},
+					"X-Foos":        {"Bar1", "Bar2"},
+					"Authorization": model.HeaderValues{"Basic amFuZTpkb2U="},
+				},
+				Body: map[interface{}]interface{}{
+					"id":     float64(1),
+					"amount": 1.2001,
+					"name":   "Jane",
+				},
+				Options: make(map[string]interface{}),
+			},
+		},
+
+		{
+			name: "Test with bearer token authentication",
+			mold: model.RequestMold{
+				Name: "Lua request",
+				Type: "lua",
+				Scriptable: &model.ScriptableRequest{
+					Script: `
+--[[
+prev_req: Some previous request
+doc:url: http://foobar.com
+doc:method: POST
+]]--
+return {
+	url = "http://foobar.com",
+	headers = { ["X-Foo"] = "Bar", ["X-Foos"] = { "Bar1", "Bar2" } },
+	method = "POST",
+	auth = {
+		bearer_token="some-token"
+	},
+	body = {
+		id=1,
+		amount=1.2001,
+		name="Jane"
+	}
+}`,
+				},
+			},
+			profile: model.Profile{},
+			expected: model.Request{
+				Url:    "http://foobar.com",
+				Method: "POST",
+				Headers: model.Headers{
+					"X-Foo":         {"Bar"},
+					"X-Foos":        {"Bar1", "Bar2"},
+					"Authorization": model.HeaderValues{"Bearer some-token"},
+				},
+				Body: map[interface{}]interface{}{
+					"id":     float64(1),
+					"amount": 1.2001,
+					"name":   "Jane",
+				},
+				Options: make(map[string]interface{}),
+			},
+		},
+
+		{
+			name: "Test with template variables",
+			mold: model.RequestMold{
+				Name: "Lua request",
+				Type: "lua",
+				Scriptable: &model.ScriptableRequest{
+					Script: `
+--[[
+prev_req: Some previous request
+doc:url: http://foobar.com
+doc:method: POST
+]]--
+return {
+	url = "http://{domain}",
+	headers = { ["X-Foo"] = "Bar", ["X-Foos"] = { "Bar1", "Bar2" }, ["X-Tmpl-Var"] = "{header-value-test}" },
+	method = "POST",
+	body = {
+		id = 1,
+		amount = 1.2001,
+		name = "Jane"
+	}
+}`,
+				},
+			},
+			profile: model.Profile{
+				Name: "some-profile",
+				Variables: map[string]string{
+					"domain":            "foobar.com",
+					"header-value-test": "Value from template var",
+				},
+			},
+			expected: model.Request{
+				Url:    "http://foobar.com",
+				Method: "POST",
+				Headers: model.Headers{
+					"X-Foo":      {"Bar"},
+					"X-Foos":     {"Bar1", "Bar2"},
+					"X-Tmpl-Var": {"Value from template var"},
+				},
+				Body: map[interface{}]interface{}{
+					"id":     float64(1),
+					"amount": 1.2001,
+					"name":   "Jane",
+				},
+				Options: make(map[string]interface{}),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request, err := BuildRequest(&tt.mold, tt.profile)
+			assert.Nil(t, err, "did not expect error to happen")
+			assert.EqualValues(t, tt.expected, request, "requests should match")
 		})
 	}
 

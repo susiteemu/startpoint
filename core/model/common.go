@@ -9,6 +9,7 @@ import (
 
 const CONTENT_TYPE_YAML = "yaml"
 const CONTENT_TYPE_STARLARK = "star"
+const CONTENT_TYPE_LUA = "lua"
 const HEADER_NAME_AUTHORIZATION = "Authorization"
 const HEADER_VALUE_BASIC_AUTH = "Basic"
 const HEADER_VALUE_BEARER_AUTH = "Bearer"

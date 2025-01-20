@@ -1,7 +1,7 @@
 package profileui
 
 import (
-	"startpoint/tui/styles"
+	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/charmbracelet/lipgloss"
 )

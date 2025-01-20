@@ -2,9 +2,9 @@ package starlarkng
 
 import (
 	"errors"
-	"startpoint/core/model"
-	"startpoint/core/scripting/starlark/goconv"
-	"startpoint/core/scripting/starlark/starlarkconv"
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/scripting/starlark/goconv"
+	"github.com/susiteemu/startpoint/core/scripting/starlark/starlarkconv"
 
 	"github.com/rs/zerolog/log"
 	"go.starlark.net/starlark"

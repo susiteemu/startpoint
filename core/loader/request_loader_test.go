@@ -1,7 +1,7 @@
 package loader
 
 import (
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/model"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

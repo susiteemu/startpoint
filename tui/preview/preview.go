@@ -2,8 +2,8 @@ package previewui
 
 import (
 	"fmt"
-	"startpoint/core/ansi"
-	"startpoint/tui/styles"
+	"github.com/susiteemu/startpoint/core/ansi"
+	"github.com/susiteemu/startpoint/tui/styles"
 	"strconv"
 	"strings"
 

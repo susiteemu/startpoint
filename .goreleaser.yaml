@@ -18,7 +18,7 @@ builds:
     flags:
       - -mod=mod
     ldflags:
-      - -s -w -X startpoint/cmd.version={{.Version}} -X startpoint/cmd.commit={{.Commit}} -X startpoint/cmd.date={{.Date}}
+      - -s -w -X github.com/susiteemu/startpoint/cmd.version={{.Version}} -X github.com/susiteemu/startpoint/cmd.commit={{.Commit}} -X github.com/susiteemu/startpoint/cmd.date={{.Date}}
 
 archives:
   - format: tar.gz

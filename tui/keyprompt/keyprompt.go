@@ -2,8 +2,8 @@ package keypromptui
 
 import (
 	"fmt"
+	"github.com/susiteemu/startpoint/tui/styles"
 	"slices"
-	"startpoint/tui/styles"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"

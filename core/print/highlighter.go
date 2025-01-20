@@ -2,8 +2,8 @@ package print
 
 import (
 	"fmt"
+	"github.com/susiteemu/startpoint/core/configuration"
 	"regexp"
-	"startpoint/core/configuration"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters"

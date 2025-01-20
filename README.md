@@ -15,6 +15,7 @@ It comes with many beautiful themes and supports you adding your own too!
 - [My Plans for `startpoint`](#my-plans-for-startpoint)
 - [Manual](#manual)
   * [Installation](#installation)
+    + [Install via `go install`](#install-via-go-install)
     + [On macOS](#on-macos)
   * [Commands](#commands)
   * [Requests TUI](#requests-tui)
@@ -107,6 +108,30 @@ As a more concrete list, at this point of time I have plans or have implemented:
 ### Installation
 
 There are several ways of installing `startpoint`.
+
+#### Install via `go install`
+
+If you have Go 1.23 or later installed, you can quickly install `startpoint` with:
+
+```bash
+go install github.com/susiteemu/startpoint@latest
+```
+
+This will download and install the binary to your Go binary directory, typically `$GOPATH/bin` or `$HOME/go/bin`
+if `$GOPATH` is not set. To ensure `startpoint` is accessible from anywhere, add this directory to your `PATH`:
+
+```bash
+export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+To confirm the installation was successful, run:
+
+```bash
+startpoint --help
+```
+
+> **Note**: Versions of `startpoint` released prior to `<next-version>` (e.g., `v1.2.5` or earlier)
+> may not be installable via `go install` due to a mismatch in the module path in `go.mod`.
 
 #### On macOS
 

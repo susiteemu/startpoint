@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/model"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2"

@@ -3,8 +3,8 @@ package styles
 import (
 	"embed"
 	"fmt"
+	"github.com/susiteemu/startpoint/core/configuration"
 	"os"
-	"startpoint/core/configuration"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/rs/zerolog/log"

@@ -1,7 +1,7 @@
 package requestui
 
 import (
-	keyprompt "startpoint/tui/keyprompt"
+	keyprompt "github.com/susiteemu/startpoint/tui/keyprompt"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"

@@ -3,12 +3,12 @@ package builder
 import (
 	b64 "encoding/base64"
 	"fmt"
-	"startpoint/core/configuration"
-	"startpoint/core/model"
-	luang "startpoint/core/scripting/lua"
-	starlarkng "startpoint/core/scripting/starlark"
-	"startpoint/core/templating/templateng"
-	"startpoint/core/tools/conv"
+	"github.com/susiteemu/startpoint/core/configuration"
+	"github.com/susiteemu/startpoint/core/model"
+	luang "github.com/susiteemu/startpoint/core/scripting/lua"
+	starlarkng "github.com/susiteemu/startpoint/core/scripting/starlark"
+	"github.com/susiteemu/startpoint/core/templating/templateng"
+	"github.com/susiteemu/startpoint/core/tools/conv"
 
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"

@@ -2,15 +2,15 @@ package requestui
 
 import (
 	"fmt"
-	"startpoint/core/model"
-	"startpoint/core/print"
-	"startpoint/core/templating/templateng"
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/print"
+	"github.com/susiteemu/startpoint/core/templating/templateng"
 
-	keyprompt "startpoint/tui/keyprompt"
-	preview "startpoint/tui/preview"
-	profiles "startpoint/tui/profile"
-	prompt "startpoint/tui/prompt"
-	statusbar "startpoint/tui/statusbar"
+	keyprompt "github.com/susiteemu/startpoint/tui/keyprompt"
+	preview "github.com/susiteemu/startpoint/tui/preview"
+	profiles "github.com/susiteemu/startpoint/tui/profile"
+	prompt "github.com/susiteemu/startpoint/tui/prompt"
+	statusbar "github.com/susiteemu/startpoint/tui/statusbar"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"

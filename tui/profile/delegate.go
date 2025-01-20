@@ -2,8 +2,8 @@ package profileui
 
 import (
 	"fmt"
+	"github.com/susiteemu/startpoint/tui/messages"
 	"io"
-	"startpoint/tui/messages"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"

@@ -4,13 +4,13 @@ Copyright © 2023 Teemu Turunen <teturun@gmail.com>
 package cmd
 
 import (
+	"github.com/susiteemu/startpoint/core/configuration"
+	"github.com/susiteemu/startpoint/core/writer"
 	"os"
 	"path/filepath"
-	"startpoint/core/configuration"
-	"startpoint/core/writer"
 	"strings"
 
-	mainview "startpoint/tui"
+	mainview "github.com/susiteemu/startpoint/tui"
 
 	"embed"
 

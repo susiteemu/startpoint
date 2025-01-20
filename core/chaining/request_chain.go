@@ -1,6 +1,6 @@
 package requestchain
 
-import "startpoint/core/model"
+import "github.com/susiteemu/startpoint/core/model"
 
 func ResolveRequestChain(r *model.RequestMold, all []*model.RequestMold) []*model.RequestMold {
 	chain := []*model.RequestMold{}

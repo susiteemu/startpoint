@@ -1,7 +1,7 @@
 package requestui
 
 import (
-	"startpoint/tui/styles"
+	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/charmbracelet/lipgloss"
 )

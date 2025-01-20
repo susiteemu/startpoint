@@ -1,7 +1,7 @@
 package promptui
 
 import (
-	"startpoint/tui/styles"
+	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"

@@ -3,12 +3,12 @@ package loader
 import (
 	"bytes"
 	"fmt"
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/templating/templateng"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
-	"startpoint/core/model"
-	"startpoint/core/templating/templateng"
 	"strings"
 
 	"github.com/joho/godotenv"

@@ -2,15 +2,15 @@ package profileui
 
 import (
 	"fmt"
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/print"
+	messages "github.com/susiteemu/startpoint/tui/messages"
+	"github.com/susiteemu/startpoint/tui/overlay"
+	preview "github.com/susiteemu/startpoint/tui/preview"
+	prompt "github.com/susiteemu/startpoint/tui/prompt"
+	statusbar "github.com/susiteemu/startpoint/tui/statusbar"
+	"github.com/susiteemu/startpoint/tui/styles"
 	"os/exec"
-	"startpoint/core/model"
-	"startpoint/core/print"
-	messages "startpoint/tui/messages"
-	"startpoint/tui/overlay"
-	preview "startpoint/tui/preview"
-	prompt "startpoint/tui/prompt"
-	statusbar "startpoint/tui/statusbar"
-	"startpoint/tui/styles"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"

@@ -1,4 +1,4 @@
-module startpoint
+module github.com/susiteemu/startpoint
 
 go 1.23
 

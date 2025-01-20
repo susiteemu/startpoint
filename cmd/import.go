@@ -22,7 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"startpoint/core/import/openapi"
+	"github.com/susiteemu/startpoint/core/import/openapi"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"

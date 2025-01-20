@@ -2,8 +2,8 @@ package print
 
 import (
 	"fmt"
-	"startpoint/core/model"
-	"startpoint/tui/styles"
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/charmbracelet/lipgloss"
 )

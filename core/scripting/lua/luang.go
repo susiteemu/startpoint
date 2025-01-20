@@ -3,7 +3,7 @@ package luang
 import (
 	"fmt"
 
-	"startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/model"
 
 	"github.com/rs/zerolog/log"
 	"github.com/yuin/gluamapper"

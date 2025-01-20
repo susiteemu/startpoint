@@ -2,7 +2,8 @@ package print
 
 import (
 	"fmt"
-	"startpoint/core/model"
+
+	"github.com/susiteemu/startpoint/core/model"
 )
 
 func SprintRequestMold(m *model.RequestMold) (string, error) {

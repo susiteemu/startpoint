@@ -2,15 +2,16 @@ package previewui
 
 import (
 	"fmt"
-	"github.com/susiteemu/startpoint/core/ansi"
-	"github.com/susiteemu/startpoint/tui/styles"
 	"strconv"
 	"strings"
+
+	"github.com/susiteemu/startpoint/core/ansi"
+	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/reflow/wordwrap"
+	"github.com/muesli/reflow/wrap"
 )
 
 type Model struct {
@@ -34,7 +35,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Viewport.Width = int(float64(msg.Width) * 0.8)
 		m.Viewport.Height = int(float64(msg.Height) * 0.8)
-		m.Viewport.SetContent(renderLines(m.content, m.Viewport.Width-4))
+		m.Viewport.SetContent(renderLines(m.content, m.Viewport.Width-3))
 	}
 
 	// Handle keyboard and mouse events in the viewport
@@ -67,7 +68,7 @@ func renderLines(content string, width int) string {
 		lineNrSection := lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true).Render(fmt.Sprintf(lineNrFmt, lineNr))
 		line = fmt.Sprintf("%s  %s", lineNrSection, line)
 		if lipgloss.Width(line) >= width {
-			line = wordwrap.String(line, width)
+			line = wrap.String(line, width)
 			colorState, _ := ansi.ParseANSI(line, width)
 			line = strings.ReplaceAll(line, "\n", "\u001b[0m\n"+colorState.State)
 		}

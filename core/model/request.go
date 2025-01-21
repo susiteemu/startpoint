@@ -14,22 +14,20 @@ import (
 )
 
 var (
-	starlarkNameFields = []string{
-		"meta:name",
-	}
-	starlarkUrlFields = []string{
+	scriptableUrlFields = []string{
 		"doc:url",
 		"url",
 	}
-	starlarkMethodFields = []string{
+	scriptableMethodFields = []string{
 		"doc:method",
 		"method",
 	}
-	starlarkPrevReqFields = []string{
+	scriptablePrevReqFields = []string{
 		"prev_req",
 	}
-	starlarkOutputFields = []string{
+	scriptableOutputFields = []string{
 		"meta:output",
+		"output",
 	}
 )
 
@@ -163,7 +161,7 @@ func (r *RequestMold) Url() string {
 	} else if r.Scriptable != nil {
 		switch r.Type {
 		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
-			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, starlarkUrlFields)
+			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, scriptableUrlFields)
 		}
 	}
 	return ""
@@ -175,7 +173,7 @@ func (r *RequestMold) Method() string {
 	} else if r.Scriptable != nil {
 		switch r.Type {
 		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
-			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, starlarkMethodFields)
+			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, scriptableMethodFields)
 		}
 	}
 	return ""
@@ -204,7 +202,7 @@ func (r *RequestMold) PreviousReq() string {
 	} else if r.Scriptable != nil {
 		switch r.Type {
 		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
-			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, starlarkPrevReqFields)
+			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, scriptablePrevReqFields)
 		}
 	}
 	return ""
@@ -235,7 +233,7 @@ func (r *RequestMold) Output() string {
 	} else if r.Scriptable != nil {
 		switch r.Type {
 		case CONTENT_TYPE_STARLARK, CONTENT_TYPE_LUA:
-			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, starlarkOutputFields)
+			return extractValueFromAlternativeFieldNames(r.Scriptable.Script, scriptableOutputFields)
 		}
 	}
 	return ""

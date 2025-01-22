@@ -47,6 +47,17 @@ func RunLuaScript(request model.RequestMold, previousResponse *model.Response) (
 		if err != nil {
 			return map[string]interface{}{}, err
 		}
+
+		// Convert map of interface{} to map of string
+		bodyAsMapInterface, isMapInterface := res.Body.(map[interface{}]interface{})
+		if isMapInterface {
+			bodyAsMapString := map[string]interface{}{}
+			for k, v := range bodyAsMapInterface {
+				bodyAsMapString[fmt.Sprintf("%v", k)] = v
+			}
+			res.Body = bodyAsMapString
+		}
+
 		log.Debug().Msgf("Received from Lua: %v", res)
 		values["url"] = res.Url
 		values["method"] = res.Method

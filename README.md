@@ -24,7 +24,7 @@ It comes with many beautiful themes and supports you adding your own too!
     + [Themes](#themes)
   * [Profiles TUI](#profiles-tui)
   * [Request Definitions](#request-definitions)
-      - [A Note About Starlark and Runtime](#a-note-about-starlark-and-runtime)
+    + [A Note About Starlark, Lua and Runtime](#a-note-about-starlark-lua-and-runtime)
     + [Different Requests](#different-requests)
       - [JSON](#json)
       - [Plain text](#plain-text)
@@ -307,7 +307,7 @@ Currently there is no direct theming support, excluding syntax coloring which co
 A request regardless of type has:
 
 - *required* a name, which must be unique within the workspace. This is derived from the file name without extension.
-- *required* an url to the resource
+- *required* an URL to the resource
 - *required* a request method: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
 - *optional* the name of the previous request
 - *optional* a list of headers
@@ -329,6 +329,14 @@ method: GET
 # A request.star
 url = "https://httpbin.org/anything"
 method = "GET"
+```
+
+```Lua
+-- A request.lua
+return {
+  url = "https://httpbin.org/anything",
+  method = "GET"
+}
 ```
 
 Both of these would perform a HTTP GET request url `https://httpbin.org/anything` and print the response.
@@ -354,12 +362,24 @@ headers = {
 }
 ```
 
+```lua
+-- A request with headers.lua
+return {
+  url = "https://httpbin.org/anything",
+  method = "GET",
+  headers = {
+    Accept = "application/json",
+    ["X-Custom-Header"] = "Some custom value"
+  }
+}
+```
+
 And to add a body, you would do:
 
 ```yaml
 # A request with body.yaml
 url: https://httpbin.org/anything
-method: GET
+method: POST
 headers:
   Accept: "application/json"
   Content-Type: "application/json"
@@ -374,7 +394,7 @@ body: >
 ```python
 # A request with body.star
 url = "https://httpbin.org/anything"
-method = "GET"
+method = "POST"
 headers = {
   "Accept": "application/json",
   "Content-Type": "application/json",
@@ -386,17 +406,34 @@ body = {
 }
 ```
 
-##### A Note About Starlark and Runtime
+```lua
+-- A request with body.lua
+return {
+  url = "https://httpbin.org/anything",
+  method = "POST",
+  headers = {
+    Accept = "application/json",
+    ["Content-Type"] = "application/json",
+    ["X-Custom-Header"] = "Some custom value"
+  },
+  body = {
+    id = 1,
+    name = "Jane"
+  }
+}
+```
 
-Since `starlark` is executable, values might be only resolved during runtime. This poses a challenge for cases when the app needs to know values for certain properties before running the script. These are:
+#### A Note About Starlark, Lua and Runtime
 
-- Requests TUI app displays request url and method in the listing. This is mainly to help you remember and know which request is which so it has only documentation purpose.
-- When building request chain, previous request needs to be known before-hand.
+Since `Starlark` and `Lua` are executable, values might be only resolved during runtime. This poses a challenge for cases when the app needs to know values for certain properties before running the script. These are:
+
+- Requests TUI app displays request URL and method in the listing. This is mainly to help you remember and know which request is which so it has only documentation purpose.
+- When building the request chain, the previous request needs to be known before-hand.
 
 For the first case, there are two possibilities:
 
-- If your url and/or method is static (i.e. it does not change during runtime) you can just define it as is and the app will parse the value and show it.
-- If your url and/or method changes during runtime, you can define a "multi-line comment block"* and add a "static version" there. Although what you see on the TUI would differ from what is the actual value when running the request, it could still be beneficial to see e.g. that your `method` is `GET or POST` instead of seeing `<blank>`.
+- If your URL and/or method is static (i.e. it does not change during runtime) you can just define it as is and the app will parse the value and show it.
+- If your URL and/or method changes during runtime, you can define a "multi-line comment block"* and add a "static version" there. Although what you see on the TUI would differ from what is the actual value when running the request, it could still be beneficial to see e.g. that your `method` is `GET or POST` instead of seeing `<blank>`.
 
 *) An example of multi-line comment block
 
@@ -407,12 +444,25 @@ doc:method: GET or POST
 """
 ```
 
+```lua
+--[[
+doc:url: http://localhost:8000/api/foo
+doc:method: GET or POST
+--]]
+```
+
 For the second case, similar to the first one, you would also use the multi-line comment block:
 
 ```python
 """
 prev_req: Some other request
 """
+```
+
+```lua
+--[[
+prev_req: Some other request
+--]]
 ```
 
 #### Different Requests
@@ -445,7 +495,7 @@ headers:
   Content-Type = "application/json"
 ```
 
-In `starlark` based requests you can either define the json body as a string or as a dict. Which you choose depends on your needs: it is probably more convenient to use dictionaries when appending items dynamically.
+In `Starlark` based requests you can either define the json body as a string or as a dict. Which you choose depends on your needs: it is probably more convenient to use dictionaries when appending items dynamically.
 
 As a string you would do:
 
@@ -472,6 +522,33 @@ headers = {
 }
 ```
 
+In `Lua` based requests you can, similar to `Starlark`, define the json body as a string or as a table. Which you choose depends on your needs: it is probably more convenient to use tables when appending items dynamically.
+
+As a string you would do:
+
+```lua
+-- ... other attributes...
+body = '{"id": 1, "name": "Jane"}'
+```
+
+And as a dict you would do:
+
+```lua
+-- ... other attributes...
+body = {
+  id = 1,
+  name = "Jane"
+}
+```
+
+As with the other types, you probably want to add appropriate header:
+
+```lua
+headers = {
+  ["Content-Type"] = "application/json"
+}
+```
+
 ##### Plain text
 
 Plain text is plain and simple: pass it to all requests as a string. You also probably want to add appropriate headers.
@@ -484,11 +561,20 @@ headers:
 body: "Plain text body"
 ```
 
-And with `starlark` based requests:
+And with `Starlark` based requests:
 
 ```python
 headers = {
   "Content-Type": "text/plain"
+}
+body = "Plain text body"
+```
+
+And with `Lua` based requests:
+
+```lua
+headers = {
+  ["Content-Type"] = "text/plain"
 }
 body = "Plain text body"
 ```
@@ -509,7 +595,7 @@ body: >
   </root>
 ```
 
-And with `starlark` based requests you could do:
+And with `Starlark` based requests you could do:
 
 ```python
 headers = {
@@ -521,6 +607,20 @@ body = """
     <name>Jane</name>
   </root>
 """
+```
+
+And with `lua` based requests you could do:
+
+```lua
+headers = {
+  ["Content-Type"] = "application/xml"
+}
+body = [[
+  <root>
+    <id>1</id>
+    <name>Jane</name>
+  </root>
+]]
 ```
 
 ##### Form data
@@ -539,7 +639,7 @@ body:
   field3: val3
 ```
 
-With `starlark` based requests:
+With `Starlark` based requests:
 
 ```python
 method = "POST"
@@ -550,6 +650,20 @@ body = {
   "field1": "val1",
   "field2": "val2",
   "field3": "val3",
+}
+```
+
+With `Lua` based requests:
+
+```lua
+method = "POST"
+headers = {
+  ["Content-Type"] = "application/x-www-form-urlencoded"
+}
+body = {
+  field1 = "val1",
+  field2 = "val2",
+  field3 = "val3",
 }
 ```
 
@@ -570,7 +684,7 @@ body:
   file: '@resources/Image.png'
 ```
 
-And with `starlark` based requests like this:
+And with `Starlark` based requests like this:
 
 ```python
 method = "POST"
@@ -580,6 +694,19 @@ headers = {
 body = {
   "title": "Image title",
   "file": "@resources/Image.png",
+}
+```
+
+And with `Lua` based requests like this:
+
+```lua
+method = "POST"
+headers = {
+  ["Content-Type"] = "multipart/form-data"
+}
+body = {
+  title = "Image title",
+  file = "@resources/Image.png",
 }
 ```
 
@@ -594,44 +721,39 @@ url: "http://localhost:8000/download"
 output: "/path/to/some/file.png"
 ```
 
-With `starlark` based requests you would do:
+With `Starlark` based requests you would do:
 
 ```python
 url = "http://localhost:8000/download"
 output = "/path/to/some/file.png"
 ```
 
+With `Lua` based requests you would do:
+
+```lua
+url = "http://localhost:8000/download"
+output = "/path/to/some/file.png"
+```
+
 ##### URL/Query Parameters and Path Variables
 
-Currently there is no special property for passing query parameters and path variables. Instead you would simply add them to the url property. Check [templating](#templating-requests) of how to pass values from environment. With `starlark` based requests you can also assign values dynamically.
+Currently there is no special property for passing query parameters and path variables. Instead you would simply add them to the url property. Check [templating](#templating-requests) of how to pass values from environment. With `Starlark` and `Lua` based requests you can also assign values dynamically. Please note that you must handle URL escaping yourself.
 
-Query parameters with `yaml` based requests:
+Query parameters:
 
-```yaml
-url: "http://localhost:8000?arg1=val1&arg2=val2"
+```
+http://localhost:8000?arg1=val1&arg2=val2
 ```
 
-Query parameters with `starlark` based requests:
+Path variables:
 
-```python
-url = "http://localhost:8000?arg1=val1&arg2=val2"
 ```
-
-Path variables with `yaml` based requests:
-
-```yaml
-url: "http://localhost:8000/some-path-var/123"
-```
-
-Path variables with `starlark` based requests:
-
-```python
-url = "http://localhost:8000/some-path-var/123"
+http://localhost:8000/some-path-var/123
 ```
 
 #### Chaining Requests
 
-At times it is useful to run a request before another, e.g. when using a API that has a authentication scheme requiring to pass a token. Each request, regardless of being "simple" or "complex" has a property `prev_req` that can be used to point to a another request. When used with "simple" (`yaml` based) requests you can't use values from the previous response but you can nevertheless chain them if need be. The real benefit comes when using "complex" (`starlark` based) requests: you can take values from previous response's headers and body, build logic upon them and pass them to the current request.
+At times it is useful to run a request before another, e.g. when using a API that has a authentication scheme requiring to pass a token. Each request, regardless of being "simple" or "complex" has a property `prev_req` that can be used to point to a another request. When used with "simple" (`yaml` based) requests you can't use values from the previous response but you can nevertheless chain them if need be. The real benefit comes when using "complex" (`Starlark` or `Lua` based) requests: you can take values from previous response's headers and body, build logic upon them and pass them to the current request.
 
 With `yaml` based requests you can define previous request like so:
 
@@ -640,13 +762,20 @@ With `yaml` based requests you can define previous request like so:
 prev_req: Some other request
 ```
 
-With `starlark` based requests you can do it like so:
+With `Starlark` based requests you can do it like so:
 
 ```python
 """
 prev_req: Some other request
 """
+```
 
+And with `Lua` based requests you can do it like so:
+
+```lua
+--[[
+prev_req: Some other request
+--]]
 ```
 
 An example illustrates how to authenticate to oauth2 endpoint.
@@ -697,6 +826,12 @@ method: GET
 
 ```python
 # Using templates.star
+url = "{domain}/foo"
+method = "GET"
+```
+
+```lua
+-- Using templates.lua
 url = "{domain}/foo"
 method = "GET"
 ```

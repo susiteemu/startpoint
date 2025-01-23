@@ -14,3 +14,15 @@ func AssertAndConvert[T any](data map[string]interface{}, fieldName string) (T, 
 	}
 	return result, nil
 }
+
+func ConvertMapOfInterfaceToString(input interface{}) (map[string]interface{}, bool) {
+	asMapInterface, isMapInterface := input.(map[interface{}]interface{})
+	asMapString := map[string]interface{}{}
+	if isMapInterface {
+		for k, v := range asMapInterface {
+			asMapString[fmt.Sprintf("%v", k)] = v
+		}
+	}
+	return asMapString, isMapInterface
+
+}

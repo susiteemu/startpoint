@@ -6,6 +6,7 @@ import (
 	"github.com/susiteemu/startpoint/core/model"
 
 	"github.com/rs/zerolog/log"
+	conv "github.com/susiteemu/startpoint/core/tools/conv"
 	"github.com/yuin/gluamapper"
 	lua "github.com/yuin/gopher-lua"
 	luar "layeh.com/gopher-luar"
@@ -49,12 +50,8 @@ func RunLuaScript(request model.RequestMold, previousResponse *model.Response) (
 		}
 
 		// Convert map of interface{} to map of string
-		bodyAsMapInterface, isMapInterface := res.Body.(map[interface{}]interface{})
+		bodyAsMapString, isMapInterface := conv.ConvertMapOfInterfaceToString(res.Body)
 		if isMapInterface {
-			bodyAsMapString := map[string]interface{}{}
-			for k, v := range bodyAsMapInterface {
-				bodyAsMapString[fmt.Sprintf("%v", k)] = v
-			}
 			res.Body = bodyAsMapString
 		}
 

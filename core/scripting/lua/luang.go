@@ -30,6 +30,13 @@ func RunLuaScript(request model.RequestMold, previousResponse *model.Response) (
 	if previousResponse != nil {
 		headers := previousResponse.HeadersAsMapString()
 		prevResponseMap["headers"] = headers
+
+		bodyAsMap, err := previousResponse.BodyAsMap()
+		if err == nil {
+			prevResponseMap["body"] = bodyAsMap
+		} else {
+			prevResponseMap["body"] = string(previousResponse.Body)
+		}
 	}
 	prevResponse := luar.New(L, prevResponseMap)
 	L.SetGlobal("prevResponse", prevResponse)

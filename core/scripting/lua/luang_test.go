@@ -1,8 +1,9 @@
 package luang
 
 import (
-	"startpoint/core/model"
 	"testing"
+
+	"github.com/susiteemu/startpoint/core/model"
 
 	"github.com/stretchr/testify/assert"
 )

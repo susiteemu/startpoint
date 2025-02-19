@@ -1,8 +1,9 @@
 package print
 
 import (
-	"github.com/susiteemu/startpoint/core/model"
 	"strings"
+
+	"github.com/susiteemu/startpoint/core/model"
 )
 
 type PrintOpts struct {
@@ -13,11 +14,11 @@ type PrintOpts struct {
 	PrintRequest   bool
 }
 
-func SprintResponse(resp *model.Response, printOpts PrintOpts) (string, error) {
+func SprintResponse(resp *model.Response, printOpts PrintOpts) (string, string, error) {
 	return sprintResponse(resp, printOpts)
 }
 
-func SprintFullResponse(resp *model.Response) (string, error) {
+func SprintFullResponse(resp *model.Response) (string, string, error) {
 	printOpts := PrintOpts{
 		PrettyPrint:    false,
 		PrintHeaders:   true,
@@ -28,7 +29,7 @@ func SprintFullResponse(resp *model.Response) (string, error) {
 	return sprintResponse(resp, printOpts)
 }
 
-func SprintPrettyFullResponse(resp *model.Response) (string, error) {
+func SprintPrettyFullResponse(resp *model.Response) (string, string, error) {
 	printOpts := PrintOpts{
 		PrettyPrint:    true,
 		PrintHeaders:   true,
@@ -39,7 +40,7 @@ func SprintPrettyFullResponse(resp *model.Response) (string, error) {
 	return sprintResponse(resp, printOpts)
 }
 
-func SprintPlainResponse(resp *model.Response, printHeaders bool, printBody bool) (string, error) {
+func SprintPlainResponse(resp *model.Response, printHeaders bool, printBody bool) (string, string, error) {
 	printOpts := PrintOpts{
 		PrettyPrint:    false,
 		PrintHeaders:   printHeaders,
@@ -50,7 +51,7 @@ func SprintPlainResponse(resp *model.Response, printHeaders bool, printBody bool
 	return sprintResponse(resp, printOpts)
 }
 
-func SprintPrettyResponse(resp *model.Response, printHeaders bool, printBody bool) (string, error) {
+func SprintPrettyResponse(resp *model.Response, printHeaders bool, printBody bool) (string, string, error) {
 	printOpts := PrintOpts{
 		PrettyPrint:    true,
 		PrintHeaders:   printHeaders,
@@ -61,50 +62,65 @@ func SprintPrettyResponse(resp *model.Response, printHeaders bool, printBody boo
 	return sprintResponse(resp, printOpts)
 }
 
-func sprintResponse(resp *model.Response, printOpts PrintOpts) (string, error) {
+func sprintResponse(resp *model.Response, printOpts PrintOpts) (string, string, error) {
 	pretty := printOpts.PrettyPrint
-	var responseBuilder []string
+	var responseBuilder, prettyResponseBuilder []string
 
 	if printOpts.PrintTraceInfo {
-		traceInfo, _ := SprintTraceInfo(resp.TraceInfo, pretty)
+		traceInfo, prettyTraceInfo, _ := SprintTraceInfo(resp.TraceInfo, pretty)
 		responseBuilder = append(responseBuilder, traceInfo)
+		if printOpts.PrettyPrint {
+			prettyResponseBuilder = append(prettyResponseBuilder, prettyTraceInfo)
+		}
 	}
 
 	if printOpts.PrintRequest {
-		request, err := SprintRequest(&resp.Request, pretty)
+		request, prettyRequest, err := SprintRequest(&resp.Request, pretty)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		if len(request) > 0 {
 			responseBuilder = append(responseBuilder, request)
 		}
+		if len(prettyRequest) > 0 && printOpts.PrettyPrint {
+			prettyResponseBuilder = append(prettyResponseBuilder, prettyRequest)
+		}
 	}
 
 	if printOpts.PrintHeaders {
-		respStatusStr, err := SprintStatus(resp, pretty)
+		respStatusStr, prettyRespStatusStr, err := SprintStatus(resp, pretty)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		responseBuilder = append(responseBuilder, respStatusStr)
-		respHeadersStr, err := SprintHeaders(resp.Headers, pretty)
+		if printOpts.PrettyPrint {
+			prettyResponseBuilder = append(prettyResponseBuilder, prettyRespStatusStr)
+		}
+		respHeadersStr, prettyRespHeadersStr, err := SprintHeaders(resp.Headers, pretty)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		if len(respHeadersStr) > 0 {
 			responseBuilder = append(responseBuilder, respHeadersStr)
 		}
+		if len(prettyRespHeadersStr) > 0 && printOpts.PrettyPrint {
+			prettyResponseBuilder = append(prettyResponseBuilder, prettyRespHeadersStr)
+		}
 	}
 
 	if printOpts.PrintBody {
-		respBodyStr, err := SprintBody(resp.Size, resp.Body, resp.Headers, pretty)
+		respBodyStr, prettyRespBodyStr, err := SprintBody(resp.Size, resp.Body, resp.Headers, pretty)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		if len(respBodyStr) > 0 {
 			responseBuilder = append(responseBuilder, respBodyStr)
 		}
+		if len(prettyRespBodyStr) > 0 && printOpts.PrettyPrint {
+			prettyResponseBuilder = append(prettyResponseBuilder, prettyRespBodyStr)
+		}
 	}
 
-	return strings.Join(responseBuilder, "\n"), nil
+	return strings.Join(responseBuilder, "\n"), strings.Join(prettyResponseBuilder, "\n"), nil
 }

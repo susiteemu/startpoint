@@ -2,13 +2,14 @@ package print
 
 import (
 	"fmt"
+
 	"github.com/susiteemu/startpoint/core/model"
 	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
-func SprintTraceInfo(traceInfo model.TraceInfo, pretty bool) (string, error) {
+func SprintTraceInfo(traceInfo model.TraceInfo, pretty bool) (string, string, error) {
 	ti := fmt.Sprintf(`DNSLookup: %s
 ConnTime: %s
 TCPConnTime: %s
@@ -25,12 +26,13 @@ RemoteAddr: %s
 		traceInfo.DNSLookup, traceInfo.ConnTime, traceInfo.TCPConnTime, traceInfo.TLSHandshake, traceInfo.ServerTime, traceInfo.ResponseTime, traceInfo.TotalTime, traceInfo.IsConnReused, traceInfo.IsConnWasIdle, traceInfo.ConnIdleTime, traceInfo.RequestAttempt, traceInfo.RemoteAddr,
 	)
 
+	prettyTi := ""
 	if pretty {
-		theme := styles.GetTheme()
+		theme := styles.LoadTheme()
 		traceInfoStyle := lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true)
-		return traceInfoStyle.Render(ti), nil
+		prettyTi = traceInfoStyle.Render(ti)
 	}
 
-	return ti, nil
+	return ti, prettyTi, nil
 
 }

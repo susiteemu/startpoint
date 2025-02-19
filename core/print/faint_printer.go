@@ -7,7 +7,7 @@ import (
 )
 
 func SprintFaint(str string) string {
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 	faintStyle := lipgloss.NewStyle().Foreground(theme.TextFgColor).Faint(true)
 	return faintStyle.Render(str)
 }

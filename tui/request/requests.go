@@ -3,12 +3,13 @@ package requestui
 import (
 	"errors"
 	"fmt"
-	"github.com/susiteemu/startpoint/core/model"
-	"github.com/susiteemu/startpoint/core/print"
 	"os/exec"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/core/print"
 
 	keyprompt "github.com/susiteemu/startpoint/tui/keyprompt"
 	messages "github.com/susiteemu/startpoint/tui/messages"
@@ -16,6 +17,7 @@ import (
 	preview "github.com/susiteemu/startpoint/tui/preview"
 	profiles "github.com/susiteemu/startpoint/tui/profile"
 	prompt "github.com/susiteemu/startpoint/tui/prompt"
+	resultsui "github.com/susiteemu/startpoint/tui/resultsview"
 	statusbar "github.com/susiteemu/startpoint/tui/statusbar"
 	"github.com/susiteemu/startpoint/tui/styles"
 
@@ -125,7 +127,6 @@ func (m *Model) SetSize(w, h int) {
 	m.width = w
 	m.height = h
 	m.statusbar.SetWidth(w)
-	m.topbar.SetWidth(w)
 	m.list.SetWidth(w)
 	m.help.Width = w
 	listHeight := calculateListHeight(*m)
@@ -153,7 +154,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		switch keypress := msg.String(); keypress {
 		case tea.KeyEsc.String():
-			if m.active == Preview || m.active == Prompt || m.active == Profiles || m.active == Keyprompt {
+			if m.active == Preview || m.active == Prompt || m.active == Profiles || m.active == Keyprompt || m.active == Results {
 				m.active = List
 				return m, nil
 			}
@@ -177,13 +178,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				listHeight := calculateListHeight(m)
 				m.list.SetHeight(listHeight)
 				updateStatusbar(&m, "")
-				return m, nil
-			}
-		case "?":
-			if m.active == List {
-				m.help.ShowAll = !m.help.ShowAll
-				listHeight := calculateListHeight(m)
-				m.list.SetHeight(listHeight)
 				return m, nil
 			}
 		case "/":
@@ -218,18 +212,39 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			doRequest(requestMold, m.requestMolds, activeProfile),
 		)
 	case RunRequestFinishedMsg:
-		m.postAction = PostAction{
-			Type:    PrintRequest,
-			Payload: string(msg),
+		m.active = Results
+		runResults := m.runResults
+		if runResults == nil {
+			runResults = map[string][]resultsui.RunResult{}
 		}
-		return m, tea.Quit
+		_, has := runResults[msg.RequestName]
+		if !has {
+			runResults[msg.RequestName] = []resultsui.RunResult{}
+		}
+		r := runResults[msg.RequestName]
+		r = append(r, resultsui.RunResult{RequestName: msg.RequestName, RunAt: time.Now(), Results: msg.Results, PlainResults: msg.RawResults})
+		runResults[msg.RequestName] = r
+		m.runResults = runResults
+		m.resultview = resultsui.New(r, len(r)-1, m.width, m.height, 0.8, 0.8)
+
+		return m, nil
 
 	case RunRequestFinishedWithFailureMsg:
-		m.postAction = PostAction{
-			Type:    PrintFailedRequest,
-			Payload: string(msg),
+		m.active = Results
+		runResults := m.runResults
+		if m.runResults == nil {
+			runResults = map[string][]resultsui.RunResult{}
 		}
-		return m, tea.Quit
+		_, has := runResults[msg.RequestName]
+		if !has {
+			runResults[msg.RequestName] = []resultsui.RunResult{}
+		}
+		r := runResults[msg.RequestName]
+		r = append(r, resultsui.RunResult{RunAt: time.Now(), Results: msg.Results})
+		m.runResults = runResults
+		m.resultview = resultsui.New(r, len(r)-1, m.width, m.height, 0.8, 0.8)
+
+		return m, nil
 	case CreateRequestMsg:
 		if m.mode == Edit && m.active == List {
 			var promptKey, promptLabel string
@@ -372,9 +387,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if formatted == "" || err != nil {
 				formatted = selected.Raw()
 			}
-			w := int(float64(m.width) * 0.8)
-			h := int(float64(m.height) * 0.8)
-			m.preview = preview.New(selected.Filename, formatted, w, h)
+			m.preview = preview.New(selected.Filename, formatted, m.width, m.height, 0.8, 0.8)
 
 			return m, nil
 		}
@@ -553,6 +566,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case Stopwatch:
 		m.stopwatch, cmd = m.stopwatch.Update(msg)
 		cmds = append(cmds, cmd)
+	case Results:
+		m.resultview, cmd = m.resultview.Update(msg)
+		cmds = append(cmds, cmd)
 	}
 	return m, tea.Batch(cmds...)
 }
@@ -571,6 +587,8 @@ func (m Model) View() string {
 		return renderStopwatch(m)
 	case Profiles:
 		return renderProfiles(m)
+	case Results:
+		return renderResults(m)
 	default:
 		return renderList(m)
 	}
@@ -587,15 +605,18 @@ func renderList(m Model) string {
 		views...,
 	)
 
-	if m.help.ShowAll {
-		helpModal := style.helpPaneStyle.Render(m.help.View(m.list))
-		// position at the bottom
-		x := (m.width / 2) - (lipgloss.Width(helpModal) / 2)
-		y := m.height - lipgloss.Height(helpModal) - 1
-		joined = overlay.PlaceOverlay(x, y, helpModal, joined)
-	}
-
 	return joined
+}
+
+func (m *Model) GetHelpKeys() help.KeyMap {
+	switch m.active {
+	case List:
+		return m.list
+	case Results:
+		return m.resultview
+	default:
+		return m.list
+	}
 }
 
 func calculateListHeight(m Model) int {
@@ -640,10 +661,16 @@ func renderKeyprompt(m Model) string {
 	return renderModal(renderList(m), m.keyprompt.View(), w, h)
 }
 
+func renderResults(m Model) string {
+	w := m.width
+	h := m.height
+	return renderModal(renderList(m), m.resultview.View(), w, h)
+}
+
 func New(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile) Model {
 	log.Info().Msgf("Starting up manage TUI with %d loaded requests and %d profiles", len(loadedRequests), len(loadedProfiles))
 
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 	InitStyle(theme, styles.GetCommonStyles(theme))
 
 	var requests []list.Item
@@ -708,12 +735,6 @@ func New(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile) M
 		{Text: "? Help", BackgroundColor: style.statusbarFourthColBg, ForegroundColor: style.statusbarSecondaryFg},
 	}
 
-	help := help.New()
-	help.Styles.ShortKey = style.helpKeyStyle
-	help.Styles.ShortDesc = style.helpDescStyle
-	help.Styles.FullKey = style.helpKeyStyle
-	help.Styles.FullDesc = style.helpDescStyle
-
 	sb := statusbar.New(statusbarItems, 1, 0)
 	return Model{
 		list:         requestList,
@@ -721,7 +742,6 @@ func New(loadedRequests []*model.RequestMold, loadedProfiles []*model.Profile) M
 		mode:         mode,
 		stopwatch:    stopwatch.NewWithInterval(time.Millisecond * 100),
 		statusbar:    sb,
-		help:         help,
 		requestMolds: loadedRequests,
 	}
 

@@ -3,6 +3,12 @@ package requestui
 import (
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
+
 	requestchain "github.com/susiteemu/startpoint/core/chaining"
 	"github.com/susiteemu/startpoint/core/client/runner"
 	"github.com/susiteemu/startpoint/core/configuration"
@@ -10,11 +16,6 @@ import (
 	"github.com/susiteemu/startpoint/core/loader"
 	"github.com/susiteemu/startpoint/core/model"
 	"github.com/susiteemu/startpoint/core/writer"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/susiteemu/startpoint/core/print"
 
@@ -33,10 +34,14 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 
 		responses, err := runner.RunRequestChain(chainedRequests, profile, interimResult)
 		if err != nil {
-			return RunRequestFinishedWithFailureMsg(fmt.Sprintf("Error occurred:\n%v", err))
+			return RunRequestFinishedWithFailureMsg{
+				RequestName: r.Name,
+				Results:     fmt.Sprintf("Error occurred: %v", err),
+			}
 		}
 		responseCount := len(responses)
 		var printedResponses []string
+		var rawResponses []string
 		for _, resp := range responses {
 			var config *configuration.Configuration = configuration.NewWithRequestOptions(resp.Options)
 			printResponse := config.GetBoolWithDefault("print", true)
@@ -52,22 +57,46 @@ func doRequest(r *model.RequestMold, all []*model.RequestMold, profile *model.Pr
 				PrintRequest:   config.GetBoolWithDefault("printRequest", false),
 			}
 			log.Debug().Msgf("Printing with opts %v", printOpts)
-			printed, err := print.SprintResponse(resp, printOpts)
+			printed, prettyPrinted, err := print.SprintResponse(resp, printOpts)
 			if err != nil {
-				return RunRequestFinishedWithFailureMsg(fmt.Sprintf("Error occurred: %v", err))
+				return RunRequestFinishedWithFailureMsg{
+					RequestName: r.Name,
+					Results:     fmt.Sprintf("Error occurred: %v", err),
+				}
 			}
 			// FIXME: instead of responseCount, this should check if there are > 1 responses that would be printed
 			if responseCount > 1 {
-				printedResponses = append(printedResponses, print.SprintFaint(fmt.Sprintf(`#
+				requestName := fmt.Sprintf(`#
 # %s
-#`, resp.RequestName)))
+#`, resp.RequestName)
+
+				if printOpts.PrettyPrint {
+					printedResponses = append(printedResponses, print.SprintFaint(requestName))
+					rawResponses = append(rawResponses, requestName)
+				} else {
+					printedResponses = append(printedResponses, requestName)
+					rawResponses = append(rawResponses, requestName)
+				}
 
 			}
-			printedResponses = append(printedResponses, printed)
-			printedResponses = append(printedResponses, "")
+			if printOpts.PrettyPrint {
+				printedResponses = append(printedResponses, prettyPrinted)
+				printedResponses = append(printedResponses, "")
+				rawResponses = append(rawResponses, printed)
+				rawResponses = append(rawResponses, "")
+			} else {
+				printedResponses = append(printedResponses, printed)
+				printedResponses = append(printedResponses, "")
+				rawResponses = append(rawResponses, printed)
+				rawResponses = append(rawResponses, "")
+			}
 		}
 
-		return RunRequestFinishedMsg(strings.Join(printedResponses, "\n"))
+		return RunRequestFinishedMsg{
+			RequestName: r.Name,
+			Results:     strings.Join(printedResponses, "\n"),
+			RawResults:  strings.Join(rawResponses, "\n"),
+		}
 	}
 
 }

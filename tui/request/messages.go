@@ -39,8 +39,15 @@ type PreviewRequestMsg struct {
 	Request Request
 }
 
-type RunRequestFinishedMsg string
-type RunRequestFinishedWithFailureMsg string
+type RunRequestFinishedMsg struct {
+	RequestName string
+	Results     string
+	RawResults  string
+}
+type RunRequestFinishedWithFailureMsg struct {
+	RequestName string
+	Results     string
+}
 
 type RenameRequestMsg struct {
 	Request Request

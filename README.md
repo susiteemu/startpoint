@@ -1,6 +1,6 @@
 # A CLI tool for managing and scripting http/restful requests: startpoint
 
-Startpoint is a lightweight, open-source CLI and TUI tool for managing and scripting HTTP/RESTful requests. It supports YAML-based request definitions, response chaining, and scripting with Starlark (Lua planned). Designed for offline use, it's ad-free, tracking-free, and highly customizable, making it a fast and efficient solution for developers.
+Startpoint is a lightweight, open-source CLI and TUI tool for managing and scripting HTTP/RESTful requests. It supports YAML-based request definitions, response chaining, and scripting with Starlark and Lua. Designed for offline use, it's ad-free, tracking-free, and highly customizable, making it a fast and efficient solution for developers.
 
 ![Catppuccin Mocha](docs/images/startpoint-catppuccin-mocha.png)
 
@@ -40,6 +40,7 @@ It comes with many beautiful themes and supports you adding your own too!
   * [Themes](#themes-1)
   * [Configuration](#configuration)
   * [Examples](#examples)
+- [Known Issues and Caveats](#known-issues-and-caveats)
 - [TODO](#todo)
 
 <!-- tocstop -->
@@ -96,7 +97,7 @@ As a more concrete list, at this point of time I have plans or have implemented:
 - dotenv based profile support
 - using yaml as request definitions
 - using Starlark as scriptable request definitions
-- using Lua as scriptable request definitions (coming later)
+- using Lua as scriptable request definitions
 - support for using your own favorite editor in writing the request definitions
 - TUI for managing both requests and profiles
 - TUI for activating wanted profile and running requests
@@ -941,43 +942,43 @@ All configuration values are:
 | ------------- | -------------- | -------------- | -------------- |
 | themeName | catppuccin-mocha | Name of the theme to use. If set, looks for theme file in yaml format (defined below with `theme.*` attributes) first in workspace, then in $HOME and lastly from embedded themes. If none found or this attribute is not set, uses `theme.*` attributes configured inside configuration file | Global |
 | theme.syntax | catppuccin-mocha | Sets syntax coloring for [Chroma](https://github.com/alecthomas/chroma). See [all available styles](https://github.com/alecthomas/chroma/tree/master/styles). | Global |
-| theme.bgColor | ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e` | Background color for the TUI apps | Global |
-| theme.primaryTextFgColor | ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4` | Primary text foreground color | Global |
-| theme.secondaryTextFgColor | ![#bac2de](https://via.placeholder.com/15/bac2de/000000.png?text=+) `#bac2de`  | Secondary text foreground color | Global |
-| theme.titleFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | App title foreground color | Global |
-| theme.titleBgColor | ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`  | App title background color | Global |
-| theme.cursorFgColor | ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | Cursor foreground color | Global |
-| theme.cursorBgColor | ![#f5e0dc](https://via.placeholder.com/15/f5e0dc/000000.png?text=+) `#f5e0dc`  | Cursor background color | Global |
-| theme.borderFgColor |  ![#11111b](https://via.placeholder.com/15/11111b/000000.png?text=+) `#11111b` | Border foreground color | Global |
-| theme.whitespaceFgColor | ![#313244](https://via.placeholder.com/15/313244/000000.png?text=+) `#313244`  | Foreground color for the whitespace (shown as a background for dialogs/prompts) | Global |
-| theme.errorFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`  | Foreground color for errors | Global |
-| theme.statusbar.primaryBgColor | ![#11111b](https://via.placeholder.com/15/11111b/000000.png?text=+) `#11111b`   | Background color for the primary section of the statusbar (e.g. that displays messages) | Global |
-| theme.statusbar.primaryFgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4`  | Foreground color for the primary section of the statusbar (e.g. that displays messages) | Global |
-| theme.statusbar.secondaryFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | Foreground color for "secondary" content such as other, colored, sections | Global |
-| theme.statusbar.modePrimaryBgColor | ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`   | Background color for the "primary" (e.g. in requests TUI the *SELECT*) mode section of the statusbar| Global |
-| theme.statusbar.modeSecondaryBgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | Background color for the "secondary" (e.g. in requests TUI the *EDIT*) mode section of the statusbar| Global |
-| theme.statusbar.thirdColBgColor | ![#94e2d5](https://via.placeholder.com/15/94e2d5/000000.png?text=+) `#94e2d5` | Background color for the third section of the statusbar | Global |
-| theme.statusbar.fourthColBgColor | ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`  | Background color for the fourth section of the statusbar | Global |
-| theme.httpMethods.textFgColor |  ![#1e1e2e](https://via.placeholder.com/15/1e1e2e/000000.png?text=+) `#1e1e2e`  | In list items, the foreground color for the label showing request's http method | Global |
-| theme.httpMethods.defaultBgColor |  ![#cdd6f4](https://via.placeholder.com/15/cdd6f4/000000.png?text=+) `#cdd6f4`  | In list items, the default background color for the label showing request's http method | Global |
-| theme.httpMethods.getBgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | In list items, the background color for the label showing request's http method when the method is `GET` | Global |
-| theme.httpMethods.postBgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | In list items, the background color for the label showing request's http method when the method is `POST` | Global |
-| theme.httpMethods.putBgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | In list items, the background color for the label showing request's http method when the method is `PUT` | Global |
-| theme.httpMethods.deleteBgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | In list items, the background color for the label showing request's http method when the method is `DELETE` | Global |
-| theme.httpMethods.patchBgColor | ![#94e2d5](https://via.placeholder.com/15/94e2d5/000000.png?text=+) `#94e2d5`  | In list items, the background color for the label showing request's http method when the method is `PATCH` | Global |
+| theme.bgColor | ![#1e1e2e](https://dummyimage.com/15/1e1e2e?text=+) `#1e1e2e` | Background color for the TUI apps | Global |
+| theme.primaryTextFgColor | ![#cdd6f4](https://dummyimage.com/15/cdd6f4?text=+) `#cdd6f4` | Primary text foreground color | Global |
+| theme.secondaryTextFgColor | ![#bac2de](https://dummyimage.com/15/bac2de?text=+) `#bac2de`  | Secondary text foreground color | Global |
+| theme.titleFgColor |  ![#1e1e2e](https://dummyimage.com/15/1e1e2e?text=+) `#1e1e2e`  | App title foreground color | Global |
+| theme.titleBgColor | ![#a6e3a1](https://dummyimage.com/15/a6e3a1?text=+) `#a6e3a1`  | App title background color | Global |
+| theme.cursorFgColor | ![#1e1e2e](https://dummyimage.com/15/1e1e2e?text=+) `#1e1e2e`  | Cursor foreground color | Global |
+| theme.cursorBgColor | ![#f5e0dc](https://dummyimage.com/15/f5e0dc?text=+) `#f5e0dc`  | Cursor background color | Global |
+| theme.borderFgColor |  ![#11111b](https://dummyimage.com/15/11111b?text=+) `#11111b` | Border foreground color | Global |
+| theme.whitespaceFgColor | ![#313244](https://dummyimage.com/15/313244?text=+) `#313244`  | Foreground color for the whitespace (shown as a background for dialogs/prompts) | Global |
+| theme.errorFgColor | ![#f38ba8](https://dummyimage.com/15/f38ba8?text=+) `#f38ba8`  | Foreground color for errors | Global |
+| theme.statusbar.primaryBgColor | ![#11111b](https://dummyimage.com/15/11111b?text=+) `#11111b`   | Background color for the primary section of the statusbar (e.g. that displays messages) | Global |
+| theme.statusbar.primaryFgColor |  ![#cdd6f4](https://dummyimage.com/15/cdd6f4?text=+) `#cdd6f4`  | Foreground color for the primary section of the statusbar (e.g. that displays messages) | Global |
+| theme.statusbar.secondaryFgColor |  ![#1e1e2e](https://dummyimage.com/15/1e1e2e?text=+) `#1e1e2e`  | Foreground color for "secondary" content such as other, colored, sections | Global |
+| theme.statusbar.modePrimaryBgColor | ![#f9e2af](https://dummyimage.com/15/f9e2af?text=+) `#f9e2af`   | Background color for the "primary" (e.g. in requests TUI the *SELECT*) mode section of the statusbar| Global |
+| theme.statusbar.modeSecondaryBgColor |  ![#a6e3a1](https://dummyimage.com/15/a6e3a1?text=+) `#a6e3a1`   | Background color for the "secondary" (e.g. in requests TUI the *EDIT*) mode section of the statusbar| Global |
+| theme.statusbar.thirdColBgColor | ![#94e2d5](https://dummyimage.com/15/94e2d5?text=+) `#94e2d5` | Background color for the third section of the statusbar | Global |
+| theme.statusbar.fourthColBgColor | ![#89b4fa](https://dummyimage.com/15/89b4fa?text=+) `#89b4fa`  | Background color for the fourth section of the statusbar | Global |
+| theme.httpMethods.textFgColor |  ![#1e1e2e](https://dummyimage.com/15/1e1e2e?text=+) `#1e1e2e`  | In list items, the foreground color for the label showing request's http method | Global |
+| theme.httpMethods.defaultBgColor |  ![#cdd6f4](https://dummyimage.com/15/cdd6f4?text=+) `#cdd6f4`  | In list items, the default background color for the label showing request's http method | Global |
+| theme.httpMethods.getBgColor |  ![#89b4fa](https://dummyimage.com/15/89b4fa?text=+) `#89b4fa`   | In list items, the background color for the label showing request's http method when the method is `GET` | Global |
+| theme.httpMethods.postBgColor |  ![#a6e3a1](https://dummyimage.com/15/a6e3a1?text=+) `#a6e3a1`   | In list items, the background color for the label showing request's http method when the method is `POST` | Global |
+| theme.httpMethods.putBgColor |  ![#f9e2af](https://dummyimage.com/15/f9e2af?text=+) `#f9e2af`    | In list items, the background color for the label showing request's http method when the method is `PUT` | Global |
+| theme.httpMethods.deleteBgColor | ![#f38ba8](https://dummyimage.com/15/f38ba8?text=+) `#f38ba8`   | In list items, the background color for the label showing request's http method when the method is `DELETE` | Global |
+| theme.httpMethods.patchBgColor | ![#94e2d5](https://dummyimage.com/15/94e2d5?text=+) `#94e2d5`  | In list items, the background color for the label showing request's http method when the method is `PATCH` | Global |
 | theme.httpMethods.optionsBgColor |  | In list items, the background color for the label showing request's http method when the method is `OPTIONS` | Global |
-| theme.urlFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | In list items, the foreground color for request's URL | Global |
+| theme.urlFgColor |  ![#89b4fa](https://dummyimage.com/15/89b4fa?text=+) `#89b4fa`   | In list items, the foreground color for request's URL | Global |
 | theme.urlBgColor |  |  In list items, the background color for request's URL | Global |
-| theme.urlTemplatedSectionFgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | In list items, the foreground color for the templated section of the request's URL | Global |
+| theme.urlTemplatedSectionFgColor |  ![#f9e2af](https://dummyimage.com/15/f9e2af?text=+) `#f9e2af`    | In list items, the foreground color for the templated section of the request's URL | Global |
 | theme.urlTemplatedSectionBgColor |  | In list items, the background color for the templated section of the request's URL | Global |
-| theme.urlUnfilledTemplatedSectionFgColor | ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   |In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable | Global |
+| theme.urlUnfilledTemplatedSectionFgColor | ![#f38ba8](https://dummyimage.com/15/f38ba8?text=+) `#f38ba8`   |In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable | Global |
 | theme.urlUnfilledTemplatedSectionBgColor |  |  In list items, the foreground color for the templated section of the request's URL when there is no environment/profile value to match the templated variable | Global |
-| theme.response.status200FgColor |  ![#a6e3a1](https://via.placeholder.com/15/a6e3a1/000000.png?text=+) `#a6e3a1`   | Foreground color for the response's 2xx status | Global |
-| theme.response.status300FgColor |  ![#f9e2af](https://via.placeholder.com/15/f9e2af/000000.png?text=+) `#f9e2af`    | Foreground color for the response's 3xx status | Global |
-| theme.response.status400FgColor |  ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | Foreground color for the response's 4xx status | Global |
-| theme.response.status500FgColor |  ![#f38ba8](https://via.placeholder.com/15/f38ba8/000000.png?text=+) `#f38ba8`   | Foreground color for the response's 5xx status | Global |
-| theme.response.protoFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's proto part | Global |
-| theme.response.headerFgColor |  ![#89b4fa](https://via.placeholder.com/15/89b4fa/000000.png?text=+) `#89b4fa`   | Foreground color for the response's header names | Global |
+| theme.response.status200FgColor |  ![#a6e3a1](https://dummyimage.com/15/a6e3a1?text=+) `#a6e3a1`   | Foreground color for the response's 2xx status | Global |
+| theme.response.status300FgColor |  ![#f9e2af](https://dummyimage.com/15/f9e2af?text=+) `#f9e2af`    | Foreground color for the response's 3xx status | Global |
+| theme.response.status400FgColor |  ![#f38ba8](https://dummyimage.com/15/f38ba8?text=+) `#f38ba8`   | Foreground color for the response's 4xx status | Global |
+| theme.response.status500FgColor |  ![#f38ba8](https://dummyimage.com/15/f38ba8?text=+) `#f38ba8`   | Foreground color for the response's 5xx status | Global |
+| theme.response.protoFgColor |  ![#89b4fa](https://dummyimage.com/15/89b4fa?text=+) `#89b4fa`   | Foreground color for the response's proto part | Global |
+| theme.response.headerFgColor |  ![#89b4fa](https://dummyimage.com/15/89b4fa?text=+) `#89b4fa`   | Foreground color for the response's header names | Global |
 | printer.pretty | `true`| Pretty print responses | Global, request |
 | editor | `$EDITOR` | Which editor to use for creating/editing requests and profiles | Global |
 | debug | `false` | Enable debug logging | Global |
@@ -1073,10 +1074,15 @@ options:
   printRequest: false
 ```
 
+## Known Issues and Caveats
+
+This is a list of known issues and caveats. If you encounter a problem that is not listed here, please open an issue.
+
+- Copying results to clipboard might not work on remote sessions/all platforms.
+- When using template variables in YAML based requests, template variable must be put into quotes if it defined at the beginning of property value. E.g. `url: "{domain}/foo"` and `url: http://{domain}/foo` works but `url: {domain}/foo` does not.
+
 ## TODO
 
 There are things still in progress and planned for some later date.
 
-- [ ] Add Lua based requests v.1.2
 - [ ] Preview, when a profile is selected, could auto-fill variables (but also show there's a variable; nvim "virtualtext" like?)
-- [ ] Theme support

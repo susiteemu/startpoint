@@ -3,19 +3,22 @@ package print
 import (
 	"errors"
 	"fmt"
+
 	"github.com/susiteemu/startpoint/core/model"
 	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
-func SprintStatus(resp *model.Response, pretty bool) (string, error) {
+func SprintStatus(resp *model.Response, pretty bool) (string, string, error) {
 	if resp == nil {
-		return "", errors.New("Response must not be nil!")
+		return "", "", errors.New("Response must not be nil!")
 	}
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 	protoStyle := lipgloss.NewStyle()
 	statusStyle := lipgloss.NewStyle()
+	status := fmt.Sprintf("%v %v", resp.Proto, resp.Status)
+	prettyStatus := ""
 	if pretty {
 		protoStyle = lipgloss.NewStyle().Foreground(theme.ResponseProtoFgColor)
 		if resp.StatusCode < 300 {
@@ -27,7 +30,8 @@ func SprintStatus(resp *model.Response, pretty bool) (string, error) {
 		} else {
 			statusStyle = lipgloss.NewStyle().Foreground(theme.ResponseStatus500FgColor)
 		}
+		prettyStatus = fmt.Sprintf("%v %v", protoStyle.Render(resp.Proto), statusStyle.Render(resp.Status))
 	}
 
-	return fmt.Sprintf("%v %v", protoStyle.Render(resp.Proto), statusStyle.Render(resp.Status)), nil
+	return status, prettyStatus, nil
 }

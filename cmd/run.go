@@ -6,14 +6,16 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	requestchain "github.com/susiteemu/startpoint/core/chaining"
 	"github.com/susiteemu/startpoint/core/client/runner"
 	"github.com/susiteemu/startpoint/core/loader"
 	"github.com/susiteemu/startpoint/core/model"
 	"github.com/susiteemu/startpoint/core/print"
-	"os"
-	"strings"
-	"time"
+	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -103,6 +105,8 @@ var runCmd = &cobra.Command{
 			return
 		}
 
+		// load theme
+		styles.LoadTheme()
 		for _, response := range responses {
 			printOpts := print.PrintOpts{
 				PrettyPrint:    !runConfig.Plain,
@@ -110,12 +114,16 @@ var runCmd = &cobra.Command{
 				PrintBody:      runConfig.PrintBody,
 				PrintTraceInfo: runConfig.PrintTraceInfo,
 			}
-			responseStr, err := print.SprintResponse(response, printOpts)
+			responseStr, prettyResponseStr, err := print.SprintResponse(response, printOpts)
 			if err != nil {
 				fmt.Print(fmt.Errorf("error %v", err))
 				return
 			}
-			fmt.Println(responseStr)
+			if printOpts.PrettyPrint {
+				fmt.Println(prettyResponseStr)
+			} else {
+				fmt.Println(responseStr)
+			}
 		}
 
 	},

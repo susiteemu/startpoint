@@ -45,7 +45,7 @@ func (m Model) View() string {
 			otherItemWidths += lipgloss.Width(renderedItem)
 		}
 	}
-	if m.mainItemIndex >= 0 && m.mainItemIndex < len(m.items) {
+	if m.mainItemIndex >= 0 && m.mainItemIndex+1 < len(m.items) {
 		renders = append(renders[:m.mainItemIndex+1], renders[m.mainItemIndex:]...)
 		truncatedText := truncate.StringWithTail(m.items[m.mainItemIndex].Text, uint(m.width-otherItemWidths-3), "...")
 		renders[m.mainItemIndex] = m.itemStyles[m.mainItemIndex].Copy().Width(m.width - otherItemWidths).Render(truncatedText)

@@ -3,6 +3,7 @@ package configuration
 import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	conv "github.com/susiteemu/startpoint/core/tools/conv"
 )
 
 type Configuration struct {
@@ -148,13 +149,12 @@ func Flatten(prefix string, src map[string]interface{}, dest map[string]interfac
 		switch child := v.(type) {
 		case map[string]interface{}:
 			Flatten(prefix+k, child, dest)
+		case map[interface{}]interface{}:
+			c, _ := conv.ConvertMapOfInterfaceToString(child)
+			Flatten(prefix+k, c, dest)
 		case []interface{}:
 			genKey := prefix + k
 			dest[genKey] = child
-			//for i := 0; i < len(child); i++ {
-			//genKey := fmt.Sprintf("%s%s.%s", prefix, k, strconv.Itoa(i))
-			//dest[genKey] = child[i]
-			//}
 		default:
 			dest[prefix+k] = v
 		}

@@ -3,36 +3,37 @@ package print
 import (
 	"errors"
 	"fmt"
-	"github.com/susiteemu/startpoint/core/model"
-	"github.com/susiteemu/startpoint/tui/styles"
 	"sort"
 	"strings"
+
+	"github.com/susiteemu/startpoint/core/model"
+	"github.com/susiteemu/startpoint/tui/styles"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
-func SprintHeaders(headers model.Headers, pretty bool) (string, error) {
+func SprintHeaders(headers model.Headers, pretty bool) (string, string, error) {
 	if headers == nil {
-		return "", errors.New("headers must not be nil")
+		return "", "", errors.New("headers must not be nil")
 	}
 
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 	headerStyle := lipgloss.NewStyle().Foreground(theme.ResponseHeaderFgColor)
 
-	respHeadersStr := ""
+	var respHeaderNamesBuilder, prettyRespHeaderNamesBuilder []string
 	// sort header names
 	respHeaderNames := sortHeaderNames(headers)
 	for _, respHeader := range respHeaderNames {
 		header := respHeader
 		headerValues := strings.Join(headers[respHeader], ", ")
 		if pretty {
-			header = headerStyle.Render(header)
+			prettyHeader := headerStyle.Render(header)
+			prettyRespHeaderNamesBuilder = append(prettyRespHeaderNamesBuilder, fmt.Sprintf("%v: %v", prettyHeader, headerValues))
 		}
-		respHeadersStr += fmt.Sprintf("%v: %v", header, headerValues)
-		respHeadersStr += fmt.Sprintln("")
+		respHeaderNamesBuilder = append(respHeaderNamesBuilder, fmt.Sprintf("%v: %v", header, headerValues))
 	}
 
-	return respHeadersStr, nil
+	return strings.Join(respHeaderNamesBuilder, "\n"), strings.Join(prettyRespHeaderNamesBuilder, "\n"), nil
 }
 
 func sortHeaderNames(headers model.Headers) []string {

@@ -128,7 +128,7 @@ func (m Model) View() string {
 
 func New(context PromptContext, initialValue string, label string, validator func(s string) error, w int) Model {
 
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 	commonStyles := styles.GetCommonStyles(theme)
 
 	promptStyle = promptStyle.Foreground(theme.TextFgColor).BorderForeground(theme.BorderFgColor)

@@ -8,6 +8,7 @@ const (
 	Preview
 	Stopwatch
 	Profiles
+	Results
 )
 
 const (

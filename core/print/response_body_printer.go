@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/susiteemu/startpoint/core/model"
 	"strings"
+
+	"github.com/susiteemu/startpoint/core/model"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/lexers"
@@ -13,8 +14,9 @@ import (
 	"github.com/yosssi/gohtml"
 )
 
-func SprintBody(size int64, body []byte, headers model.Headers, pretty bool) (string, error) {
+func SprintBody(size int64, body []byte, headers model.Headers, pretty bool) (string, string, error) {
 	respBodyStr := ""
+	prettyRespBodyStr := ""
 	if size > 0 {
 		dispatcher := NewBodyFormatter(&JsonContentTypeBodyHandler{}, &XmlContentTypeBodyHandler{}, &HtmlContentTypeBodyHandler{}, &DefaultContentTypeBodyHandler{})
 
@@ -30,14 +32,14 @@ func SprintBody(size int64, body []byte, headers model.Headers, pretty bool) (st
 			}
 		}
 		if pretty && len(respBodyStr) > 0 {
-			respBodyStr, err = prettyPrintBody(respBodyStr, headers)
+			prettyRespBodyStr, err = prettyPrintBody(respBodyStr, headers)
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 		}
 
 	}
-	return respBodyStr, nil
+	return respBodyStr, prettyRespBodyStr, nil
 }
 
 func prettyPrintBody(respBodyStr string, headers model.Headers) (string, error) {

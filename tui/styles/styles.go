@@ -3,8 +3,9 @@ package styles
 import (
 	"embed"
 	"fmt"
-	"github.com/susiteemu/startpoint/core/configuration"
 	"os"
+
+	"github.com/susiteemu/startpoint/core/configuration"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/rs/zerolog/log"
@@ -97,8 +98,7 @@ func loadThemeByThemeName(themeName string) {
 	}
 }
 
-func GetTheme() *Theme {
-	log.Debug().Msgf("Get theme")
+func LoadTheme() *Theme {
 	if theme == nil {
 		getColor := config.GetStringOrDefault
 		themeName, found := config.GetString("themeName")

@@ -2,13 +2,16 @@ package tui
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/susiteemu/startpoint/core/loader"
 	"github.com/susiteemu/startpoint/core/tools/paths"
+	"github.com/susiteemu/startpoint/tui/overlay"
 	profileUI "github.com/susiteemu/startpoint/tui/profile"
 	requestUI "github.com/susiteemu/startpoint/tui/request"
 	statusbar "github.com/susiteemu/startpoint/tui/statusbar"
 	"github.com/susiteemu/startpoint/tui/styles"
-	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -28,6 +31,9 @@ type Model struct {
 	requests       requestUI.Model
 	profiles       profileUI.Model
 	topbar         statusbar.Model
+	help           help.Model
+	width          int
+	height         int
 	runningRequest bool
 	reloadProfiles bool
 	workspace      string
@@ -42,7 +48,7 @@ type topbarColors struct {
 
 func getTopbarColors(activeView ActiveView) topbarColors {
 
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 
 	var requestsBg, requestsFg, profilesBg, profilesFg lipgloss.Color
 	switch activeView {
@@ -92,6 +98,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// request gets -1 for height because mainview has topbar
 		m.requests.SetSize(msg.Width, msg.Height-1)
 		m.profiles.SetSize(msg.Width, msg.Height-1)
+		m.width = msg.Width
+		m.height = msg.Height
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case tea.KeyCtrlC.String():
@@ -116,9 +124,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				updateTopbar(&m)
 				return m, nil
 			}
+		case "?":
+			m.help.ShowAll = !m.help.ShowAll
+			return m, nil
 		}
 	case requestUI.RunRequestMsg:
 		m.runningRequest = true
+	case requestUI.RunRequestFinishedMsg:
+		m.runningRequest = false
 	case profileUI.ProfilesChangedMsg:
 		m.reloadProfiles = true
 	}
@@ -157,6 +170,13 @@ func renderRequests(m Model) string {
 		lipgloss.Top,
 		views...,
 	)
+	if m.help.ShowAll {
+		helpModal := style.helpPaneStyle.Render(m.help.View(m.requests.GetHelpKeys()))
+		// position at the bottom
+		x := (m.width / 2) - (lipgloss.Width(helpModal) / 2)
+		y := m.height - lipgloss.Height(helpModal) - 1
+		joined = overlay.PlaceOverlay(x, y, helpModal, joined)
+	}
 	return joined
 }
 
@@ -169,12 +189,22 @@ func renderProfiles(m Model) string {
 		lipgloss.Top,
 		views...,
 	)
+	if m.help.ShowAll {
+		helpModal := style.helpPaneStyle.Render(m.help.View(m.profiles.GetHelpKeys()))
+		// position at the bottom
+		x := (m.width / 2) - (lipgloss.Width(helpModal) / 2)
+		y := m.height - lipgloss.Height(helpModal) - 1
+		joined = overlay.PlaceOverlay(x, y, helpModal, joined)
+	}
 	return joined
 }
 
 func Start(workspace string, activeView ActiveView) {
 
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
+
+	commonStyles := styles.GetCommonStyles(theme)
+	InitStyle(theme, commonStyles)
 
 	loadedRequests, err := loader.ReadRequests(workspace)
 	if err != nil {
@@ -201,12 +231,19 @@ func Start(workspace string, activeView ActiveView) {
 
 	tb := statusbar.New(topbarItems, 2, 0)
 
+	help := help.New()
+	help.Styles.ShortKey = style.helpKeyStyle
+	help.Styles.ShortDesc = style.helpDescStyle
+	help.Styles.FullKey = style.helpKeyStyle
+	help.Styles.FullDesc = style.helpDescStyle
+	help.ShortSeparator = "  "
 	m := Model{
 		active:    activeView,
 		requests:  requestUI.New(loadedRequests, loadedProfiles),
 		profiles:  profileUI.New(loadedProfiles),
 		topbar:    tb,
 		workspace: workspace,
+		help:      help,
 	}
 
 	output := termenv.NewOutput(os.Stdout)

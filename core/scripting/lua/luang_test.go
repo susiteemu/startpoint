@@ -8,9 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Generate tests
-//
-
 func TestRunLuaScript(t *testing.T) {
 
 	tests := []struct {
@@ -34,6 +31,11 @@ return {
 	body = {
 		id=1,
 		name="Jane"
+	},
+	options = {
+		printer = {
+			pretty = false
+		}
 	}
 }`,
 				},
@@ -48,16 +50,20 @@ return {
 			expected: map[string]interface{}{
 				"url":    "http://foo.bar",
 				"method": "POST",
-				"headers": map[string][]string{
-					"X-Custom-Header": {"FooBar", "Barz"},
+				"headers": map[string]interface{}{
+					"X-Custom-Header": []interface{}{"FooBar", "Barz"},
 				},
 				"body": map[string]interface{}{
-					"id":   1,
+					"id":   float64(1),
 					"name": "Jane",
 				},
-				"auth":    map[string]interface{}{},
-				"options": map[string]interface{}{},
-				"output":  "",
+				"auth": map[string]interface{}{},
+				"options": map[string]interface{}{
+					"printer": map[interface{}]interface{}{
+						"pretty": false,
+					},
+				},
+				"output": "",
 			},
 		},
 	}
@@ -66,7 +72,7 @@ return {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := RunLuaScript(tt.mold, &tt.previousResponse)
 			assert.Nil(t, err, "did not expect error to happen")
-			assert.NotEqual(t, tt.expected, result, "results should match")
+			assert.Equal(t, tt.expected, result, "results should match")
 		})
 	}
 }

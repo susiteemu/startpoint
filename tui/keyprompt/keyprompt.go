@@ -2,9 +2,10 @@ package keypromptui
 
 import (
 	"fmt"
-	"github.com/susiteemu/startpoint/tui/styles"
 	"slices"
 	"strings"
+
+	"github.com/susiteemu/startpoint/tui/styles"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -97,7 +98,7 @@ func (m Model) View() string {
 
 func New(label string, entries []KeypromptEntry, promptType string, payload interface{}, width int) Model {
 
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 	commonStyles := styles.GetCommonStyles(theme)
 
 	promptStyle = lipgloss.NewStyle().BorderForeground(theme.BorderFgColor).BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2)

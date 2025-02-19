@@ -14,10 +14,14 @@ import (
 	"github.com/muesli/reflow/wrap"
 )
 
+const RENDER_LINE_MARGIN = 4
+
 type Model struct {
 	title    string
 	content  string
 	Viewport viewport.Model
+	wPercent float64
+	hPercent float64
 }
 
 func (m Model) Init() tea.Cmd {
@@ -33,9 +37,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
-		m.Viewport.Width = int(float64(msg.Width) * 0.8)
-		m.Viewport.Height = int(float64(msg.Height) * 0.8)
-		m.Viewport.SetContent(renderLines(m.content, m.Viewport.Width-3))
+		m.Viewport.Width = int(float64(msg.Width) * m.wPercent)
+		m.Viewport.Height = int(float64(msg.Height) * m.hPercent)
+		m.Viewport.SetContent(renderLines(m.content, m.Viewport.Width-RENDER_LINE_MARGIN))
 	}
 
 	// Handle keyboard and mouse events in the viewport
@@ -46,7 +50,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return lipgloss.NewStyle().BorderForeground(styles.GetTheme().BorderFgColor).Border(lipgloss.RoundedBorder(), true, true).Render(contentStyle.Render(m.Viewport.View()))
+	return lipgloss.NewStyle().BorderForeground(styles.LoadTheme().BorderFgColor).Border(lipgloss.RoundedBorder(), true, true).Render(contentStyle.Render(m.Viewport.View()))
 }
 
 func (m *Model) SetSize(width int, height int) {
@@ -55,7 +59,7 @@ func (m *Model) SetSize(width int, height int) {
 }
 
 func renderLines(content string, width int) string {
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 
 	content = strings.ReplaceAll(content, "\r\n", "\n")
 	lines := strings.Split(content, "\n")
@@ -79,16 +83,20 @@ func renderLines(content string, width int) string {
 	return strings.Join(linesWithLineNrs, "\n")
 }
 
-func New(title, content string, w, h int) Model {
+func New(title, content string, w, h int, wPercent, hPercent float64) Model {
 
-	v := viewport.New(w, h)
-	v.SetContent(renderLines(content, w-4))
+	width := int(float64(w) * wPercent)
+	height := int(float64(h) * hPercent)
+	v := viewport.New(width, height)
+	v.SetContent(renderLines(content, width-RENDER_LINE_MARGIN))
 	v.Style = v.Style.Padding(0, 0)
 
 	m := Model{
 		title:    title,
 		content:  content,
 		Viewport: v,
+		wPercent: wPercent,
+		hPercent: hPercent,
 	}
 	return m
 }

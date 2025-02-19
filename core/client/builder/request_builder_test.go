@@ -1,9 +1,10 @@
 package builder
 
 import (
-	"github.com/susiteemu/startpoint/core/model"
 	"math/big"
 	"testing"
+
+	"github.com/susiteemu/startpoint/core/model"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -460,7 +461,7 @@ return {
 					"X-Foo":  {"Bar"},
 					"X-Foos": {"Bar1", "Bar2"},
 				},
-				Body: map[interface{}]interface{}{
+				Body: map[string]interface{}{
 					"id":     float64(1),
 					"amount": 1.2001,
 					"name":   "Jane",
@@ -508,7 +509,7 @@ return {
 					"X-Foos":        {"Bar1", "Bar2"},
 					"Authorization": model.HeaderValues{"Basic amFuZTpkb2U="},
 				},
-				Body: map[interface{}]interface{}{
+				Body: map[string]interface{}{
 					"id":     float64(1),
 					"amount": 1.2001,
 					"name":   "Jane",
@@ -553,7 +554,7 @@ return {
 					"X-Foos":        {"Bar1", "Bar2"},
 					"Authorization": model.HeaderValues{"Bearer some-token"},
 				},
-				Body: map[interface{}]interface{}{
+				Body: map[string]interface{}{
 					"id":     float64(1),
 					"amount": 1.2001,
 					"name":   "Jane",
@@ -601,7 +602,7 @@ return {
 					"X-Foos":     {"Bar1", "Bar2"},
 					"X-Tmpl-Var": {"Value from template var"},
 				},
-				Body: map[interface{}]interface{}{
+				Body: map[string]interface{}{
 					"id":     float64(1),
 					"amount": 1.2001,
 					"name":   "Jane",

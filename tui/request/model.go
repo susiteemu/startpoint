@@ -2,6 +2,7 @@ package requestui
 
 import (
 	"fmt"
+
 	"github.com/susiteemu/startpoint/core/model"
 	"github.com/susiteemu/startpoint/core/print"
 	"github.com/susiteemu/startpoint/core/templating/templateng"
@@ -10,6 +11,7 @@ import (
 	preview "github.com/susiteemu/startpoint/tui/preview"
 	profiles "github.com/susiteemu/startpoint/tui/profile"
 	prompt "github.com/susiteemu/startpoint/tui/prompt"
+	resultsui "github.com/susiteemu/startpoint/tui/resultsview"
 	statusbar "github.com/susiteemu/startpoint/tui/statusbar"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -73,10 +75,10 @@ type Model struct {
 	active       ActiveView
 	list         list.Model
 	preview      preview.Model
+	resultview   resultsui.Model
 	prompt       prompt.Model
 	keyprompt    keyprompt.Model
 	stopwatch    stopwatch.Model
-	topbar       statusbar.Model
 	statusbar    statusbar.Model
 	profileui    profiles.Model
 	help         help.Model
@@ -84,4 +86,5 @@ type Model struct {
 	height       int
 	postAction   PostAction
 	requestMolds []*model.RequestMold
+	runResults   map[string][]resultsui.RunResult
 }

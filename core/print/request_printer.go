@@ -3,24 +3,25 @@ package print
 import (
 	"errors"
 	"fmt"
-	"github.com/susiteemu/startpoint/core/model"
 	"strings"
+
+	"github.com/susiteemu/startpoint/core/model"
 
 	"github.com/rs/zerolog/log"
 )
 
-func SprintRequest(request *model.Request, pretty bool) (string, error) {
+func SprintRequest(request *model.Request, pretty bool) (string, string, error) {
 	if request == nil {
-		return "", errors.New("Request must not be nil!")
+		return "", "", errors.New("Request must not be nil!")
 	}
 
 	var requestBuilder []string
 	methodLabel := request.Method
 	urlLabel := request.Url
 	requestBuilder = append(requestBuilder, fmt.Sprintf("%s %s", methodLabel, urlLabel))
-	headers, err := SprintHeaders(request.Headers, false)
+	headers, _, err := SprintHeaders(request.Headers, false)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	requestBuilder = append(requestBuilder, headers)
 
@@ -29,7 +30,7 @@ func SprintRequest(request *model.Request, pretty bool) (string, error) {
 			bodyAsMap, ok := request.BodyAsMap()
 			log.Debug().Msgf("Body as map %v", bodyAsMap)
 			if !ok {
-				return "", errors.New("cannot convert body to map")
+				return "", "", errors.New("cannot convert body to map")
 			}
 			for k, v := range bodyAsMap {
 				requestBuilder = append(requestBuilder, fmt.Sprintf("%v: %v", k, v))
@@ -43,13 +44,13 @@ func SprintRequest(request *model.Request, pretty bool) (string, error) {
 			log.Debug().Msgf("Request body type %T, value=%v, headers=%v", request.Body, request.Body, request.Headers)
 			bodyAsStr, ok := request.Body.(string)
 			if !ok {
-				return "", errors.New("cannot convert request body to string")
+				return "", "", errors.New("cannot convert request body to string")
 			}
 			bodyBytes := []byte(bodyAsStr)
-			printedBody, err := SprintBody(int64(len(bodyBytes)), bodyBytes, request.Headers, false)
+			printedBody, _, err := SprintBody(int64(len(bodyBytes)), bodyBytes, request.Headers, false)
 			if err != nil {
 				log.Warn().Err(err).Msg("Error occurred while printing body")
-				return "", err
+				return "", "", err
 			}
 			if len(printedBody) > 0 {
 				requestBuilder = append(requestBuilder, printedBody)
@@ -64,10 +65,10 @@ func SprintRequest(request *model.Request, pretty bool) (string, error) {
 	}
 
 	printed := strings.Join(requestBuilder, "\n")
-
+	prettyPrinted := ""
 	if pretty {
-		printed = SprintFaint(printed)
+		prettyPrinted = SprintFaint(printed)
 	}
 
-	return printed, nil
+	return printed, prettyPrinted, nil
 }

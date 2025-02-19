@@ -67,6 +67,9 @@ func RunLuaScript(request model.RequestMold, previousResponse *model.Response) (
 		values["method"] = res.Method
 		values["headers"] = res.Headers
 		values["body"] = res.Body
+		if res.Auth == nil {
+			res.Auth = map[string]interface{}{}
+		}
 		values["auth"] = res.Auth
 		values["options"] = res.Options
 		values["output"] = res.Output

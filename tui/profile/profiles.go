@@ -2,6 +2,8 @@ package profileui
 
 import (
 	"fmt"
+	"os/exec"
+
 	"github.com/susiteemu/startpoint/core/model"
 	"github.com/susiteemu/startpoint/core/print"
 	messages "github.com/susiteemu/startpoint/tui/messages"
@@ -10,7 +12,6 @@ import (
 	prompt "github.com/susiteemu/startpoint/tui/prompt"
 	statusbar "github.com/susiteemu/startpoint/tui/statusbar"
 	"github.com/susiteemu/startpoint/tui/styles"
-	"os/exec"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -87,9 +88,9 @@ func (i Profile) FilterValue() string { return i.Name }
 type Model struct {
 	list          list.Model
 	prompt        prompt.Model
-	help          help.Model
 	statusbar     statusbar.Model
 	preview       preview.Model
+	embeddedHelp  help.Model
 	active        ActiveView
 	mode          Mode
 	width         int
@@ -105,7 +106,6 @@ func (m *Model) SetSize(w, h int) {
 	m.list.SetWidth(width)
 	if m.mode == Normal {
 		m.statusbar.SetWidth(width)
-		m.help.Width = width
 		listHeight := calculateListHeight(*m)
 		m.list.SetHeight(listHeight)
 		updateStatusbar(m, "")
@@ -133,13 +133,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.active = List
 			}
 			return m, nil
-		case "?":
-			if m.active == List && m.mode == Normal {
-				m.help.ShowAll = !m.help.ShowAll
-				listHeight := calculateListHeight(m)
-				m.list.SetHeight(listHeight)
-				return m, nil
-			}
 		}
 	case CreateProfileMsg:
 		if m.mode == Normal && m.active == List {
@@ -232,12 +225,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				formatted = selected.Raw
 			}
 
-			// NOTE: cannot give correct height before preview is created
-			// and we can calculate vertical margin height
-			w := int(float64(m.width) * 0.8)
-			h := int(float64(m.height) * 0.8)
-			m.preview = preview.New(selected.Filename, formatted, w, h)
-
+			m.preview = preview.New(selected.Filename, formatted, m.width, m.height, 0.8, 0.8)
 			return m, nil
 		}
 	case prompt.PromptAnsweredMsg:
@@ -314,10 +302,16 @@ func (m Model) View() string {
 	}
 }
 
+func (m *Model) GetHelpKeys() help.KeyMap {
+	if m.mode == Embedded {
+		return embeddedKeyMap{}
+	}
+	return m.list
+}
 func renderList(m Model) string {
 	if m.mode == Embedded {
-		m.help.Width = m.list.Width()
-		helpView := lipgloss.NewStyle().PaddingLeft(4).Render(m.help.View(embeddedKeys))
+		m.embeddedHelp.Width = m.list.Width()
+		helpView := lipgloss.NewStyle().Render(m.embeddedHelp.View(embeddedKeys))
 
 		views := []string{}
 		views = append(views, m.list.View())
@@ -335,13 +329,6 @@ func renderList(m Model) string {
 		views...,
 	)
 
-	if m.help.ShowAll {
-		helpModal := style.helpPaneStyle.Render(m.help.View(m.list))
-		// position at the bottom
-		x := (m.width / 2) - (lipgloss.Width(helpModal) / 2)
-		y := m.height - lipgloss.Height(helpModal) - 1
-		joined = overlay.PlaceOverlay(x, y, helpModal, joined)
-	}
 	return joined
 }
 
@@ -379,7 +366,7 @@ func New(loadedProfiles []*model.Profile) Model {
 func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeight int, wPercent, hPercent float64) Model {
 	var profiles []list.Item
 
-	theme := styles.GetTheme()
+	theme := styles.LoadTheme()
 	commonStyles := styles.GetCommonStyles(theme)
 	InitStyle(theme, commonStyles)
 
@@ -409,12 +396,6 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 	profileList.SetShowTitle(false)
 
 	var sb statusbar.Model
-	help := help.New()
-	help.Styles.ShortKey = style.helpKeyStyle
-	help.Styles.ShortDesc = style.helpDescStyle
-	help.Styles.FullKey = style.helpKeyStyle
-	help.Styles.FullDesc = style.helpDescStyle
-	help.ShortSeparator = "  "
 
 	if !embedded {
 		statusbarItems := []statusbar.StatusbarItem{
@@ -429,11 +410,27 @@ func newModel(loadedProfiles []*model.Profile, embedded bool, winWidth, winHeigh
 	profileList.SetFilteringEnabled(false)
 
 	mode := Normal
+	var embeddedHelp help.Model
 	if embedded {
-		help.ShowAll = true
 		profileList.DisableQuitKeybindings()
 		mode = Embedded
+		embeddedHelp = help.New()
+		embeddedHelp.Styles.ShortKey = style.helpKeyStyle
+		embeddedHelp.Styles.ShortDesc = style.helpDescStyle
+		embeddedHelp.Styles.FullKey = style.helpKeyStyle
+		embeddedHelp.Styles.FullDesc = style.helpDescStyle
+		embeddedHelp.ShortSeparator = "  "
 	}
 
-	return Model{list: profileList, active: List, mode: mode, width: winWidth, height: winHeight, help: help, statusbar: sb, widthPercent: wPercent, heightPercent: hPercent}
+	return Model{
+		list:          profileList,
+		active:        List,
+		embeddedHelp:  embeddedHelp,
+		mode:          mode,
+		width:         winWidth,
+		height:        winHeight,
+		statusbar:     sb,
+		widthPercent:  wPercent,
+		heightPercent: hPercent,
+	}
 }

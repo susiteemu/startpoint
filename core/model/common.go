@@ -22,10 +22,8 @@ const CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
 const CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
 
 type Body interface{}
-
 type FormData interface{}
 type HeaderValues []string
-
 type Headers map[string]HeaderValues
 
 /*func (body *Body) UnmarshalYAML(node *yaml.Node) error {

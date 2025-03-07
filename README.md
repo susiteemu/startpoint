@@ -1080,6 +1080,7 @@ This is a list of known issues and caveats. If you encounter a problem that is n
 
 - Copying results to clipboard might not work on remote sessions/all platforms.
 - When using template variables in YAML based requests, template variable must be put into quotes if it defined at the beginning of property value. E.g. `url: "{domain}/foo"` and `url: http://{domain}/foo` works but `url: {domain}/foo` does not.
+- Lua requests support Lua 5.1 (+ goto statement in Lua 5.2), as per support in used [library](https://github.com/yuin/gopher-lua)
 
 ## TODO
 

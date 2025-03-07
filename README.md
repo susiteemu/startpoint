@@ -821,7 +821,7 @@ An example: you want to perform a `GET` request to an endpoint `/foo`. You have 
 
 ```yaml
 # Using templates.yaml
-url: {domain}/foo
+url: "{domain}/foo"
 method: GET
 ```
 
